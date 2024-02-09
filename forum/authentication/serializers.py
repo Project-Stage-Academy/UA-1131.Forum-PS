@@ -61,10 +61,10 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         current_site = get_current_site(self.context['request']).domain
         tokens = RefreshToken.for_user(user)
         access_token = str(tokens.access_token)
-        verification_link = reverse('email_varify')
+        verification_link = reverse('email_verify')
         absurl = f"http://{current_site}{verification_link}?token={str(access_token)}"
         from_email = settings.EMAIL_HOST_USER
-        email_body = f'Hello {user.first_name} {user.surname} Use link below to varify your account\n {absurl}'
+        email_body = f'Hello {user.first_name} {user.surname} Use link below to verify your account\n {absurl}'
         data = {'to_email': user.email,
                 'from_email': from_email,
                 'email_body': email_body,
