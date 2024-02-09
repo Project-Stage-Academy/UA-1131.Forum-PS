@@ -26,6 +26,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=100, unique=True)
     first_name = models.CharField(max_length=100)
     surname = models.CharField(max_length=100)
+    phone_number = models.CharField(max_length=20, default="-")
     registration_date = models.DateTimeField(auto_now_add=True)
     investor_role = models.BooleanField(default=False)
     startup_role = models.BooleanField(default=False)
@@ -35,7 +36,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
 
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["first_name", "surname"]
+    REQUIRED_FIELDS = ["password", "first_name", "surname", "phone_number"]
     objects = CustomUserManager()
 
     def __str__(self):

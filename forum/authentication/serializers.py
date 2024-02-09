@@ -6,26 +6,25 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.tokens import RefreshToken
-
 from authentication.models import CustomUser
 from authentication.utils import Utils
-from validation.validation import (validation_email, validation_password)
+from validation.serializers import CustomValidationSerializer
 
 
-class UserRegistrationSerializer(serializers.ModelSerializer):
+class UserRegistrationSerializer(serializers.ModelSerializer, CustomValidationSerializer):
     email = serializers.EmailField(required=True, validators=[UniqueValidator(queryset=CustomUser.objects.all())])
     password = serializers.CharField(write_only=True, required=True)
     password2 = serializers.CharField(write_only=True, required=True)
+    first_name = serializers.CharField(required=True)
+    surname = serializers.CharField(required=True)
+    phone_number = serializers.CharField(required=True, validators=[UniqueValidator(queryset=CustomUser.objects.all())])
     investor_role = serializers.BooleanField()
     startup_role = serializers.BooleanField()
 
     class Meta:
         model = CustomUser
-        fields = ("email", "password", "password2", "first_name", "surname", "investor_role", "startup_role")
-        extra_kwargs = {
-            'first_name': {"required": True},
-            'surname': {"required": True},
-        }
+        fields = (
+        "email", "password", "password2", "first_name", "surname", 'phone_number', "investor_role", "startup_role")
 
     def validate(self, attrs):
         email = attrs.get("email")
@@ -33,18 +32,23 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         password2 = attrs.pop("password2")
         first_name = attrs.get("first_name")
         surname = attrs.get("surname")
+        phone_number = attrs.get("phone_number")
         investor_role = attrs.get("investor_role")
         startup_role = attrs.get("startup_role")
         if password != password2:
             raise serializers.ValidationError({"password": "Passwords are different"})
         try:
-            validation_email(email)
+            self.validation_email(email)
         except ValidationError as e:
             raise ValidationError({"email": e.detail})
         try:
-            validation_password(password, email, first_name, surname)
+            self.validation_password(password, email, first_name, surname)
         except ValidationError as e:
             raise ValidationError({"password": e.detail})
+        try:
+            self.validation_phone_number(phone_number)
+        except ValidationError as e:
+            raise ValidationError({"phone_number": e.detail})
         if not investor_role and not startup_role:
             raise ValidationError("Please choose who you represent ")
         return attrs
@@ -70,4 +74,3 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
                 'email_body': email_body,
                 'email_subject': "Email verification"}
         Utils.send_verification_email(data)
-
