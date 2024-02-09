@@ -84,4 +84,45 @@ We are committed to delivering a platform that is not just a marketplace for ide
 - Regular feedback from both user groups (startups and investors) should be incorporated.
 
 
+## Installation
+
+### Environment
+Create .env file for storing global variables for Django and Database
+```properties
+POSTGRES_DB=yourdbname # name of db inside pgAdmin
+POSTGRES_USER=yourdbuser # username to db
+POSTGRES_PASSWORD=yourdbpassword # password to db
+POSTGRES_HOST=localhost # host of db
+POSTGRES_PORT=5432  # port of db
+PGADMIN_DEFAULT_EMAIL=... # default email for pgAdmin
+PGADMIN_DEFAULT_PASSWORD=... # default password for pgAdmin
+
+POSTGRES_DOCKER_DB=db # container name of db
+SECRET_KEY=... # secret key for Django secure management
+```
+
+### Setup
+> To run Docker compose
+```shell
+$ docker compose build
+$ docker compose up
+```
+> To run Django migrations
+```shell
+$ docker exec -i contener-name-exemple python manage.py makemigrations
+$ docker exec -i contener-name-exemple python manage.py migrate
+```
+> To stop Docker commands
+```shell
+ctrl + c
+$ docker stop $(docker ps -q)
+```
+
+## Usage
+### How to run tests
+```shell
+$ docker exec -i contener-name-exemple python manage.py test
+```
+
+
 
