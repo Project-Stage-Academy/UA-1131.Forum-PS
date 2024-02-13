@@ -1,11 +1,12 @@
 from datetime import datetime
+
+from django.contrib.auth.hashers import check_password
 from django.contrib.sites.shortcuts import get_current_site
-from django.conf import settings
-from django.urls import reverse
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.tokens import RefreshToken
+import logging
 from authentication.models import CustomUser
 from authentication.utils import Utils
 from validation.serializers import CustomValidationSerializer
@@ -18,13 +19,11 @@ class UserRegistrationSerializer(serializers.ModelSerializer, CustomValidationSe
     first_name = serializers.CharField(required=True)
     surname = serializers.CharField(required=True)
     phone_number = serializers.CharField(required=True, validators=[UniqueValidator(queryset=CustomUser.objects.all())])
-    investor_role = serializers.BooleanField()
-    startup_role = serializers.BooleanField()
 
     class Meta:
         model = CustomUser
         fields = (
-        "email", "password", "password2", "first_name", "surname", 'phone_number', "investor_role", "startup_role")
+            "email", "password", "password2", "first_name", "surname", 'phone_number')
 
     def validate(self, attrs):
         email = attrs.get("email")
@@ -33,8 +32,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer, CustomValidationSe
         first_name = attrs.get("first_name")
         surname = attrs.get("surname")
         phone_number = attrs.get("phone_number")
-        investor_role = attrs.get("investor_role")
-        startup_role = attrs.get("startup_role")
         if password != password2:
             raise serializers.ValidationError({"password": "Passwords are different"})
         try:
@@ -49,8 +46,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer, CustomValidationSe
             self.validation_phone_number(phone_number)
         except ValidationError as e:
             raise ValidationError({"phone_number": e.detail})
-        if not investor_role and not startup_role:
-            raise ValidationError("Please choose who you represent ")
         return attrs
 
     def create(self, validated_data):
@@ -58,19 +53,82 @@ class UserRegistrationSerializer(serializers.ModelSerializer, CustomValidationSe
         user.set_password(validated_data.get("password"))
         user.registration_date = datetime.now()
         user.save()
-        self.send_verification_email(user)
-        return user
-
-    def send_verification_email(self, user):
-        current_site = get_current_site(self.context['request']).domain
         tokens = RefreshToken.for_user(user)
         access_token = str(tokens.access_token)
-        verification_link = reverse('email_verify')
-        absurl = f"http://{current_site}{verification_link}?token={str(access_token)}"
-        from_email = settings.EMAIL_HOST_USER
-        email_body = f'Hello {user.first_name} {user.surname} Use link below to verify your account\n {absurl}'
-        data = {'to_email': user.email,
-                'from_email': from_email,
-                'email_body': email_body,
-                'email_subject': "Email verification"}
-        Utils.send_verification_email(data)
+        Utils.send_verification_email(get_current_site(self.context['request']).domain, user, access_token)
+        return user
+
+
+class UserUpdateSerializer(serializers.ModelSerializer, CustomValidationSerializer):
+    email = serializers.EmailField(required=True, validators=[UniqueValidator(queryset=CustomUser.objects.all())])
+    first_name = serializers.CharField(required=True)
+    surname = serializers.CharField(required=True)
+    phone_number = serializers.CharField(required=True, validators=[UniqueValidator(queryset=CustomUser.objects.all())])
+
+    class Meta:
+        model = CustomUser
+        fields = ("email", "first_name", "surname", 'phone_number',)
+
+    def validate(self, attrs):
+        email = attrs.get("email")
+        phone_number = attrs.get("phone_number")
+        try:
+            self.validation_email(email)
+        except ValidationError as e:
+            raise ValidationError({"email": e.detail})
+        try:
+            self.validation_phone_number(phone_number)
+        except ValidationError as e:
+            raise ValidationError({"phone_number": e.detail})
+        return attrs
+
+    def update(self, instance, validated_data):
+        logger = logging.getLogger('account_update')
+        new_email = validated_data.get("email")
+        if new_email != instance.email:
+            instance.is_validated = False
+            tokens = RefreshToken.for_user(instance)
+            access_token = str(tokens.access_token)
+            instance = super().update(instance, validated_data)
+            Utils.send_verification_email(get_current_site(self.context['request']).domain, instance, access_token)
+            logger.info(
+                    f"User {instance.email} {instance.first_name} {instance.surname} updated his\
+                     account information:{validated_data} (Email in process of verification)")
+            return instance
+        instance = super().update(instance, validated_data)
+        logger.info(
+            f"User {instance.email} {instance.first_name} {instance.surname} updated his\
+                             account information:{validated_data}")
+
+        return instance
+
+
+class UserPasswordUpdateSerializer(serializers.ModelSerializer, CustomValidationSerializer):
+    previous_password = serializers.CharField(label="Previous password", required=True, write_only=True)
+    new_password = serializers.CharField(label="New password", required=True, write_only=True)
+
+    class Meta:
+        model = CustomUser
+        fields = ("previous_password", "new_password")
+
+    def validate(self, attrs):
+        previous_password = attrs.get("previous_password")
+        new_password = attrs.get("new_password")
+        user = self.instance
+        if not check_password(previous_password, user.password):
+            raise ValidationError({"previous_password": "Wrong previous password"})
+        try:
+            self.validation_password(new_password)
+        except ValidationError as e:
+            raise ValidationError({"password": e.detail})
+        return attrs
+
+    def update(self, instance, validated_data):
+        logger = logging.getLogger('account_update')
+        new_password = validated_data.pop("new_password")
+        instance.set_password(new_password)
+        instance = super().update(instance, validated_data)
+        Utils.send_password_update_email(instance)
+        logger.info(
+            f"{datetime.now()}: User {instance.email} {instance.first_name} {instance.surname} updated his password")
+        return instance
