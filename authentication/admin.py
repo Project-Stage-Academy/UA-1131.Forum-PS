@@ -2,10 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
 from authentication.models import CustomUser
-from authentication.serializers import UserRegistrationSerializer
 
-
-# Register your models here.
 
 class CustomAdmin(UserAdmin):
     model = CustomUser
@@ -35,3 +32,4 @@ class CustomAdmin(UserAdmin):
 
 
 admin.site.register(CustomUser, CustomAdmin)
+
