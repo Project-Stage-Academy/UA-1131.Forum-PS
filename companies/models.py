@@ -11,7 +11,7 @@ class Companies(models.Model):
     contact_phone = models.CharField(max_length=255, blank=True)
     contact_email = models.CharField(max_length=255, blank=True)
     registration_date = models.DateTimeField(auto_now_add=True)
-    edrpou = models.IntegerField(blank=True)
+    edrpou = models.IntegerField(blank=True, null=True)
     address = models.TextField(max_length=255, blank=True)
     product_info = models.TextField(blank=True)
     startup_idea = models.TextField(blank=True)
