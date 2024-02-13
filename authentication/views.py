@@ -36,24 +36,20 @@ class VerifyEmail(generics.GenericAPIView):
 
 class LoginView(APIView):
     def post(self, request):
-        username = request.data.get('username')
+        email = request.data.get('email')
         password = request.data.get('password')
-        user = authenticate(username=username, password=password)
-
-        print('Auth user:', user)
+        user = authenticate(email=email, password=password)
 
         if user is None:
             return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
         refresh = RefreshToken.for_user(user)
-        response = JsonResponse({
+        return JsonResponse({
             'refresh': str(refresh),
             'access': str(refresh.access_token),
             'user_id': user.id,
-            'username': username
+            'email': email
         })
-        print('Returning response:', response)
-        return response
 
 class LogoutView(APIView):
     permission_classes = (IsAuthenticated,)
