@@ -51,6 +51,7 @@ class LoginView(APIView):
             'email': email
         })
 
+
 class LogoutView(APIView):
     permission_classes = (IsAuthenticated,)
 
