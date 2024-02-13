@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny
 
+
 class UserRegistrationView(generics.CreateAPIView):
     queryset = CustomUser.objects.all()
     permission_classes = (AllowAny,)
@@ -34,6 +35,7 @@ class VerifyEmail(generics.GenericAPIView):
         except jwt.exceptions.DecodeError as e:
             return Response({'email': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
 
+
 class LoginView(APIView):
     def post(self, request):
         email = request.data.get('email')
@@ -50,4 +52,3 @@ class LoginView(APIView):
             'user_id': user.id,
             'email': email
         })
-    

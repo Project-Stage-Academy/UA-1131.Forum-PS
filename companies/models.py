@@ -1,0 +1,24 @@
+from django.db import models
+
+from authentication.models import CustomUser
+
+
+class Companies(models.Model):
+    company_id = models.ManyToManyField('CompaniesAndUsersRelations', related_name='companies')
+    brand = models.CharField(max_length=255, blank=True)
+    is_registered = models.BooleanField(default=False)
+    common_info = models.TextField(blank=True)
+    contact_phone = models.CharField(max_length=255, blank=True)
+    contact_email = models.CharField(max_length=255, blank=True)
+    registration_date = models.DateTimeField(auto_now_add=True)
+    edrpou = models.IntegerField(blank=True)
+    address = models.CharField(max_length=255, blank=True)
+    product_info = models.TextField(blank=True)
+    startup_idea = models.TextField(blank=True)
+    tags = models.CharField(max_length=255, blank=True)
+
+
+class CompaniesAndUsersRelations(models.Model):
+    user_id = models.ManyToManyField(CustomUser, related_name='companies_relations')
+    as_infestor = models.BooleanField(default=False)
+    # position = models.ManyToManyField()
