@@ -9,11 +9,11 @@ https://docs.djangoproject.com/en/5.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
-import os
 from datetime import timedelta
-from pathlib import Path
 from dotenv import load_dotenv
-from datetime import timedelta
+import logging
+import os
+from pathlib import Path
 
 
 load_dotenv()
@@ -155,3 +155,31 @@ EMAIL_HOST = os.environ.get("EMAIL_HOST")
 EMAIL_PORT = 587
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': os.environ.get("LOG_LEVEL"),
+            'class': 'logging.FileHandler',
+            'filename': os.environ.get("LOG_FILE"),
+            'formatter': 'verbose',
+        },
+    },
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'loggers': {
+        'account_update': {
+            'handlers': ['file'],
+            'level': os.environ.get("LOG_LEVEL"),
+            'propagate': True,
+        },
+    },
+}
+
