@@ -16,18 +16,17 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import ValidationError
 from forum import settings
-from validation.serializers import PasswordResetValidator, CustomValidationSerializer
+from validation.serializers import  CustomValidationSerializer
 from .serializers import PasswordRecoverySerializer
 
 
 class PasswordRecoveryAPIView(APIView):
     def post(self, request):
-        print('я тут ')
+
         serializer = PasswordRecoverySerializer(data=request.data)
         if serializer.is_valid():
-            print('я вже тут ')
+
             email = serializer.validated_data.get('email')
-            print(f'я тут і осьо {email}')
             try:
                 user = CustomUser.objects.get(email=email)
 

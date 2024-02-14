@@ -134,13 +134,14 @@ WSGI_APPLICATION = 'forum.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'postgres',
-        'USER': 'postgres',
-        'PASSWORD':'postgres',
-        'HOST': 'localhost',
-        'PORT': '5432'
+        'NAME': os.environ.get('POSTGRES_DB'),
+        'USER': os.environ.get('POSTGRES_USER'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
+        'HOST': os.environ.get('POSTGRES_DOCKER_DB'),
+        'PORT': os.environ.get('POSTGRES_PORT')
     }
 }
+
 
 
 # Password validation
