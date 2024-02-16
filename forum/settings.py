@@ -14,6 +14,9 @@ from datetime import timedelta
 from pathlib import Path
 from dotenv import load_dotenv
 from datetime import timedelta
+from datetime import timedelta
+from dotenv import load_dotenv
+import logging
 
 
 load_dotenv()
@@ -41,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     "rest_framework_simplejwt",
+    'rest_framework_simplejwt.token_blacklist',
     'rest_framework',
     'authentication',
     'password_recovery'
@@ -55,7 +59,7 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    "SIGNING_KEY": os.environ.get('SECRET_KEY')
+    'SIGNING_KEY': os.environ.get('SECRET_KEY')
 }
 
 SIMPLE_JWT_PASSWORD_RECOVERY = {
