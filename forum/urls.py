@@ -1,8 +1,8 @@
 from django.contrib import admin
 from django.urls import path, include
 from authentication.views import LoginView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.views import  TokenRefreshView
-
 
 urlpatterns = [
     path('admin/', admin.site.urls),
