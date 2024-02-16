@@ -1,19 +1,21 @@
 from rest_framework.test import APITestCase, APIClient
 from authentication.models import CustomUser
 
+
 class CreateCompanyTest(APITestCase):
     def test_create_company(self):
         user = CustomUser()
         client = APIClient()
         client.force_authenticate(user=user)
-        response = client.post('http://127.0.0.1:8000/companies/',{'brand': 'test_brand', 'is_registered': True}, format='json')
+        response = client.post('http://127.0.0.1:8000/companies/', {'brand': 'test_brand', 'is_registered': True},
+                               format='json')
         self.assertEqual(response.status_code, 201)
 
     def test_get_company(self):
         user = CustomUser()
         client = APIClient()
         client.force_authenticate(user=user)
-        client.post('http://127.0.0.1:8000/companies/',{'brand': 'test_brand', 'is_registered': True}, format='json')
+        client.post('http://127.0.0.1:8000/companies/', {'brand': 'test_brand', 'is_registered': True}, format='json')
         response = client.get('http://127.0.0.1:8000/companies/2', follow=True)
         self.assertEqual(response.status_code, 200)
 
@@ -22,7 +24,7 @@ class CreateCompanyTest(APITestCase):
         user = CustomUser()
         client = APIClient()
         client.force_authenticate(user=user)
-        response = client.post('http://127.0.0.1:8000/companies/',valid_post_body, format='json')
+        response = client.post('http://127.0.0.1:8000/companies/', valid_post_body, format='json')
         self.assertEqual(response.status_code, 201)
 
     def test_valid_phone(self):
@@ -30,11 +32,12 @@ class CreateCompanyTest(APITestCase):
         user = CustomUser()
         client = APIClient()
         client.force_authenticate(user=user)
-        response = client.post('http://127.0.0.1:8000/companies/',valid_post_body, format='json')
+        response = client.post('http://127.0.0.1:8000/companies/', valid_post_body, format='json')
         self.assertEqual(response.status_code, 201)
 
     def test_negative_unauthorized_user(self):
-        response = self.client.post('http://127.0.0.1:8000/companies/',{'brand': 'test_brand', 'is_registered': True}, format='json')
+        response = self.client.post('http://127.0.0.1:8000/companies/', {'brand': 'test_brand', 'is_registered': True},
+                                    format='json')
         self.assertEqual(response.status_code, 401)
 
     def test_negative_incorrect_edrpou(self):
@@ -42,7 +45,7 @@ class CreateCompanyTest(APITestCase):
         user = CustomUser()
         client = APIClient()
         client.force_authenticate(user=user)
-        response = client.post('http://127.0.0.1:8000/companies/',invalid_post_body, format='json')
+        response = client.post('http://127.0.0.1:8000/companies/', invalid_post_body, format='json')
         self.assertEqual(response.status_code, 400)
 
     def test_negative_invalid_phone(self):
@@ -50,5 +53,5 @@ class CreateCompanyTest(APITestCase):
         user = CustomUser()
         client = APIClient()
         client.force_authenticate(user=user)
-        response = client.post('http://127.0.0.1:8000/companies/',invalid_post_body, format='json')        
-        self.assertEqual(response.status_code, 400)        
+        response = client.post('http://127.0.0.1:8000/companies/', invalid_post_body, format='json')
+        self.assertEqual(response.status_code, 400)
