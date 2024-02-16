@@ -8,6 +8,8 @@ class Chat(models.Model):
     participants = models.ManyToManyField(Companies, related_name='chats')
     subject = models.TextField(default=" ", null=True)
 
+    def __str__(self):
+        return f"{self.subject}  {self.participants}"
 
 class Message(models.Model):
     message_id = models.BigAutoField(primary_key=True)

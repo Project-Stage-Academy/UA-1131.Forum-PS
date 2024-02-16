@@ -37,6 +37,7 @@ class VerifyEmail(generics.GenericAPIView):
         except jwt.exceptions.DecodeError as e:
             return Response({'email': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
 
+
 class LoginView(APIView):
     def post(self, request):
         email = request.data.get('email')
@@ -54,15 +55,18 @@ class LoginView(APIView):
             'email': email
         })
 
+
 class UserUpdateView(generics.RetrieveUpdateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserUpdateSerializer
     permission_classes = (IsAuthenticated, CustomUserUpdatePermission | IsAdminUser)
 
+
 class UserPasswordUpdateView(generics.UpdateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserPasswordUpdateSerializer
     permission_classes = (CustomUserUpdatePermission,)
+
 
 class LogoutView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -76,4 +80,3 @@ class LogoutView(APIView):
         except Exception as e:
             print("Exception", e)
             return Response(status=status.HTTP_400_BAD_REQUEST)
-

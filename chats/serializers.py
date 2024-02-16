@@ -18,7 +18,7 @@ class ParticipantSerializer(serializers.ModelSerializer):
 class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
-        fields = ['message_id', 'sender', 'recipient', 'content']
+        fields = ['message_id', 'sender', 'recipient', 'content', 'timestamp']
         ordering = ['timestamp']
 
     def validate(self, data):
@@ -52,7 +52,8 @@ class MessageSerializer(serializers.ModelSerializer):
 
 class ChatSerializer(serializers.ModelSerializer):
     messages = MessageSerializer(many=True, read_only=True)
-    participants = ParticipantSerializer(many=True,read_only=True)
+    participants = ParticipantSerializer(many=True, read_only=True)
+
     class Meta:
         model = Chat
         fields = ('id', 'participants', 'messages')
