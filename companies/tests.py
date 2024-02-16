@@ -16,8 +16,9 @@ class CreateCompanyTest(APITestCase):
         user = CustomUser()
         client = APIClient()
         client.force_authenticate(user=user)
-        client.post('http://127.0.0.1:8000/companies/', {'brand': 'test_brand', 'is_registered': True}, format='json')
-        response = client.get('http://127.0.0.1:8000/companies/2', follow=True)
+        post_response = client.post('http://127.0.0.1:8000/companies/', {'brand': 'test_brand', 'is_registered': True}, format='json')
+        company_id = post_response.data.get('company_id')
+        response = client.get(f'http://127.0.0.1:8000/companies/{company_id}', follow=True)
         self.assertEqual(response.status_code, 200)
 
     def test_update_company(self):
@@ -33,13 +34,14 @@ class CreateCompanyTest(APITestCase):
         self.assertEqual(response.data['brand'], 'updated_brand')
 
     def test_delete_company(self):
+        user = CustomUser()
         client = APIClient()
+        client.force_authenticate(user=user)
         response = client.post('http://127.0.0.1:8000/companies/', {'brand': 'test_brand', 'is_registered': True},
                                format='json')
-        company_id = response.data.get('id')
-        client.logout()
+        company_id = response.data.get('company_id')
         response = client.delete(f'http://127.0.0.1:8000/companies/{company_id}/')
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 204)
 
     def test_valid_edrpou(self):
         valid_post_body = {'brand': 'test_brand', 'is_registered': True, 'edrpou': 98756775}
