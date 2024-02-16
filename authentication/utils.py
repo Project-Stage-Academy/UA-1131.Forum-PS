@@ -1,6 +1,19 @@
+import datetime
+
+import jwt
 from django.conf import settings
-from django.core.mail import EmailMessage
+
 from django.urls import reverse
+
+from jwt.utils import force_bytes
+from django.template.loader import render_to_string
+from django.utils.encoding import force_bytes
+from django.utils.encoding import force_str
+from django.utils.html import strip_tags
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from authentication.models import CustomUser
+
+from django.core.mail import EmailMultiAlternatives, EmailMessage
 
 
 class Utils:
@@ -33,3 +46,45 @@ class Utils:
                 'email_body': email_body,
                 'email_subject': "Password update"}
         Utils.email_sender(data)
+    @staticmethod
+    def send_password_reset_email(email, reset_link):
+        subject = 'Password Reset'
+        html_message = render_to_string('password_reset_email.html', {'reset_link': reset_link})
+        plain_message = strip_tags(html_message)
+        email_message = EmailMultiAlternatives(subject, plain_message, settings.EMAIL_HOST_USER, [email])
+        email_message.attach_alternative(html_message, "text/html")
+        email_message.send()
+
+    @classmethod
+    def generate_token(self, email, user_id):
+        uid = urlsafe_base64_encode(force_bytes(user_id))
+        refresh_token_lifetime = settings.SIMPLE_JWT_PASSWORD_RECOVERY['ACCESS_TOKEN_LIFETIME']
+        expiration_time = datetime.datetime.utcnow() + refresh_token_lifetime
+        expiration_timestamp = int(expiration_time.timestamp())
+        jwt_token = jwt.encode({'uid': uid, 'email': email, 'exp': expiration_timestamp},
+                               settings.SIMPLE_JWT_PASSWORD_RECOVERY['SIGNING_KEY'],
+                               algorithm=settings.SIMPLE_JWT_PASSWORD_RECOVERY['ALGORITHM'])
+        return jwt_token
+
+    @classmethod
+    def decode_token(self, jwt_token):
+
+        try:
+            decoded_token = jwt.decode(jwt_token, settings.SECRET_KEY, algorithms=['HS256'])
+            uid = decoded_token.get('uid')
+            email = decoded_token.get('email')
+            exp = decoded_token.get('exp')
+            uid = force_str(urlsafe_base64_decode(uid))
+
+            return uid, email, exp
+        except jwt.ExpiredSignatureError:
+            return None, None, None
+    @classmethod
+    def get_user(self, uid, email):
+        try:
+            user = CustomUser.objects.get(pk=uid)
+            if user.email == email:
+                return user
+        except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
+            pass
+        return None

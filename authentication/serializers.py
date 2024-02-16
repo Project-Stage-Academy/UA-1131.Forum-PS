@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from django.contrib.auth.hashers import check_password
+from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.sites.shortcuts import get_current_site
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -131,4 +131,33 @@ class UserPasswordUpdateSerializer(serializers.ModelSerializer, CustomValidation
         Utils.send_password_update_email(instance)
         logger.info(
             f"{datetime.now()}: User {instance.email} {instance.first_name} {instance.surname} updated his password")
+        return instance
+
+class PasswordRecoverySerializer(serializers.ModelSerializer, CustomValidationSerializer):
+
+    password = serializers.CharField(write_only=True, required=True)
+    password2 = serializers.CharField(write_only=True, required=True)
+
+    class Meta:
+        model = CustomUser
+        fields = [ 'password', 'password2']
+
+    def validate(self, attrs):
+        email = attrs.get("email")
+        password1 = attrs.get('password')
+        password2 = attrs.get('password2')
+        first_name = attrs.get("first_name")
+        surname = attrs.get("surname")
+        if password1 != password2:
+            raise serializers.ValidationError({"password": "Passwords are different"})
+        try:
+            self.validation_password(password1, email, first_name, surname)
+        except ValidationError as e:
+            raise ValidationError({"password": e.detail})
+        return attrs
+
+    def update(self, instance, validated_data):
+        password = validated_data.get('password')
+        instance.password = make_password(password)
+        instance.save()
         return instance
