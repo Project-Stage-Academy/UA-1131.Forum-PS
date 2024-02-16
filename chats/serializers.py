@@ -59,7 +59,7 @@ class ChatSerializer(serializers.ModelSerializer):
         fields = ('id', 'participants', 'messages')
 
 
-class InboxSerializer(serializers.ModelSerializer):
+class MailboxSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
-        fields = "__all__"
+        fields = ['message_id', 'sender', 'recipient', 'content', 'timestamp']

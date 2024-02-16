@@ -16,5 +16,7 @@ class Message(models.Model):
     chat = models.ForeignKey(Chat, on_delete=models.CASCADE, related_name="messages",null=True)
     sender = models.ForeignKey(Companies, on_delete=models.CASCADE, related_name="sent_messages")
     recipient = models.ForeignKey(Companies, on_delete=models.CASCADE, related_name='received_messages')
+    visible_for_sender = models.BooleanField(default=True)
+    visible_for_recipient = models.BooleanField(default=True)
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
