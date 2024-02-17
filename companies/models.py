@@ -23,3 +23,11 @@ class CompaniesAndUsersRelations(models.Model):
     user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     company_id = models.ForeignKey(Companies, on_delete=models.CASCADE)
     position = models.IntegerField()
+
+class Subscription(models.Model):
+    subscription_id = models.BigAutoField(primary_key=True)
+    investor = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    company = models.ForeignKey(Companies, on_delete=models.CASCADE)
+    get_email_newsletter = models.BooleanField(default=False)
+    subscribed_at = models.DateTimeField(auto_now_add=True)
+    
