@@ -140,7 +140,7 @@ class PasswordRecoverySerializer(serializers.ModelSerializer, CustomValidationSe
 
     class Meta:
         model = CustomUser
-        fields = [ 'password', 'password2']
+        fields = ['password', 'password2']
 
     def validate(self, attrs):
         email = attrs.get("email")
@@ -155,9 +155,3 @@ class PasswordRecoverySerializer(serializers.ModelSerializer, CustomValidationSe
         except ValidationError as e:
             raise ValidationError({"password": e.detail})
         return attrs
-
-    def update(self, instance, validated_data):
-        password = validated_data.get('password')
-        instance.password = make_password(password)
-        instance.save()
-        return instance

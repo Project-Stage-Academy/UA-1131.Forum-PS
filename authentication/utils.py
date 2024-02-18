@@ -55,8 +55,8 @@ class Utils:
         email_message.attach_alternative(html_message, "text/html")
         email_message.send()
 
-    @classmethod
-    def generate_token(self, email, user_id):
+    @staticmethod
+    def generate_token( email, user_id):
         uid = urlsafe_base64_encode(force_bytes(user_id))
         refresh_token_lifetime = settings.SIMPLE_JWT_PASSWORD_RECOVERY['ACCESS_TOKEN_LIFETIME']
         expiration_time = datetime.datetime.utcnow() + refresh_token_lifetime
@@ -66,8 +66,8 @@ class Utils:
                                algorithm=settings.SIMPLE_JWT_PASSWORD_RECOVERY['ALGORITHM'])
         return jwt_token
 
-    @classmethod
-    def decode_token(self, jwt_token):
+    @staticmethod
+    def decode_token(jwt_token):
 
         try:
             decoded_token = jwt.decode(jwt_token, settings.SECRET_KEY, algorithms=['HS256'])
@@ -79,8 +79,8 @@ class Utils:
             return uid, email, exp
         except jwt.ExpiredSignatureError:
             return None, None, None
-    @classmethod
-    def get_user(self, uid, email):
+    @staticmethod
+    def get_user( uid, email):
         try:
             user = CustomUser.objects.get(pk=uid)
             if user.email == email:

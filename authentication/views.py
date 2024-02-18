@@ -116,23 +116,11 @@ class PasswordRecoveryAPIView(APIView):
 
 
 
-class PasswordResetView(APIView):
+class PasswordResetView(generics.GenericAPIView):
     serializer_class = PasswordRecoverySerializer
 
-    def get(self, request, jwt_token):
-
-        uid, email, exp = Utils.decode_token(jwt_token)
-        user = Utils.get_user(uid, email)
-
-        if user is not None:
-            return render(request, 'reset_password_form.html', {'jwt_token': jwt_token})
-        else:
-            return JsonResponse({'error': 'Invalid token for password reset'}, status=400)
-
     def post(self, request, jwt_token):
-
         uid, email, exp = Utils.decode_token(jwt_token)
-
         user = Utils.get_user(uid, email)
         if user is not None:
             serializer = self.serializer_class(instance=user, data=request.data)
