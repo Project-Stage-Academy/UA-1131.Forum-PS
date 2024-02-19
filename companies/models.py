@@ -6,7 +6,7 @@ from authentication.models import CustomUser
 class Companies(models.Model):
     company_id = models.BigAutoField(primary_key=True)
     brand = models.CharField(max_length=255, blank=True)
-    is_registered = models.BooleanField(default=False)
+    is_startup = models.BooleanField(default=False)
     common_info = models.TextField(blank=True)
     contact_phone = models.CharField(max_length=255, blank=True)
     contact_email = models.CharField(max_length=255, blank=True)
