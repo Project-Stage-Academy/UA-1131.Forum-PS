@@ -1,7 +1,7 @@
 import logging
 
 from authentication.permissions import CustomUserUpdatePermission
-from authentication.serializers import UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer
+from authentication.serializers import UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdate_ResetSerializer
 from django.contrib.auth import authenticate
 from django.conf import settings
 
@@ -9,10 +9,10 @@ from rest_framework import status, generics
 
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
-import datetime
+
 
 import jwt
-from django.contrib.auth.hashers import make_password
+
 from django.core.exceptions import ValidationError
 
 from django.core.validators import validate_email
@@ -24,7 +24,7 @@ from rest_framework.views import APIView
 
 from authentication.models import CustomUser
 from forum import settings
-from .serializers import PasswordRecoverySerializer
+
 from .utils import Utils
 
 
@@ -76,7 +76,7 @@ class UserUpdateView(generics.RetrieveUpdateAPIView):
 
 class UserPasswordUpdateView(generics.UpdateAPIView):
     queryset = CustomUser.objects.all()
-    serializer_class = UserPasswordUpdateSerializer
+    serializer_class = UserPasswordUpdate_ResetSerializer
     permission_classes = (CustomUserUpdatePermission,)
 
 class LogoutView(APIView):
@@ -117,7 +117,7 @@ class PasswordRecoveryAPIView(APIView):
 
 
 class PasswordResetView(generics.GenericAPIView):
-    serializer_class = PasswordRecoverySerializer
+    serializer_class = UserPasswordUpdate_ResetSerializer
 
     def post(self, request, jwt_token):
         uid, email, exp = Utils.decode_token(jwt_token)
@@ -125,6 +125,7 @@ class PasswordResetView(generics.GenericAPIView):
         if user is not None:
             serializer = self.serializer_class(instance=user, data=request.data)
             serializer.is_valid(raise_exception=True)
+
             serializer.save()
             return render(request, 'password_reset_done.html')
         else:

@@ -103,61 +103,36 @@ class UserUpdateSerializer(serializers.ModelSerializer, CustomValidationSerializ
         return instance
 
 
-class UserPasswordUpdateSerializer(serializers.ModelSerializer, CustomValidationSerializer):
-    previous_password = serializers.CharField(label="Previous password", required=True, write_only=True)
-    new_password = serializers.CharField(label="New password", required=True, write_only=True)
+class UserPasswordUpdate_ResetSerializer(serializers.ModelSerializer, CustomValidationSerializer):
+    password = serializers.CharField(label="password", required=True, write_only=True)
+    password2 = serializers.CharField(label="password2", required=True, write_only=True)
 
     class Meta:
         model = CustomUser
-        fields = ("previous_password", "new_password")
+        fields = ("password", "password2")
 
     def validate(self, attrs):
-        previous_password = attrs.get("previous_password")
-        new_password = attrs.get("new_password")
+        password = attrs.get("password")
+        password2 = attrs.get("password2")
         user = self.instance
-        if not check_password(previous_password, user.password):
-            raise ValidationError({"previous_password": "Wrong previous password"})
+        if user.is_verified:
+            if not check_password(password, user.password):
+                raise ValidationError({"password": "Wrong previous password"})
+        else:
+            if password != password2:
+                raise serializers.ValidationError({"password": "Passwords are different"})
         try:
-            self.validation_password(new_password)
+            self.validation_password(password2)
         except ValidationError as e:
             raise ValidationError({"password": e.detail})
         return attrs
 
     def update(self, instance, validated_data):
         logger = logging.getLogger('account_update')
-        new_password = validated_data.pop("new_password")
+        new_password = validated_data.pop("password2")
         instance.set_password(new_password)
         instance = super().update(instance, validated_data)
         Utils.send_password_update_email(instance)
         logger.info(
             f"{datetime.now()}: User {instance.email} {instance.first_name} {instance.surname} updated his password")
-        return instance
-
-class PasswordRecoverySerializer(serializers.ModelSerializer, CustomValidationSerializer):
-
-    password = serializers.CharField(write_only=True, required=True)
-    password2 = serializers.CharField(write_only=True, required=True)
-
-    class Meta:
-        model = CustomUser
-        fields = ['password', 'password2']
-
-    def validate(self, attrs):
-        email = attrs.get("email")
-        password1 = attrs.get('password')
-        password2 = attrs.get('password2')
-        first_name = attrs.get("first_name")
-        surname = attrs.get("surname")
-        if password1 != password2:
-            raise serializers.ValidationError({"password": "Passwords are different"})
-        try:
-            self.validation_password(password1, email, first_name, surname)
-        except ValidationError as e:
-            raise ValidationError({"password": e.detail})
-        return attrs
-    def update(self, instance, validated_data):
-
-        new_password = validated_data.pop("password")
-        instance.set_password(new_password)
-        Utils.send_password_update_email(instance)
         return instance
