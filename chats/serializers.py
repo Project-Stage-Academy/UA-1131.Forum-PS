@@ -1,7 +1,8 @@
-from django.db.models import Q
+
 from rest_framework import serializers
-from chats.models import Chat, Message
-from companies.models import Companies, CompaniesAndUsersRelations
+
+from chats.models import (Chat, Message)
+from companies.models import (Companies, CompaniesAndUsersRelations)
 
 
 class ParticipantSerializer(serializers.ModelSerializer):

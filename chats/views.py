@@ -1,15 +1,14 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from chats.models import Message, Chat
-from chats.permissions import ChatParticipantPermission, MessageParticipantPermission
-from chats.serializers import ChatSerializer, MessageSerializer, MailboxSerializer
+from chats.models import (Message, Chat)
+from chats.permissions import (ChatParticipantPermission, MessageParticipantPermission)
+from chats.serializers import (ChatSerializer, MessageSerializer, MailboxSerializer)
 from companies.models import CompaniesAndUsersRelations
 
 
-# Create your views here.
 
 class MessageDetail(APIView):
     permission_classes = (IsAuthenticated, MessageParticipantPermission)

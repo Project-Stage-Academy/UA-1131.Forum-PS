@@ -1,7 +1,4 @@
-import logging
-
 from rest_framework.permissions import BasePermission
-
 from companies.models import CompaniesAndUsersRelations
 
 
