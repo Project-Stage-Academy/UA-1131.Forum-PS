@@ -6,7 +6,7 @@ from authentication.models import CustomUser
 
 class CustomAdmin(UserAdmin):
     model = CustomUser
-    list_display = ["id",
+    list_display = ["user_id",
                     'email', 'first_name', 'surname', "phone_number",
                     'is_superuser', 'is_verified']
     readonly_fields = ("registration_date",)

@@ -1,9 +1,5 @@
 import logging
 import jwt
-from authentication.models import CustomUser
-from authentication.permissions import CustomUserUpdatePermission
-from authentication.serializers import UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer
-from django.contrib.auth import authenticate
 from django.conf import settings
 from django.http import JsonResponse
 from rest_framework import status, generics
@@ -11,12 +7,28 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
+from rest_framework.exceptions import ValidationError
+from authentication.models import CustomUser
+from authentication.permissions import CustomUserUpdatePermission, IsNotAuthenticated
+from authentication.serializers import UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer
+from authentication.authentications import UserAndCompanyAuthentication, UserAuthentication
 
 
-class UserRegistrationView(generics.CreateAPIView):
-    queryset = CustomUser.objects.all()
-    permission_classes = (AllowAny,)
-    serializer_class = UserRegistrationSerializer
+
+
+class UserRegistrationView(APIView):
+
+    authentication_classes = [UserAuthentication]
+    permission_classes = [IsNotAuthenticated]
+
+    def post(self, request):
+        serializer = UserRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+          serializer.save()
+          return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+          return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class VerifyEmail(generics.GenericAPIView):
@@ -38,12 +50,16 @@ class VerifyEmail(generics.GenericAPIView):
             return Response({'email': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
 
 class LoginView(APIView):
+    authentication_classes = (UserAndCompanyAuthentication,)
+    
     def post(self, request):
+        if request.user.is_authenticated:
+            return Response({'error': 'User has already logged in'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
         email = request.data.get('email')
         password = request.data.get('password')
-        user = authenticate(email=email, password=password)
+        user = CustomUser.objects.get(email=email, password=password)
 
-        if user is None:
+        if user.DoesNotExist:
             return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
         refresh = RefreshToken.for_user(user)
@@ -57,14 +73,17 @@ class LoginView(APIView):
 class UserUpdateView(generics.RetrieveUpdateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserUpdateSerializer
+    authentication_classes = (UserAndCompanyAuthentication,)
     permission_classes = (IsAuthenticated, CustomUserUpdatePermission | IsAdminUser)
 
 class UserPasswordUpdateView(generics.UpdateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserPasswordUpdateSerializer
+    authentication_classes = (UserAndCompanyAuthentication,)
     permission_classes = (CustomUserUpdatePermission,)
 
 class LogoutView(APIView):
+    authentication_classes = (UserAndCompanyAuthentication,)
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
