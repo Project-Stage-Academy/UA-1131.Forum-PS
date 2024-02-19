@@ -19,7 +19,7 @@ class UserRegistrationView(generics.CreateAPIView):
     serializer_class = UserRegistrationSerializer
 
 
-class VerifyEmail(generics.GenericAPIView):
+class VerifyEmail(APIView):
 
     def get(self, request):
         logger = logging.getLogger('account_update')

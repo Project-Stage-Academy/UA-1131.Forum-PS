@@ -9,7 +9,6 @@ from chats.serializers import (ChatSerializer, MessageSerializer, MailboxSeriali
 from companies.models import CompaniesAndUsersRelations
 
 
-
 class MessageDetail(APIView):
     permission_classes = (IsAuthenticated, MessageParticipantPermission)
 
@@ -20,9 +19,25 @@ class MessageDetail(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class SendMessage(generics.CreateAPIView):
-    serializer_class = MessageSerializer
+class SendMessage(APIView):
     permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = MessageSerializer(data=request.data, context={'request': request})
+
+        if serializer.is_valid():
+            participant_1 = serializer.validated_data.get('sender')
+            participant_2 = serializer.validated_data.get('recipient')
+            content = serializer.data.get('content')
+            chat = Chat.objects.filter(participants=participant_1).filter(participants=participant_2)
+            if not chat:
+                chat = Chat.objects.create()
+                chat.participants.add(participant_1, participant_2)
+            message = Message.objects.create(chat=chat[0], sender=participant_1, recipient=participant_2,
+                                   content=content)
+            message.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ChatList(APIView):
