@@ -1,7 +1,8 @@
 import logging
 
 from authentication.permissions import CustomUserUpdatePermission
-from authentication.serializers import UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdate_ResetSerializer
+from authentication.serializers import UserRegistrationSerializer, UserUpdateSerializer, PasswordRecoverySerializer, \
+    UserPasswordUpdateSerializer
 from django.contrib.auth import authenticate
 from django.conf import settings
 
@@ -76,7 +77,7 @@ class UserUpdateView(generics.RetrieveUpdateAPIView):
 
 class UserPasswordUpdateView(generics.UpdateAPIView):
     queryset = CustomUser.objects.all()
-    serializer_class = UserPasswordUpdate_ResetSerializer
+    serializer_class = UserPasswordUpdateSerializer
     permission_classes = (CustomUserUpdatePermission,)
 
 class LogoutView(APIView):
@@ -112,12 +113,12 @@ class PasswordRecoveryAPIView(APIView):
             Utils.send_password_reset_email(email, reset_link)
         except Exception as e:
             return Response({'error': 'Failed to send email'}, status=500)
-        return Response({'message': 'Password reset email sent successfully'})
+        return Response({'message': 'Password reset email sent successfully'}, status=status.HTTP_200_OK)
 
 
 
-class PasswordResetView(generics.GenericAPIView):
-    serializer_class = UserPasswordUpdate_ResetSerializer
+class PasswordResetView(APIView):
+    serializer_class = PasswordRecoverySerializer
 
     def post(self, request, jwt_token):
         uid, email, exp = Utils.decode_token(jwt_token)
@@ -125,8 +126,7 @@ class PasswordResetView(generics.GenericAPIView):
         if user is not None:
             serializer = self.serializer_class(instance=user, data=request.data)
             serializer.is_valid(raise_exception=True)
-
             serializer.save()
-            return render(request, 'password_reset_done.html')
+            return JsonResponse({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
         else:
             return JsonResponse({'error': 'Invalid token for password reset'}, status=status.HTTP_400_BAD_REQUEST)

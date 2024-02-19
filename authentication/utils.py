@@ -56,7 +56,7 @@ class Utils:
         email_message.send()
 
     @staticmethod
-    def generate_token( email, user_id):
+    def generate_token(email, user_id):
         uid = urlsafe_base64_encode(force_bytes(user_id))
         refresh_token_lifetime = settings.SIMPLE_JWT_PASSWORD_RECOVERY['ACCESS_TOKEN_LIFETIME']
         expiration_time = datetime.datetime.utcnow() + refresh_token_lifetime
@@ -80,7 +80,7 @@ class Utils:
         except jwt.ExpiredSignatureError:
             return None, None, None
     @staticmethod
-    def get_user( uid, email):
+    def get_user(uid, email):
         try:
             user = CustomUser.objects.get(pk=uid)
             if user.email == email:
