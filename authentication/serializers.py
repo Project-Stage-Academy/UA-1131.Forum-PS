@@ -155,3 +155,9 @@ class PasswordRecoverySerializer(serializers.ModelSerializer, CustomValidationSe
         except ValidationError as e:
             raise ValidationError({"password": e.detail})
         return attrs
+    def update(self, instance, validated_data):
+
+        new_password = validated_data.pop("password")
+        instance.set_password(new_password)
+        Utils.send_password_update_email(instance)
+        return instance
