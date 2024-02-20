@@ -23,19 +23,19 @@ class SubscriptionCreateAPIView(APIView):
     permission_classes = (IsAuthenticated,)
     def post(self, request, *args, **kwargs):
         
-        response = JWT_authenticator.authenticate(request)
-        if response is None:
+        auth_response = JWT_authenticator.authenticate(request)
+        if auth_response is None:
             return Response({'error': "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
-        user_id = response[1].get('user_id')
-        request.data['investor_id'] = user_id
+        user_id = auth_response[1].get('user_id')
+        request.data['investor'] = user_id
         serializer = SubscriptionSerializer(data=request.data)
         if serializer.is_valid():
-            subs = Subscription.objects.filter(investor_id=user_id, company_id=request.data.get('company_id'))
+            subs = Subscription.objects.filter(investor=user_id, company=request.data.get('company'))
             if not subs:
                 subscription = serializer.save()
             else:
                 subscription = subs.first()
-            company = subscription.company_id
+            company = subscription.company
             brand = company.brand
             subscription_id = subscription.subscription_id
             message = f"You're subscribed to {brand}, subscription id: {subscription_id}"

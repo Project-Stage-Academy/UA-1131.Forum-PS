@@ -29,7 +29,7 @@ class CompaniesSerializer(serializers.ModelSerializer):
 class SubscriptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subscription
-        fields = ['investor_id', 'company_id', 'get_email_newsletter']
+        fields = ['investor', 'company', 'get_email_newsletter']
 
 class SubscriptionListSerializer(serializers.ModelSerializer):
     class Meta:
