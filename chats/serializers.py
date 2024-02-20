@@ -8,7 +8,6 @@ class ParticipantSerializer(serializers.ModelSerializer):
     brand = serializers.SerializerMethodField()
 
     def get_brand(self, participant):
-        print(participant)
         return participant.company_id.brand if participant else None
 
     class Meta:

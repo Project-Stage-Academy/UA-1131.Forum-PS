@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import generics, status
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -54,8 +54,7 @@ class OutboxView(APIView):
 
     def get(self, request):
         sender = request.user
-        user_companies = CompaniesAndUsersRelations.objects.filter(user_id=sender.id).values_list('company_id',
-                                                                                                  flat=True)
+        user_companies = CompaniesAndUsersRelations.objects.filter(user_id=sender.id)
         queryset = Message.objects.filter(sender__in=user_companies, visible_for_sender=True).order_by("-timestamp")
         serializer = MailboxSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
