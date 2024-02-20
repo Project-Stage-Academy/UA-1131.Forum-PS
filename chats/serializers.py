@@ -8,11 +8,12 @@ class ParticipantSerializer(serializers.ModelSerializer):
     brand = serializers.SerializerMethodField()
 
     def get_brand(self, participant):
-        return participant.brand if participant else None
+        print(participant)
+        return participant.company_id.brand if participant else None
 
     class Meta:
-        model = Companies
-        fields = ['company_id', 'brand']
+        model = CompaniesAndUsersRelations
+        fields = ["relation_id", "brand", "company_id"]
 
 
 class MessageSerializer(serializers.ModelSerializer):
@@ -27,8 +28,9 @@ class MessageSerializer(serializers.ModelSerializer):
         if not sender_company_relations.exists():
             raise serializers.ValidationError("You dont have companies in your list.")
 
-        sender_company_ids = [relation.company_id.company_id for relation in sender_company_relations]
+        sender_company_ids = [relation.company_id for relation in sender_company_relations]
         sender_company_id = data.company_id
+        print(sender_company_ids)
         if sender_company_id not in sender_company_ids:
             raise serializers.ValidationError("You are not allowed to send message")
 

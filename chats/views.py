@@ -65,8 +65,7 @@ class InboxView(APIView):
 
     def get(self, request):
         recipient = request.user
-        user_companies = CompaniesAndUsersRelations.objects.filter(user_id=recipient.id).values_list('company_id',
-                                                                                                     flat=True)
+        user_companies = CompaniesAndUsersRelations.objects.filter(user_id=recipient.id)
         queryset = Message.objects.filter(recipient__in=user_companies, visible_for_recipient=True).order_by(
             "-timestamp")
         serializer = MailboxSerializer(queryset, many=True)
@@ -80,16 +79,15 @@ class MessageDeleteView(APIView):
         user_id = request.user.id
         message = get_object_or_404(Message, pk=pk)
         self.check_object_permissions(request, message)
-        user_company_ids = CompaniesAndUsersRelations.objects.filter(user_id=user_id).values_list('company_id',
-                                                                                                  flat=True)
-        if message.sender.company_id in user_company_ids:
+        user_company_ids = CompaniesAndUsersRelations.objects.filter(user_id=user_id)
+        if message.sender in user_company_ids:
             message.visible_for_sender = False
             message.save()
             if not message.visible_for_recipient and not message.visible_for_sender:
                 message.delete()
                 return Response({"message": "Message was deleted"}, status=status.HTTP_200_OK)
             return Response({"message": "Message was deleted from your mailbox"}, status=status.HTTP_200_OK)
-        if message.recipient.company_id in user_company_ids:
+        if message.recipient in user_company_ids:
             message.visible_for_recipient = False
             message.save()
             if not message.visible_for_recipient and not message.visible_for_sender:
