@@ -3,7 +3,7 @@ import jwt
 from authentication.models import CustomUser
 from authentication.permissions import CustomUserUpdatePermission
 from authentication.serializers import UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, user_logged_in, user_login_failed
 from django.conf import settings
 from django.http import JsonResponse
 from rest_framework import status, generics
@@ -41,11 +41,12 @@ class LoginView(APIView):
     def post(self, request):
         email = request.data.get('email')
         password = request.data.get('password')
-        user = authenticate(email=email, password=password)
+        user = authenticate(request=request, email=email, password=password)
 
         if user is None:
             return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
+        user_logged_in.send(sender=user.__class__, request=request, user=user)
         refresh = RefreshToken.for_user(user)
         return JsonResponse({
             'refresh': str(refresh),
