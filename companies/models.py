@@ -6,7 +6,7 @@ from authentication.models import CustomUser
 class Companies(models.Model):
     company_id = models.BigAutoField(primary_key=True)
     brand = models.CharField(max_length=255, blank=True)
-    is_registered = models.BooleanField(default=False)
+    is_startup = models.BooleanField(default=False)
     common_info = models.TextField(blank=True)
     contact_phone = models.CharField(max_length=255, blank=True)
     contact_email = models.CharField(max_length=255, blank=True)
@@ -17,9 +17,6 @@ class Companies(models.Model):
     startup_idea = models.TextField(blank=True)
     tags = models.CharField(max_length=255, blank=True)
 
-    def __str__(self):
-        return self.brand
-
 
 class CompaniesAndUsersRelations(models.Model):
     relation_id = models.BigAutoField(primary_key=True)
@@ -27,5 +24,3 @@ class CompaniesAndUsersRelations(models.Model):
     company_id = models.ForeignKey(Companies, on_delete=models.CASCADE)
     position = models.IntegerField()
 
-    def __str__(self):
-        return f'{self.company_id.brand}'

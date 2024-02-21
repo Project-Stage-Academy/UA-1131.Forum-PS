@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from chats.models import (Chat, Message)
-from companies.models import (Companies, CompaniesAndUsersRelations)
+from companies.models import CompaniesAndUsersRelations
 
 
 class ParticipantSerializer(serializers.ModelSerializer):

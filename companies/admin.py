@@ -5,3 +5,4 @@ from .models import Companies, CompaniesAndUsersRelations
 
 admin.site.register(Companies)
 admin.site.register(CompaniesAndUsersRelations)
+
