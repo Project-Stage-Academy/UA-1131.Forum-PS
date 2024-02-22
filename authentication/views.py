@@ -11,7 +11,7 @@ from rest_framework.exceptions import ValidationError
 from authentication.models import CustomUser
 from authentication.permissions import CustomUserUpdatePermission, IsNotAuthenticated
 from authentication.serializers import UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer
-from authentication.authentications import UserAndCompanyAuthentication, UserAuthentication
+from authentication.authentications import UserAuthentication
 from forum.errors import Error
 
 
@@ -51,7 +51,7 @@ class VerifyEmail(generics.GenericAPIView):
 
 
 class LoginView(APIView):
-    authentication_classes = [UserAndCompanyAuthentication]
+    authentication_classes = [UserAuthentication]
     
     def post(self, request):
         try:
@@ -78,17 +78,17 @@ class LoginView(APIView):
 class UserUpdateView(generics.RetrieveUpdateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserUpdateSerializer
-    authentication_classes = (UserAndCompanyAuthentication,)
+    authentication_classes = (UserAuthentication,)
     permission_classes = (IsAuthenticated, CustomUserUpdatePermission | IsAdminUser)
 
 class UserPasswordUpdateView(generics.UpdateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserPasswordUpdateSerializer
-    authentication_classes = (UserAndCompanyAuthentication,)
+    authentication_classes = (UserAuthentication,)
     permission_classes = (CustomUserUpdatePermission,)
 
 class LogoutView(APIView):
-    authentication_classes = (UserAndCompanyAuthentication,)
+    authentication_classes = (UserAuthentication,)
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):

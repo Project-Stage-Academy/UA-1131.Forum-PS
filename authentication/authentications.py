@@ -8,7 +8,7 @@ from .models import AuthUser, CustomUser, CompaniesAndUsersRelations
 from forum.errors import Error
 
 
-class CustomAuthentication(JWTAuthentication):
+class UserAuthentication(JWTAuthentication):
     def authenticate(self, request: Request) -> Optional[Tuple[AuthUser, Token]]:
         header = self.get_header(request) 
 
@@ -55,13 +55,3 @@ class CustomAuthentication(JWTAuthentication):
 
         return self.user_model(**user_and_company)
 
-# doing exactly the same as CustomAuthentication, added in case of nedd for additional specific functionality
-# could be removed and CustomAuthentication renamed to UserAuthentication instead
-class UserAuthentication(CustomAuthentication):
-    def authenticate(self, request: Request) -> Tuple[AuthUser, Token] | None:
-        return super().authenticate(request)
-
-
-class UserAndCompanyAuthentication(CustomAuthentication):
-    def authenticate(self, request: Request) -> Tuple[AuthUser, Token] | None:
-        return super().authenticate(request)
