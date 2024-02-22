@@ -10,6 +10,7 @@ class CompaniesListCreateView(generics.ListCreateAPIView):
     permission_classes = (IsAuthenticated,)
 
 
+
 class CompaniesRetrieveUpdateView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Companies.objects.all()
     serializer_class = CompaniesSerializer

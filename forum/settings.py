@@ -44,8 +44,9 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'rest_framework',
     'authentication',
-
     'companies',
+    'chats',
+
 ]
 
 # REST_FRAMEWORK = {
@@ -53,6 +54,7 @@ INSTALLED_APPS = [
 #         'rest_framework_simplejwt.authentication.JWTAuthentication',
 #     ),    
 # }
+
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),

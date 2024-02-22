@@ -1,11 +1,9 @@
 import logging
 import jwt
-from django.conf import settings
-from django.http import JsonResponse
-from rest_framework import status, generics
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
+from authentication.models import CustomUser
+from authentication.permissions import CustomUserUpdatePermission
+from authentication.serializers import (UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer)
+from django.contrib.auth import authenticate
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.exceptions import ValidationError
 from authentication.models import CustomUser
@@ -13,6 +11,7 @@ from authentication.permissions import CustomUserUpdatePermission, IsNotAuthenti
 from authentication.serializers import UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer
 from authentication.authentications import UserAuthentication
 from forum.errors import Error
+
 
 
 
@@ -31,7 +30,7 @@ class UserRegistrationView(APIView):
           return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class VerifyEmail(generics.GenericAPIView):
+class VerifyEmail(APIView):
 
     def get(self, request):
         logger = logging.getLogger('account_update')
@@ -75,17 +74,20 @@ class LoginView(APIView):
             'email': email
         })
 
+
 class UserUpdateView(generics.RetrieveUpdateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserUpdateSerializer
     authentication_classes = (UserAuthentication,)
     permission_classes = (IsAuthenticated, CustomUserUpdatePermission | IsAdminUser)
 
+
 class UserPasswordUpdateView(generics.UpdateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserPasswordUpdateSerializer
     authentication_classes = (UserAuthentication,)
     permission_classes = (CustomUserUpdatePermission,)
+
 
 class LogoutView(APIView):
     authentication_classes = (UserAuthentication,)
@@ -100,4 +102,3 @@ class LogoutView(APIView):
         except Exception as e:
             print("Exception", e)
             return Response(status=status.HTTP_400_BAD_REQUEST)
-
