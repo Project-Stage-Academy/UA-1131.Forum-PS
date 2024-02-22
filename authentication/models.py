@@ -100,7 +100,6 @@ class AuthUser(AbstractBaseUser):
 
     USERNAME_FIELD = 'email'
     
-    # using for data formatting
     required_fields = ['email',
                        'password',
                        'first_name', 
@@ -111,8 +110,8 @@ class AuthUser(AbstractBaseUser):
                        'is_startup', 
                        'is_verified', 
                        'is_superuser',]
-    # class Meta:
-    #     managed = False # this model is not supposed for migration
+    class Meta:
+        managed = False 
 
     def __str__(self): 
         return str(self.__dict__)
