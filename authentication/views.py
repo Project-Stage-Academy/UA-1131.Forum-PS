@@ -6,6 +6,8 @@ from authentication.serializers import (UserRegistrationSerializer, UserUpdateSe
 from django.contrib.auth import authenticate
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from authentication.models import CustomUser
 from authentication.permissions import CustomUserUpdatePermission, IsNotAuthenticated
 from authentication.serializers import UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer
