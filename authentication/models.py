@@ -27,7 +27,7 @@ class CustomUserManager(BaseUserManager):
 
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
-    user_id = models.BigAutoField(primary_key=True, unique=True, auto_created=True, default=0)
+    user_id = models.BigAutoField(primary_key=True, unique=True, auto_created=True)
     email = models.EmailField(max_length=100, unique=True)
     first_name = models.CharField(max_length=100)
     surname = models.CharField(max_length=100)
@@ -57,7 +57,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     
 
 class Companies(models.Model):
-    company_id = models.BigAutoField(primary_key=True)
+    company_id = models.BigAutoField(primary_key=True, unique=True, auto_created=True)
     brand = models.CharField(max_length=255, blank=True)
     is_registered = models.BooleanField(default=False)
     common_info = models.TextField(blank=True)
@@ -71,11 +71,18 @@ class Companies(models.Model):
     tags = models.CharField(max_length=255, blank=True)
 
 
+class Positions(models.Model):
+    position_id = models.BigAutoField(primary_key=True, unique=True, auto_created=True)
+    position = models.CharField(max_length=100)
+    position_descr = models.CharField(max_length=500, blank=True)
+
+
 class CompaniesAndUsersRelations(models.Model):
     relation_id = models.BigAutoField(primary_key=True)
     user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     company_id = models.ForeignKey(Companies, on_delete=models.CASCADE)
-    position = models.IntegerField()
+    position = models.ForeignKey(Positions, on_delete=models.CASCADE)
+
 
 class AuthUser(AbstractBaseUser):
     email = models.EmailField(max_length=100, default=None, unique=True)
@@ -104,8 +111,8 @@ class AuthUser(AbstractBaseUser):
                        'is_startup', 
                        'is_verified', 
                        'is_superuser',]
-    class Meta:
-        managed = False # this model is not supposed for migration
+    # class Meta:
+    #     managed = False # this model is not supposed for migration
 
     def __str__(self): 
         return str(self.__dict__)

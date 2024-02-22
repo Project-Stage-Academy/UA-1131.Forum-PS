@@ -12,6 +12,7 @@ from authentication.models import CustomUser
 from authentication.permissions import CustomUserUpdatePermission, IsNotAuthenticated
 from authentication.serializers import UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer
 from authentication.authentications import UserAndCompanyAuthentication, UserAuthentication
+from forum.errors import Error
 
 
 
@@ -50,17 +51,21 @@ class VerifyEmail(generics.GenericAPIView):
             return Response({'email': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
 
 class LoginView(APIView):
-    authentication_classes = (UserAndCompanyAuthentication,)
+    authentication_classes = [UserAndCompanyAuthentication]
     
     def post(self, request):
-        if request.user.is_authenticated:
-            return Response({'error': 'User has already logged in'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        email = request.data.get('email')
-        password = request.data.get('password')
-        user = CustomUser.objects.get(email=email, password=password)
+        try:
+            if request.user.is_authenticated:
+               return Response({'error': Error.ALREADY_LOGGED_IN.msg}, status=Error.ALREADY_LOGGED_IN.status)
+            email = request.data.get('email')
+            password = request.data.get('password')
+            user = CustomUser.objects.get(email=email)
+            check_password = user.check_password(password)
+            if not check_password:
+                return Response({'error': Error.WRONG_PASSWORD.msg}, status=Error.WRONG_PASSWORD.status)
 
-        if user.DoesNotExist:
-            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+        except user.DoesNotExist:
+            return Response({'error': Error.USER_NOT_FOUND.msg}, status=Error.USER_NOT_FOUND.status)
 
         refresh = RefreshToken.for_user(user)
         return JsonResponse({

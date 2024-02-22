@@ -1,62 +1,74 @@
 from rest_framework.permissions import BasePermission
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied, NotAuthenticated
+from forum.positions import Founder, Employee, Representative
 
-# this permission handles errors if any
-class CustomPermission(BasePermission):
-    def check_errors(self, request):
+def check_errors(func):
+    def wrapper(self, request, view):
         error = request.user.error
         if error:
-            if error['status'] == status.HTTP_403_FORBIDDEN:
-                raise PermissionDenied(detail=error['msg'])
-            if error['status'] == status.HTTP_401_UNAUTHORIZED:
-                raise NotAuthenticated(detail=error['msg'])
-        return True
-    
-    def has_permission(self, request, view):
-        self.check_errors(request)
+            if error.status == status.HTTP_403_FORBIDDEN:
+                raise PermissionDenied(detail=error.msg)
+            if error.status == status.HTTP_401_UNAUTHORIZED:
+                raise NotAuthenticated(detail=error.msg)
+        return func(self, request, view)
 
-# this permission ensures that user is not authenticated. 
-# could be useful for registration or login functionality
-class IsNotAuthenticated(CustomPermission):
+    return wrapper
+
+
+class PositionPermission(BasePermission):
+    position_model = None
+    @check_errors
+    def has_permission(self, request, view):
+        return request.user.position == self.position_model.position
+            
+class IsFounder(PositionPermission):
+    position_model = Founder
+        
+class IsEmployee(PositionPermission):
+    position_model = Employee
+
+class IsRepresentative(PositionPermission):
+    position_model = Representative
+
+class IsNotAuthenticated(BasePermission):
     def has_permission(self, request, view):
         if request.user.is_authenticated:
             return False
         return True
 
-# this permission ensures that user is verified by email
-# could be useful for verification functionality
-class IsVerified(CustomPermission):
+class IsVerified(BasePermission):
+    @check_errors
     def has_permission(self, request, view):
         super().has_permission(request, view)
         if not request.user.is_verified:
             return False
         return True
 
-# this permission checks if user was authenticated  
-class IsAuthenticated(CustomPermission):
+class IsAuthenticated(BasePermission):
+    @check_errors
     def has_permission(self, request, view):
         super().has_permission(request, view)
         return request.user.is_authenticated
-# this permission checks if user is related to investor company at the moment
-# and therefore acts as an investor
-# checks if user has investor role, simply speaking   
-class IsInvestor(CustomPermission):
+
+class IsInvestor(BasePermission):
+    @check_errors
     def has_permission(self, request, view):
         super().has_permission(request, view)
         if request.user.is_startup == False:
             return True
         return False
-# this permission do the same as IsInvestor only for startup role
-class IsStartup(CustomPermission):
+
+class IsStartup(BasePermission):
+    @check_errors
     def has_permission(self, request, view):
         super().has_permission(request, view)
         if request.user.is_startup == True:
             return True
         return False
-# this permission checks if user is related to company at the moment
-# could be removed as IsInvestor and IsStartup are doing basicly the same job
-class IsRelatedToCompany(CustomPermission):
+
+class IsRelatedToCompany(BasePermission):
+    @check_errors
     def has_permission(self, request, view):
         super().has_permission(request, view)
         if request.user.company_id:
