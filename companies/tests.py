@@ -1,3 +1,4 @@
+from django.test import TestCase
 from rest_framework.test import APITestCase, APIClient
 
 from authentication.models import CustomUser
@@ -111,6 +112,4 @@ class CreateCompanyTest(APITestCase):
         client.force_authenticate(user=user)
         response = client.post('http://127.0.0.1:8000/companies/', invalid_post_body, format='json')
         self.assertEqual(response.status_code, 400)
-
-
 
