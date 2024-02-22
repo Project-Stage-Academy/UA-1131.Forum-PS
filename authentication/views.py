@@ -31,7 +31,6 @@ class UserRegistrationView(APIView):
           return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 class VerifyEmail(generics.GenericAPIView):
 
     def get(self, request):
@@ -49,6 +48,7 @@ class VerifyEmail(generics.GenericAPIView):
             return Response({'email': 'Activation Expired'}, status=status.HTTP_400_BAD_REQUEST)
         except jwt.exceptions.DecodeError as e:
             return Response({'email': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class LoginView(APIView):
     authentication_classes = [UserAndCompanyAuthentication]
