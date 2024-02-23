@@ -28,8 +28,10 @@ jobs:
     - name: Generate XML coverage report
       run: |
         coverage xml
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v2
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4.0.1
       with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        slug: Project-Stage-Academy/UA-1131.Forum-Project-Stage
         file: ./coverage.xml
         fail_ci_if_error: true
