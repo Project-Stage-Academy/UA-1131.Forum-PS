@@ -1,0 +1,18 @@
+[run]
+branch = True
+source =
+    authentication
+    chats
+    companies
+    forum
+    validation
+
+omit =
+    */migrations/*
+    */tests/*
+    manage.py
+    forum/wsgi.py
+    forum/asgi.py
+
+[report]
+show_missing = True
