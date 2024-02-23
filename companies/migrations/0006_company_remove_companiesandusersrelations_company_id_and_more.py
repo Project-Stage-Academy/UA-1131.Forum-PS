@@ -51,7 +51,7 @@ class Migration(migrations.Migration):
                 ("relation_id", models.BigAutoField(primary_key=True, serialize=False)),
                 (
                     "position",
-                    models.CharField(
+                    models.CharField(max_length=1,
                         choices=[("H", "Head"), ("R", "Representative")], default="R"
                     ),
                 ),
