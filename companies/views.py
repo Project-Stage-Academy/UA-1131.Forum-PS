@@ -5,6 +5,7 @@ from .models import Company, Subscription
 from .serializers import CompaniesSerializer, SubscriptionSerializer, SubscriptionListSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from .signals import company_update
 
 JWT_authenticator = JWTAuthentication()
 
@@ -19,6 +20,10 @@ class CompaniesRetrieveUpdateView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Company.objects.all()
     serializer_class = CompaniesSerializer
     permission_classes = (IsAuthenticated,)
+
+    def patch(self, request, *args, **kwargs):
+        company_update.send(self.__class__, company=self.get_object())
+        return super().patch(request, *args, **kwargs)
 
 class SubscriptionCreateAPIView(APIView):
     permission_classes = (IsAuthenticated,)
