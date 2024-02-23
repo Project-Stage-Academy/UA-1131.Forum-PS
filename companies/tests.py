@@ -1,3 +1,4 @@
+from django.test import TestCase
 from rest_framework.test import APITestCase, APIClient
 from django.urls import reverse
 from authentication.models import CustomUser
@@ -76,6 +77,7 @@ class CompanyTestAuthenticatedUser(APITestCase):
         self.assertEqual(response.status_code, 400)
 
 
+
 class CompanyTestUnauthenticatedUser(APITestCase):
 
     def test_negative_unauthenticated_user(self):
@@ -83,3 +85,4 @@ class CompanyTestUnauthenticatedUser(APITestCase):
                                     format='json')
         self.assertEqual(response.status_code, 401)
         
+

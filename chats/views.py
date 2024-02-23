@@ -6,7 +6,9 @@ from rest_framework.views import APIView
 from chats.models import (Message, Chat)
 from chats.permissions import (ChatParticipantPermission, MessageParticipantPermission)
 from chats.serializers import (ChatSerializer, MessageSerializer, MailboxSerializer)
+
 from companies.models import CompanyAndUserRelation
+
 
 
 class MessageDetail(APIView):
@@ -54,7 +56,9 @@ class OutboxView(APIView):
 
     def get(self, request):
         sender = request.user
+
         user_companies = CompanyAndUserRelation.objects.filter(user_id=sender.id)
+
         queryset = Message.objects.filter(sender__in=user_companies, visible_for_sender=True).order_by("-timestamp")
         serializer = MailboxSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -64,7 +68,9 @@ class InboxView(APIView):
 
     def get(self, request):
         recipient = request.user
+
         user_companies = CompanyAndUserRelation.objects.filter(user_id=recipient.id)
+
         queryset = Message.objects.filter(recipient__in=user_companies, visible_for_recipient=True).order_by(
             "-timestamp")
         serializer = MailboxSerializer(queryset, many=True)
@@ -78,7 +84,9 @@ class MessageDeleteView(APIView):
         user_id = request.user.id
         message = get_object_or_404(Message, pk=pk)
         self.check_object_permissions(request, message)
+
         user_company_ids = CompanyAndUserRelation.objects.filter(user_id=user_id)
+
         if message.sender in user_company_ids:
             message.visible_for_sender = False
             message.save()
