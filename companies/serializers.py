@@ -1,13 +1,14 @@
 import re
 from rest_framework import serializers
-from .models import Companies
 
+from .models import Company, Subscription
+import re
 
 
 
 class CompaniesSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Companies
+        model = Company
         fields = '__all__'
 
     @staticmethod
@@ -29,3 +30,12 @@ class CompaniesSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Incorrect phone number')
         return phone
 
+class SubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subscription
+        fields = ['investor', 'company', 'get_email_newsletter']
+
+class SubscriptionListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subscription
+        fields = ['subscription_id', 'company_id', 'get_email_newsletter']

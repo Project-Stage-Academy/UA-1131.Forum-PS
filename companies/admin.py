@@ -1,8 +1,10 @@
 from django.contrib import admin
-from .models import Companies, CompaniesAndUsersRelations
+
+from .models import Company, CompanyAndUserRelation
 
 # Register your models here.
 
-admin.site.register(Companies)
-admin.site.register(CompaniesAndUsersRelations)
+admin.site.register(Company)
+admin.site.register(CompanyAndUserRelation)
+
 
