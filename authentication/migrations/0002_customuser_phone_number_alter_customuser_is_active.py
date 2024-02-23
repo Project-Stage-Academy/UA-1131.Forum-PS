@@ -10,11 +10,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='customuser',
-            name='phone_number',
-            field=models.CharField(default='-', max_length=20),
-        ),
         migrations.AlterField(
             model_name='customuser',
             name='is_active',
