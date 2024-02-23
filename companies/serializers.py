@@ -1,11 +1,12 @@
+import re
 from rest_framework import serializers
-from .models import Companies, Subscription
+from .models import Company, Subscription
 import re
 
 
 class CompaniesSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Companies
+        model = Company
         fields = '__all__'
 
     @staticmethod
@@ -13,6 +14,7 @@ class CompaniesSerializer(serializers.ModelSerializer):
         if not isinstance(value, int) or len(str(value)) != 8:
             raise serializers.ValidationError("EDRPOU must be an 8-digit number")
         return value
+
     
     @staticmethod
     def validate_contact_email(email):

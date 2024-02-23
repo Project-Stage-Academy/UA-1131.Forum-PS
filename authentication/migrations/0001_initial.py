@@ -22,8 +22,6 @@ class Migration(migrations.Migration):
                 ('first_name', models.CharField(max_length=100)),
                 ('surname', models.CharField(max_length=100)),
                 ('registration_date', models.DateTimeField(auto_now_add=True)),
-                ('investor_role', models.BooleanField(default=False)),
-                ('startup_role', models.BooleanField(default=False)),
                 ('is_verified', models.BooleanField(default=False)),
                 ('is_superuser', models.BooleanField(default=False)),
                 ('is_active', models.BooleanField(default=False)),
