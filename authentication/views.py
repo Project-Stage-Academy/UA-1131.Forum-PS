@@ -59,10 +59,6 @@ class LoginView(APIView):
         email = request.data.get('email')
         password = request.data.get('password')
         user = authenticate(request=request, email=email, password=password)
-
-        except CustomUser.DoesNotExist:
-            return Response({'error': Error.USER_NOT_FOUND.msg}, status=Error.USER_NOT_FOUND.status)
-
         user_logged_in.send(sender=user.__class__, request=request, user=user)
         refresh = RefreshToken.for_user(user)
         return Response({
