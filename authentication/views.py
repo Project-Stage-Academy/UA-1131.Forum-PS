@@ -3,9 +3,11 @@ import jwt
 from authentication.models import CustomUser
 from authentication.permissions import CustomUserUpdatePermission
 from authentication.serializers import (UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer)
-from django.contrib.auth import authenticate
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
-from rest_framework.exceptions import ValidationError
+from django.contrib.auth import authenticate, user_logged_in, user_login_failed
+from django.conf import settings
+from django.http import JsonResponse
+from rest_framework import status, generics
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import generics
@@ -54,19 +56,14 @@ class VerifyEmail(APIView):
 class LoginView(APIView):
     
     def post(self, request):
-        try:
-            if request.user.is_authenticated:
-               return Response({'error': Error.ALREADY_LOGGED_IN.msg}, status=Error.ALREADY_LOGGED_IN.status)
-            email = request.data.get('email')
-            password = request.data.get('password')
-            user = CustomUser.objects.get(email=email)
-            check_password = user.check_password(password)
-            if not check_password:
-                return Response({'error': Error.WRONG_PASSWORD.msg}, status=Error.WRONG_PASSWORD.status)
+        email = request.data.get('email')
+        password = request.data.get('password')
+        user = authenticate(request=request, email=email, password=password)
 
         except CustomUser.DoesNotExist:
             return Response({'error': Error.USER_NOT_FOUND.msg}, status=Error.USER_NOT_FOUND.status)
 
+        user_logged_in.send(sender=user.__class__, request=request, user=user)
         refresh = RefreshToken.for_user(user)
         return Response({
             'refresh': str(refresh),
