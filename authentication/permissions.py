@@ -17,6 +17,10 @@ def check_errors(func):
 
 
 class PositionPermission(BasePermission):
+    """
+    This permission defines if user have the required position.
+    If not, the response with corresponding status is returned.
+    """
     position_model = None
     @check_errors
     def has_permission(self, request, view):
@@ -36,6 +40,11 @@ class IsNotAuthenticated(BasePermission):
         if request.user.is_authenticated:
             return False
         return True
+    
+class IsAdmin(BasePermission):
+    @check_errors
+    def has_permission(self, request, view):
+        return request.user.is_superuser
 
 class IsVerified(BasePermission):
     @check_errors

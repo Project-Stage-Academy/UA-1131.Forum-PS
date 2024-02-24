@@ -7,26 +7,26 @@ from django.contrib.auth import authenticate
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework import generics
+from rest_framework import status
 from rest_framework.views import APIView
 from authentication.models import CustomUser
 from authentication.permissions import CustomUserUpdatePermission, IsNotAuthenticated
 from authentication.serializers import UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer
 from authentication.authentications import UserAuthentication
+from forum import settings
 from forum.errors import Error
-
-
 
 
 
 class UserRegistrationView(APIView):
 
-    authentication_classes = [UserAuthentication]
-    permission_classes = [IsNotAuthenticated]
-
     def post(self, request):
+        print(request.user)
         serializer = UserRegistrationSerializer(data=request.data)
         if serializer.is_valid():
-          serializer.save()
+          CustomUser.objects.create_user(**serializer.validated_data)
           return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
           return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -52,7 +52,6 @@ class VerifyEmail(APIView):
 
 
 class LoginView(APIView):
-    authentication_classes = [UserAuthentication]
     
     def post(self, request):
         try:
@@ -65,11 +64,11 @@ class LoginView(APIView):
             if not check_password:
                 return Response({'error': Error.WRONG_PASSWORD.msg}, status=Error.WRONG_PASSWORD.status)
 
-        except user.DoesNotExist:
+        except CustomUser.DoesNotExist:
             return Response({'error': Error.USER_NOT_FOUND.msg}, status=Error.USER_NOT_FOUND.status)
 
         refresh = RefreshToken.for_user(user)
-        return JsonResponse({
+        return Response({
             'refresh': str(refresh),
             'access': str(refresh.access_token),
             'user_id': user.id,

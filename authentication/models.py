@@ -1,9 +1,7 @@
+from datetime import datetime
 from django.contrib.auth.models import PermissionsMixin
 from django.contrib.auth.base_user import (AbstractBaseUser, BaseUserManager)
 from django.db import models
-
-# I suppose that all main models, as User, Company and Relations should be in one place
-# since they`re required for authentication
 
 
 
@@ -13,8 +11,10 @@ class CustomUserManager(BaseUserManager):
         if not email:
             raise ValueError("The email must be set")
         email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
+        user:CustomUser = self.model(email=email, **extra_fields)
         user.set_password(password)
+        user.registration_date = datetime.now()
+        print(user.user_id)
         user.save()
         return user
 
@@ -27,7 +27,7 @@ class CustomUserManager(BaseUserManager):
 
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
-    user_id = models.BigAutoField(primary_key=True, unique=True, auto_created=True)
+    user_id = models.BigAutoField(primary_key=True, unique=True)
     email = models.EmailField(max_length=100, unique=True)
     first_name = models.CharField(max_length=100)
     surname = models.CharField(max_length=100)
@@ -40,7 +40,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
 
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["password", "first_name", "surname", "phone_number"]
+    REQUIRED_FIELDS = ["user_id", "password", "first_name", "surname", "phone_number"]
     objects = CustomUserManager()
 
     def __str__(self):
@@ -55,9 +55,12 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
                 'is_verified': self.is_verified,
                 'is_superuser': self.is_superuser}
     
+    def get_user(self, *args, **kwargs):
+        return self.objects.get(**kwargs)
+    
 
 class Companies(models.Model):
-    company_id = models.BigAutoField(primary_key=True, unique=True, auto_created=True)
+    company_id = models.BigAutoField(primary_key=True, unique=True)
     brand = models.CharField(max_length=255, blank=True)
     is_registered = models.BooleanField(default=False)
     common_info = models.TextField(blank=True)
@@ -72,31 +75,35 @@ class Companies(models.Model):
 
 
 class Positions(models.Model):
-    position_id = models.BigAutoField(primary_key=True, unique=True, auto_created=True)
+    position_id = models.BigAutoField(primary_key=True, unique=True)
     position = models.CharField(max_length=100)
     position_descr = models.CharField(max_length=500, blank=True)
 
 
 class CompaniesAndUsersRelations(models.Model):
     relation_id = models.BigAutoField(primary_key=True)
-    user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    company_id = models.ForeignKey(Companies, on_delete=models.CASCADE)
+    user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='user_relation')
+    company_id = models.ForeignKey(Companies, on_delete=models.CASCADE, related_name='company_relation')
     position = models.ForeignKey(Positions, on_delete=models.CASCADE)
+
+    def get_relation(self, u_id, c_id):
+        return self.objects.filter(
+                    user_id=u_id, company_id=c_id)[0].values(AuthUser.required_fields)
 
 
 class AuthUser(AbstractBaseUser):
-    email = models.EmailField(max_length=100, default=None, unique=True)
-    password = models.CharField(max_length=128, default=None)
-    first_name = models.CharField(max_length=100, default=None)
-    surname = models.CharField(max_length=100, default=None)
-    position = models.CharField(max_length=25, default=None)
-    company_id = models.IntegerField(default=None)
-    user_id = models.IntegerField(default=None)
-    is_startup = models.BooleanField(default='undefined')
-    is_verified = models.BooleanField(default='undefined')
-    is_superuser = models.BooleanField(default=False)
-    is_authenticated = models.BooleanField(default=False)
-    error = models.CharField(max_length=150, default=None)
+    email = models.EmailField(max_length=100, unique=True)
+    password = models.CharField(max_length=128)
+    first_name = models.CharField(max_length=100)
+    surname = models.CharField(max_length=100)
+    position = models.CharField(max_length=25)
+    company_id = models.ForeignKey(to=Companies,on_delete=models.CASCADE)
+    user_id = models.ForeignKey(to=CustomUser, on_delete=models.CASCADE)
+    is_startup = models.BooleanField()
+    is_verified = models.BooleanField()
+    is_superuser = models.BooleanField()
+    is_authenticated = models.BooleanField()
+    error = models.CharField(max_length=150)
 
     USERNAME_FIELD = 'email'
     
@@ -110,8 +117,7 @@ class AuthUser(AbstractBaseUser):
                        'is_startup', 
                        'is_verified', 
                        'is_superuser',]
-    class Meta:
-        managed = False 
+
 
     def __str__(self): 
         return str(self.__dict__)

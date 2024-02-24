@@ -36,4 +36,4 @@ class Error:
 
     class WRONG_PASSWORD:
         msg = "Password is wrong"
-        status = status.HTTP_403_FORBIDDEN
+        status = status.HTTP_401_UNAUTHORIZED
