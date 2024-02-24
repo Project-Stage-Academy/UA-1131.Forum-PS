@@ -1,5 +1,5 @@
 from django.dispatch import Signal, receiver
-from authentication.utils import Utils
+from forum.tasks import email_sender_celery
 from forum.settings import EMAIL_HOST_USER
 
 company_update = Signal()
@@ -14,4 +14,4 @@ def company_update_reciever(sender, company, **kwargs):
                 'from_email': EMAIL_HOST_USER,
                 'to_email': email            
                 } 
-        Utils.email_sender(data)
+        email_sender_celery.delay(data)
