@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
 from chats.models import (Chat, Message)
-from companies.models import CompaniesAndUsersRelations
+
+from companies.models import CompanyAndUserRelation
 
 
 class ParticipantSerializer(serializers.ModelSerializer):
@@ -11,7 +12,9 @@ class ParticipantSerializer(serializers.ModelSerializer):
         return participant.company_id.brand if participant else None
 
     class Meta:
-        model = CompaniesAndUsersRelations
+
+        model = CompanyAndUserRelation
+
         fields = ["relation_id", "brand", "company_id"]
 
 
@@ -23,7 +26,9 @@ class MessageSerializer(serializers.ModelSerializer):
 
     def validate_sender(self, data):
         sender_id = self.context['request'].user.id
-        sender_company_relations = CompaniesAndUsersRelations.objects.filter(user_id=sender_id)
+
+        sender_company_relations = CompanyAndUserRelation.objects.filter(user_id=sender_id)
+
         if not sender_company_relations.exists():
             raise serializers.ValidationError("You dont have companies in your list.")
 
