@@ -66,7 +66,6 @@ def get_conversation(request, convo_id):
 @api_view(['GET'])
 def conversations(request):
     user = request.user
-    print(user.pk)
     conversation_list = collections.find({
         "$or": [
             {"initiator_id": user.id},
@@ -78,5 +77,4 @@ def conversations(request):
     for conversation in conversation_list:
         conversation['_id'] = str(conversation['_id'])
         conversation_list_serialized.append(conversation)
-    print(conversation_list_serialized)
     return Response(conversation_list_serialized)

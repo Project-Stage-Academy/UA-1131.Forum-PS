@@ -25,6 +25,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def update_conversation(self, messages):
+        """Function for updating live-chat messages data"""
         conversations = mongo_conversations()
         conversations.update_one({"_id": ObjectId(self.room_name)}, {"$push": {"messages": messages}})
 
@@ -53,6 +54,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
         cache.set(_message["conversation_id"], chat_value, 36000)
 
     async def connect(self):
+        """
+        Connecting to the WS, also adding number to "room_connection_counts"
+         for counting the number of active users in a channel
+         """
         self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
         self.room_group_name = f"chat_{self.room_name}"
         conversation, initiator, receiver = await self.get_conversation()
@@ -68,35 +73,30 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.accept()
             self.room_connection_counts[self.room_name] += 1
 
-            print(
-                "Connection Count:",
-                self.room_connection_counts[self.room_name]
-            )
-
         else:
-            # close connection to the other users
             await self.close()
 
     async def disconnect(self, close_code):
+        """
+        Disconnecting from the WS, after user leaves the channel in decrease "room_connection_counts",
+        when num of active users is 0, the chat cache will be sent to MongoBD and Redis cache ll be cleaned.
+        "parse_obj_as" validate the data in list of messages from cache.
+         """
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
         self.room_connection_counts[self.room_name] -= 1
-        print(
-            "Connection Count:",
-            self.room_connection_counts[self.room_name]
-        )
         if not self.room_connection_counts[self.room_name]:
             chat_value = cache.get(self.room_name)
             messages = [Message.parse_obj(message).dict() for message in eval(chat_value)]
-            try:
-                parse_obj_as(list[Message], messages)
-            except pydantic.ValidationError as e:
-                print(e)
+            parse_obj_as(list[Message], messages)
             await self.update_conversation(messages)
             cache.clear()
 
 
 
     async def receive(self, text_data=None, bytes_data=None):
+        """
+        When message is sent my user it ll be sent to the cache
+        """
         text_data_json = json.loads(text_data)
         chat_type = {"type": "chat_message"}
         return_dict = {**chat_type, **text_data_json}
