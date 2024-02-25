@@ -13,6 +13,7 @@ from authentication.models import CustomUser
 
 
 class JWTAuthMiddleware:
+    """ Checking JWT token for the user"""
     def __init__(self, app):
         self.app = app
 

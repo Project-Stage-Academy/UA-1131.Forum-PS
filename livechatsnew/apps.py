@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class LivechatsConfig(AppConfig):
+class LivechatsnewConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'livechats'
+    name = 'livechatsnew'

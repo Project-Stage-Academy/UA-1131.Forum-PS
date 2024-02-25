@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     'authentication',
     'companies',
     'chats',
-    'livechats',
+    'livechatsnew',
 
     'corsheaders',
     'channels',
@@ -95,7 +95,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'forum.wsgi.application'
-ASGI_APPLICATION = "forum.asgi.application"
+ASGI_APPLICATION = 'forum.asgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
@@ -107,7 +107,8 @@ DATABASES = {
         'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
         'HOST': os.environ.get('POSTGRES_DOCKER_DB'),
         'PORT': os.environ.get('POSTGRES_PORT')
-    }
+    },
+
 }
 
 CACHES = {
