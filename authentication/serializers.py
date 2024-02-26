@@ -49,9 +49,10 @@ class UserRegistrationSerializer(serializers.ModelSerializer, CustomValidationSe
             raise ValidationError({"phone_number": e.detail})
         return attrs
 
-    def create(self, validated_data):
-        user = CustomUser.objects.create(**validated_data)
-        user.set_password(validated_data.get("password"))
+    def create(self):
+        user = CustomUser.objects.create(**self.validated_data)
+        print(user)
+        user.set_password(self.validated_data.get("password"))
         user.registration_date = datetime.now()
         user.save()
         tokens = RefreshToken.for_user(user)

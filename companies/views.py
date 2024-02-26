@@ -1,7 +1,8 @@
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Company, Subscription
+from authentication.models import Company
+from .models import Subscription
 from .serializers import CompaniesSerializer, SubscriptionSerializer, SubscriptionListSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication

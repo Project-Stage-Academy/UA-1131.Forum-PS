@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from chats.models import (Chat, Message)
 
-from companies.models import CompanyAndUserRelation
+from authentication.models import CompanyAndUserRelation
 
 
 class ParticipantSerializer(serializers.ModelSerializer):

@@ -10,14 +10,28 @@ from rest_framework import status, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.permissions import (AllowAny, IsAuthenticated, IsAdminUser)
+from rest_framework import generics
+from rest_framework import status
+from rest_framework.views import APIView
+from authentication.models import CustomUser
+from authentication.permissions import CustomUserUpdatePermission, IsAuthenticated
+from authentication.serializers import UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer
+from authentication.authentications import UserAuthentication
+from forum import settings
+from forum.errors import Error
 
 
 
-class UserRegistrationView(generics.CreateAPIView):
-    queryset = CustomUser.objects.all()
-    permission_classes = (AllowAny,)
-    serializer_class = UserRegistrationSerializer
+class UserRegistrationView(APIView):
+
+    def post(self, request):
+        print(request.user)
+        serializer = UserRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+          CustomUser.objects.create_user(**serializer.validated_data)
+          return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+          return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class VerifyEmail(APIView):
@@ -40,17 +54,14 @@ class VerifyEmail(APIView):
 
 
 class LoginView(APIView):
+    
     def post(self, request):
         email = request.data.get('email')
         password = request.data.get('password')
         user = authenticate(request=request, email=email, password=password)
-
-        if user is None:
-            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
-
         user_logged_in.send(sender=user.__class__, request=request, user=user)
         refresh = RefreshToken.for_user(user)
-        return JsonResponse({
+        return Response({
             'refresh': str(refresh),
             'access': str(refresh.access_token),
             'user_id': user.id,
@@ -61,16 +72,19 @@ class LoginView(APIView):
 class UserUpdateView(generics.RetrieveUpdateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserUpdateSerializer
-    permission_classes = (IsAuthenticated, CustomUserUpdatePermission | IsAdminUser)
+    authentication_classes = (UserAuthentication,)
+    permission_classes = (IsAuthenticated, CustomUserUpdatePermission)
 
 
 class UserPasswordUpdateView(generics.UpdateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserPasswordUpdateSerializer
+    authentication_classes = (UserAuthentication,)
     permission_classes = (CustomUserUpdatePermission,)
 
 
 class LogoutView(APIView):
+    authentication_classes = (UserAuthentication,)
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
