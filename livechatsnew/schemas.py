@@ -16,6 +16,6 @@ class Conversation(BaseModel):
     """Pydentic BaseModel class for conversation validations"""
     initiator_id: int
     receiver_id: int
-    start_time: str
+    start_time: datetime
     messages: Optional[list[Message]]
 

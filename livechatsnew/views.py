@@ -23,6 +23,9 @@ def start_conversation(request, ):
     data = request.data
     user_email = data.pop("email")
     current_user = request.user
+    if request.user.email == user_email:
+        return Response({'message': 'You cannot chat with yourself'})
+
     try:
         participant = CustomUser.objects.get(email=user_email)
 
@@ -48,6 +51,7 @@ def start_conversation(request, ):
         try:
             new_conversation_serialized = Conversation.parse_obj(new_conversation).dict()
             collections.insert_one(new_conversation_serialized)
+            new_conversation_serialized['_id'] = str(new_conversation_serialized['_id'])
             return Response(new_conversation_serialized, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

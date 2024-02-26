@@ -19,18 +19,19 @@ class Company(models.Model):
 
 
 class CompanyAndUserRelation(models.Model):
-
     HEAD = "H"
     REPRESENTATIVE = "R"
 
-    POSITION_CHOICES = ((HEAD, "Head"), 
+    POSITION_CHOICES = ((HEAD, "Head"),
                         (REPRESENTATIVE, "Representative"))
 
     relation_id = models.BigAutoField(primary_key=True)
     user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
 
     company_id = models.ForeignKey(Company, on_delete=models.CASCADE)
-    position = models.CharField(default=REPRESENTATIVE, choices=POSITION_CHOICES, blank=False, null=False)
+    position = models.CharField(default=REPRESENTATIVE, choices=POSITION_CHOICES, blank=False, null=False,
+                                max_length=100)
+
 
 class Subscription(models.Model):
     subscription_id = models.BigAutoField(primary_key=True)
@@ -38,4 +39,3 @@ class Subscription(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     get_email_newsletter = models.BooleanField(default=False)
     subscribed_at = models.DateTimeField(auto_now_add=True)
-    
