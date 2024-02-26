@@ -1,19 +1,8 @@
 from rest_framework.permissions import BasePermission
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied, NotAuthenticated
-from forum.positions import Founder, Employee, Representative
+from forum.errors import Error
 
-def check_errors(func):
-    def wrapper(self, request, view):
-        error = request.user.error
-        if error:
-            if error.status == status.HTTP_403_FORBIDDEN:
-                raise PermissionDenied(detail=error.msg)
-            if error.status == status.HTTP_401_UNAUTHORIZED:
-                raise NotAuthenticated(detail=error.msg)
-        return func(self, request, view)
-
-    return wrapper
 
 
 class PositionPermission(BasePermission):
@@ -21,69 +10,74 @@ class PositionPermission(BasePermission):
     This permission defines if user have the required position.
     If not, the response with corresponding status is returned.
     """
-    position_model = None
-    @check_errors
+    position = None
+    error = None
     def has_permission(self, request, view):
-        return request.user.position == self.position_model.position
+        if not request.user.position == self.position:
+            raise PermissionDenied(detail=self.error.msg)
+        return True
             
 class IsFounder(PositionPermission):
-    position_model = Founder
+    position = 'Founder'
+    error = Error.NOT_FOUNDER
         
-class IsEmployee(PositionPermission):
-    position_model = Employee
-
 class IsRepresentative(PositionPermission):
-    position_model = Representative
+    position = 'Representative'
+    error = Error.NOT_REPRESENTATIVE
 
-class IsNotAuthenticated(BasePermission):
-    def has_permission(self, request, view):
-        if request.user.is_authenticated:
-            return False
-        return True
-    
-class IsAdmin(BasePermission):
-    @check_errors
-    def has_permission(self, request, view):
-        return request.user.is_superuser
 
 class IsVerified(BasePermission):
-    @check_errors
+    """
+    Checking if registered user was verified.
+
+    """
     def has_permission(self, request, view):
-        super().has_permission(request, view)
         if not request.user.is_verified:
-            return False
+            raise PermissionDenied(detail=Error.USER_IS_NOT_VERIFIED.msg)
         return True
 
 class IsAuthenticated(BasePermission):
-    @check_errors
-    def has_permission(self, request, view):
-        super().has_permission(request, view)
-        return request.user.is_authenticated
+    """
+    Checking if user is authenticated.
+    
+    """
 
-class IsInvestor(BasePermission):
-    @check_errors
     def has_permission(self, request, view):
-        super().has_permission(request, view)
-        if request.user.is_startup == False:
-            return True
-        return False
+        if not request.user.is_authenticated:
+            raise NotAuthenticated(detail=Error.NOT_AUTHENTICATED.msg)
+        return True
 
-class IsStartup(BasePermission):
-    @check_errors
-    def has_permission(self, request, view):
-        super().has_permission(request, view)
-        if request.user.is_startup == True:
-            return True
-        return False
+
 
 class IsRelatedToCompany(BasePermission):
-    @check_errors
-    def has_permission(self, request, view):
-        super().has_permission(request, view)
-        if request.user.company_id:
-            return True
-        return False
+    """
+    Checking if user is currently related to company.
 
+    """
+    def has_permission(self, request, view):
+        if not request.user.company:
+            raise NotAuthenticated(detail=Error.NO_RELATED_TO_COMPANY.msg)
+        return True
+
+class IsInvestor(BasePermission):
+    """
+    Checking if company user is currently related to is of investment.
+    
+    """
+    def has_permission(self, request, view):
+        if request.user.get_company_type():
+            raise PermissionDenied(detail=Error.NOT_INVESTOR.msg)
+        return True
+
+class IsStartup(BasePermission):
+    """
+    Checking if company user is currently related to is startup.
+    
+    """
+    def has_permission(self, request, view):
+        if not request.user.get_company_type():
+            raise PermissionDenied(detail=Error.NOT_STARTUP.msg)
+        return True
 
 class CustomUserUpdatePermission(BasePermission):
     def has_object_permission(self, request, view, obj):

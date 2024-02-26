@@ -1,10 +1,11 @@
 from typing import Tuple, Optional
 from rest_framework.request import Request
+from rest_framework.exceptions import NotAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.utils import get_md5_hash_password
 from rest_framework_simplejwt.tokens import Token
-from .models import AuthUser, CustomUser, CompaniesAndUsersRelations
+from .models import AuthUser, CustomUser, CompanyAndUserRelation
 from forum.errors import Error
 
 
@@ -17,8 +18,6 @@ class UserAuthentication(JWTAuthentication):
     the empty AuthUser instance is returned with error written in related AuthUser field. 
     
     """
-    def error_handling(self, error):
-        return self.user_model(error=error) 
     
     def authenticate(self, request: Request) -> Optional[Tuple[AuthUser, Token]]:
         """
@@ -29,11 +28,11 @@ class UserAuthentication(JWTAuthentication):
         header = self.get_header(request) 
 
         if header is None:
-            return self.error_handling(Error.NO_HEADER), None
+            return None
 
         raw_token = self.get_raw_token(header) 
         if raw_token is None:
-            return self.error_handling(Error.NO_TOKEN), None
+            return None
 
         validated_token = self.get_validated_token(raw_token) 
         return self.get_user(validated_token), validated_token 
@@ -47,30 +46,31 @@ class UserAuthentication(JWTAuthentication):
         if not 'company_id' in validated_token:
             try:
                 user_id = validated_token[api_settings.USER_ID_CLAIM] 
-                user_and_company = CustomUser.get_user(user_id=user_id)
-                user_and_company = user_and_company.get_auth_data() 
+                user = CustomUser.get_user(user_id=user_id)
             except KeyError: 
-                return self.error_handling(Error.NO_USER_ID)
+                raise NotAuthenticated(detail=Error.NO_USER_ID.msg, status_code=Error.NO_USER_ID.status)
             except CustomUser.DoesNotExist: 
-                return self.error_handling(Error.USER_NOT_FOUND)
+                raise NotAuthenticated(detail=Error.USER_NOT_FOUND.msg, status_code=Error.USER_NOT_FOUND.status)
         else:
             try:
                 user_id = validated_token[api_settings.USER_ID_CLAIM] 
                 company_id = validated_token[api_settings.COMPANY_ID_CLAIM] 
-                user_and_company = CompaniesAndUsersRelations.get_relation(user_id, company_id) 
+                relation = CompanyAndUserRelation.get_relation(user_id, company_id) 
+                user = CustomUser(relation.user)
+                user.company = relation.company
+                user.position = relation.position
             except KeyError:
-                return self.error_handling(Error.NO_USER_OR_COMPANY_ID)
-            except CompaniesAndUsersRelations.DoesNotExist:
-                return self.error_handling(Error.NO_RELATED_TO_COMPANY)
+                raise NotAuthenticated(detail=Error.NO_USER_OR_COMPANY_ID.msg)
+            except CompanyAndUserRelation.DoesNotExist:
+                raise NotAuthenticated(detail=Error.NO_RELATED_TO_COMPANY.msg)
             
-        if not user_and_company.is_validated: 
-            return self.error_handling(Error.USER_IS_NOT_VALDATED)
 
         if api_settings.CHECK_REVOKE_TOKEN:
             if validated_token.get(
                 api_settings.REVOKE_TOKEN_CLAIM
             ) != get_md5_hash_password(self.user_model.password):
-                return self.error_handling(Error.WRONG_PASSWORD)
-
-        return self.user_model(**user_and_company)
+                raise NotAuthenticated(detail=Error.WRONG_PASSWORD.msg)
+            
+        user.is_authenticated = True
+        return user
 

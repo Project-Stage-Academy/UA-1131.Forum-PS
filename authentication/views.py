@@ -14,7 +14,7 @@ from rest_framework import generics
 from rest_framework import status
 from rest_framework.views import APIView
 from authentication.models import CustomUser
-from authentication.permissions import CustomUserUpdatePermission, IsNotAuthenticated
+from authentication.permissions import CustomUserUpdatePermission, IsAuthenticated
 from authentication.serializers import UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer
 from authentication.authentications import UserAuthentication
 from forum import settings
@@ -73,7 +73,7 @@ class UserUpdateView(generics.RetrieveUpdateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserUpdateSerializer
     authentication_classes = (UserAuthentication,)
-    permission_classes = (IsAuthenticated, CustomUserUpdatePermission | IsAdminUser)
+    permission_classes = (IsAuthenticated, CustomUserUpdatePermission)
 
 
 class UserPasswordUpdateView(generics.UpdateAPIView):

@@ -14,9 +14,21 @@ class Error:
         msg = "Token contained no recognizable user identification"
         status = status.HTTP_401_UNAUTHORIZED
 
-    class USER_IS_NOT_VALDATED:
-        msg = "User is not validated"
+    class USER_IS_NOT_VERIFIED:
+        msg = "User is not verified"
         status = status.HTTP_401_UNAUTHORIZED
+
+    class NOT_AUTHENTICATED: 
+        msg = "User is not authenticated"
+        status = status.HTTP_401_UNAUTHORIZED
+
+    class NOT_INVESTOR:
+        msg = "Related company is not of investment"
+        status = status.HTTP_403_FORBIDDEN
+
+    class NOT_STARTUP:
+        msg = "Related company is not of startup"
+        status = status.HTTP_403_FORBIDDEN
 
     class USER_NOT_FOUND:
         msg = "User not found"
@@ -30,6 +42,10 @@ class Error:
         msg = "User isn't related to any company"
         status = status.HTTP_403_FORBIDDEN
 
+    class NO_COMPANY_TYPE:
+        msg = "No company type is recognised"
+        status = status.HTTP_401_UNAUTHORIZED
+
     class ALREADY_LOGGED_IN:
         msg = "User is already logged in"
         status = status.HTTP_403_FORBIDDEN
@@ -37,3 +53,11 @@ class Error:
     class WRONG_PASSWORD:
         msg = "Password is wrong"
         status = status.HTTP_401_UNAUTHORIZED
+
+    class NOT_FOUNDER:
+        msg = "User has not founder position"
+        status = status.HTTP_403_FORBIDDEN
+    
+    class NOT_REPRESENTATIVE:
+        msg = "User has not founder position"
+        status = status.HTTP_403_FORBIDDEN
