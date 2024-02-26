@@ -13,6 +13,7 @@ from datetime import timedelta
 from dotenv import load_dotenv
 import logging
 import os
+import pymongo
 from pathlib import Path
 
 
@@ -108,6 +109,8 @@ DATABASES = {
     }
 }
 
+CLIENT = pymongo.MongoClient(os.environ.get('MONGO_URL'), maxPoolSize=400)
+DB = CLIENT[os.environ.get('MONGO_DATABASE')]
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
