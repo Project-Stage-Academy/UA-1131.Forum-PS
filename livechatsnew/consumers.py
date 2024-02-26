@@ -86,10 +86,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.room_connection_counts[self.room_name] -= 1
         if not self.room_connection_counts[self.room_name]:
             chat_value = cache.get(self.room_name)
-            messages = [Message.parse_obj(message).dict() for message in eval(chat_value)]
-            parse_obj_as(list[Message], messages)
-            await self.update_conversation(messages)
-            cache.clear()
+            if chat_value:
+                messages = [Message.parse_obj(message).dict() for message in eval(chat_value)]
+                await self.update_conversation(messages)
+                cache.clear()
 
 
 
