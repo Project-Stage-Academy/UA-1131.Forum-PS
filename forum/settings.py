@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 import logging
 import os
 from pathlib import Path
+import sys
 
 
 load_dotenv()
@@ -165,26 +166,17 @@ EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
 
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': False,
     'handlers': {
-        'file': {
-            'level': os.environ.get("LOG_LEVEL"),
-            'class': 'logging.FileHandler',
-            'filename': os.environ.get("LOG_FILE"),
-            'formatter': 'verbose',
-        },
-    },
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {message}',
-            'style': '{',
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'stream': sys.stdout,
         },
     },
     'loggers': {
-        'account_update': {
-            'handlers': ['file'],
-            'level': os.environ.get("LOG_LEVEL"),
-            'propagate': True,
+        'django': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
         },
     },
 }
