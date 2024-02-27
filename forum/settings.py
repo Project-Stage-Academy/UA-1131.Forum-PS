@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'authentication',
     'companies',
     'chats',
+    'notifications',
 
 ]
 

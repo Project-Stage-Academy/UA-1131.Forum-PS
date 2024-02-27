@@ -30,7 +30,7 @@ class CompanyAndUserRelation(models.Model):
     user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
 
     company_id = models.ForeignKey(Company, on_delete=models.CASCADE)
-    position = models.CharField(default=REPRESENTATIVE, choices=POSITION_CHOICES, blank=False, null=False)
+    position = models.CharField(max_length=60, default=REPRESENTATIVE, choices=POSITION_CHOICES, blank=False, null=False)
 
 class Subscription(models.Model):
     subscription_id = models.BigAutoField(primary_key=True)
