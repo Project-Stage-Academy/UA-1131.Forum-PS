@@ -1,19 +1,17 @@
 import json
+import math
+import os
 
-import pydantic
+import aioredis
 from bson import ObjectId
-from datetime import datetime
-from django.core.cache import cache
-from collections import defaultdict
+from django.utils import timezone
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from livechatsnew.utils import mongo_conversations
 from livechatsnew.schemas import Message
-from pydantic import parse_obj_as
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
-    room_connection_counts = defaultdict(lambda: 0)
 
     @database_sync_to_async
     def get_conversation(self):
@@ -27,7 +25,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
     def update_conversation(self, messages):
         """Function for updating live-chat messages data"""
         conversations = mongo_conversations()
-        conversations.update_one({"_id": ObjectId(self.room_name)}, {"$push": {"messages": messages}})
+        if len(messages) > 50:
+            for i in range(math.ceil(messages / 50)):
+                if len(messages) > 50:
+                    conversations.update_one({"_id": ObjectId(self.room_name)}, {"$push": {"messages": messages[0:50]}})
+                    messages = messages[50::]
+                else:
+                    conversations.update_one({"_id": ObjectId(self.room_name)}, {"$push": {"messages": messages}})
+                    break
+        else:
+            conversations.update_one({"_id": ObjectId(self.room_name)}, {"$push": {"messages": messages}})
 
     async def create_message_data(self, message):
         """Function for creating messages available for caching and sending"""
@@ -35,9 +42,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
         sender = self.scope["user"]
         message = {
             "msg_text": message["message"],
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "timestamp": timezone.now().strftime("%Y-%m-%d %H:%M:%S"),
             "sender_id": sender.id,
-            "sender_data": str(sender),
+            "sender_data": f"{sender.first_name} {sender.surname}, {sender.email}",
             "conversation_id": str(conversation[0].get("_id")),
 
         }
@@ -46,12 +53,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def cache_data(self, message):
         """Function for adding messages and joining data to cache for 10 hours"""
         _message = await self.create_message_data(message)
-        chat_value = cache.get(_message["conversation_id"])
-        if chat_value:
-            chat_value = str(_message) + "," + chat_value
-        else:
-            chat_value = str(_message)
-        cache.set(_message["conversation_id"], chat_value, 36000)
+        _message_json = json.dumps(_message)
+        redis = await aioredis.from_url(
+            os.environ.get("REDIS_HOST"), encoding="utf-8", decode_responses=True
+        )
+        async with redis.client() as conn:
+            await conn.lpush(_message["conversation_id"], _message_json)
+            await conn.expire(_message["conversation_id"], 3600)
 
     async def connect(self):
         """
@@ -71,7 +79,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
             )
 
             await self.accept()
-            self.room_connection_counts[self.room_name] += 1
+            redis = await aioredis.from_url(
+                os.environ.get("REDIS_HOST"), encoding="utf-8", decode_responses=True
+            )
+            async with redis.client() as conn:
+                user_active = conn.hget(f"{self.room_name}_users", current_user.email)
+                if not user_active:
+                    await conn.hincrby(f"{self.room_name}_users", current_user.email, 1)
+                    await conn.expire(f"{self.room_name}_users", 3600)
+                else:
+                    await conn.hincrby(f"{self.room_name}_users", current_user.email, +1)
 
         else:
             await self.close()
@@ -82,14 +99,27 @@ class ChatConsumer(AsyncWebsocketConsumer):
         when num of active users is 0, the chat cache will be sent to MongoBD and Redis cache ll be cleaned.
         "parse_obj_as" validate the data in list of messages from cache.
          """
+        current_user = self.scope['user']
+
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
-        self.room_connection_counts[self.room_name] -= 1
-        if not self.room_connection_counts[self.room_name]:
-            chat_value = cache.get(self.room_name)
-            if chat_value:
-                messages = [Message.parse_obj(message).dict() for message in eval(chat_value)]
-                await self.update_conversation(messages)
-                cache.clear()
+
+        redis = await aioredis.from_url(
+            os.environ.get("REDIS_HOST"), encoding="utf-8", decode_responses=True
+        )
+        messages = None
+        async with redis.client() as conn:
+            await conn.hincrby(f"{self.room_name}_users", current_user.email, -1)
+            user_activity = await conn.hget(f"{self.room_name}_users", current_user.email,)
+            if user_activity == "0":
+                await conn.hdel(f"{self.room_name}_users", current_user.email,)
+                if not await conn.hgetall(f"{self.room_name}_users"):
+                    conn.delete(f"{self.room_name}_users")
+                    messages = await conn.lrange(self.room_name, 0, -1)
+                    await conn.delete(self.room_name)
+        if messages is not None:
+            messages_list = [Message.parse_raw(msg).dict() for msg in messages]
+            await self.update_conversation(messages_list)
+
 
 
 
