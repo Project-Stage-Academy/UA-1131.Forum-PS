@@ -53,17 +53,19 @@ INSTALLED_APPS = [
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-
-        'rest_framework.authentication.SessionAuthentication',
+        'authentication.authentications.UserAuthentication',
     ),    
-
 }
+
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    "SIGNING_KEY": os.environ.get('SECRET_KEY') 
+    "SIGNING_KEY": os.environ.get('SECRET_KEY'),
+    "USER_ID_FIELD": 'user_id',
+    "USER_ID_CLAIM": 'user_id',
+    "COMPANY_ID_CLAIM": 'company_id',
+    "TOKEN_USER_CLASS": 'authentication.AuthUser'
 }
 
 MIDDLEWARE = [
@@ -106,6 +108,7 @@ DATABASES = {
         'USER': os.environ.get('POSTGRES_USER'),
         'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
         'HOST': os.environ.get('POSTGRES_HOST'),
+        'HOST': os.environ.get('POSTGRES_HOST'),
         'PORT': os.environ.get('POSTGRES_PORT')
     }
 }
@@ -131,11 +134,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    "SIGNING_KEY": os.environ.get('SECRET_KEY')
-}
+
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 

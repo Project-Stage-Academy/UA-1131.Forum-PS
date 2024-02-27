@@ -7,7 +7,7 @@ from chats.models import (Message, Chat)
 from chats.permissions import (ChatParticipantPermission, MessageParticipantPermission)
 from chats.serializers import (ChatSerializer, MessageSerializer, MailboxSerializer)
 
-from companies.models import CompanyAndUserRelation
+from authentication.models import CompanyAndUserRelation
 
 
 

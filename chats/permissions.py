@@ -1,6 +1,6 @@
 from rest_framework.permissions import BasePermission
 
-from companies.models import CompanyAndUserRelation
+from authentication.models import CompanyAndUserRelation
 
 
 
