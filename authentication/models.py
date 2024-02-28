@@ -52,9 +52,10 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f"{self.first_name} {self.surname} {self.email}"
-    
-    def get_user(self, *args, **kwargs):
-        return self.objects.get(**kwargs)
+        
+    @classmethod
+    def get_user(cls, *args, **kwargs):
+        return cls.objects.get(**kwargs)
     
     def get_company_type(self):
         if not self.company:
@@ -93,8 +94,10 @@ class CompanyAndUserRelation(models.Model):
     user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     company_id = models.ForeignKey(Company, on_delete=models.CASCADE)
     position = models.CharField(default=REPRESENTATIVE, max_length=30, choices=POSITION_CHOICES, blank=False, null=False)
-    def get_relation(self, u_id, c_id):
-        relation = self.objects.filter(user_id=u_id, company_id=c_id)[0]
+
+    @classmethod
+    def get_relation(cls, u_id, c_id):
+        relation = cls.objects.filter(user_id=u_id, company_id=c_id)[0]
         return relation
 
 
