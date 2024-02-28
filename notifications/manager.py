@@ -90,7 +90,7 @@ class NotificationManager:
     
     @classmethod
     def delete_notification_by_query(cls, query):
-        """Delete notification that matches to given conditions."""
+        """Delete notification that matches given conditions."""
 
         notification = cls.db.find_one_and_delete(query)
         if not notification:
