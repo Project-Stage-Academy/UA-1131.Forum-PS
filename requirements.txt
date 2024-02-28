@@ -12,3 +12,4 @@ typing_extensions==4.9.0
 tzdata==2024.1
 zxcvbn==4.4.28
 coverage==7.4.2
+django-filter==23.5
