@@ -232,5 +232,10 @@ LOGGING = {
             'level': os.environ.get("LOG_LEVEL"),
             'propagate': True,
         },
+        'email_sending':{
+            'handlers': ['file'],
+            'level': os.environ.get("LOG_LEVEL"),
+            'propagate': True,            
+        }
     },
 }

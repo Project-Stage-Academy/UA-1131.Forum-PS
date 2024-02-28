@@ -4,7 +4,7 @@ import jwt
 from django.conf import settings
 
 from django.urls import reverse
-
+import logging
 from jwt.utils import force_bytes
 from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes
@@ -46,14 +46,19 @@ class Utils:
                 'email_body': email_body,
                 'email_subject': "Password update"}
         Utils.email_sender(data)
+
     @staticmethod
     def send_password_reset_email(email, reset_link):
         subject = 'Password Reset'
         html_message = render_to_string('password_reset_email.html', {'reset_link': reset_link})
         plain_message = strip_tags(html_message)
-        email_message = EmailMultiAlternatives(subject, plain_message, settings.EMAIL_HOST_USER, [email])
-        email_message.attach_alternative(html_message, "text/html")
-        email_message.send()
+        try:
+            email_message = EmailMultiAlternatives(subject, plain_message, settings.EMAIL_HOST_USER, [email])
+            email_message.attach_alternative(html_message, "text/html")
+            email_message.send()
+        except:
+            logger = logging.getLogger('email_sending') 
+            logger.error(f'Error during email sending to {email}.')   
 
     @staticmethod
     def generate_token(email, user_id):
@@ -77,8 +82,9 @@ class Utils:
             uid = force_str(urlsafe_base64_decode(uid))
 
             return uid, email, exp
-        except jwt.ExpiredSignatureError:
+        except (jwt.ExpiredSignatureError, jwt.DecodeError):
             return None, None, None
+        
     @staticmethod
     def get_user(uid, email):
         try:

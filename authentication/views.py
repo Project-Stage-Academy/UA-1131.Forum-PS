@@ -9,7 +9,6 @@ from django.contrib.auth import authenticate, user_logged_in
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from django.http import JsonResponse
 from rest_framework import status, generics
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
@@ -101,19 +100,19 @@ class PasswordRecoveryAPIView(APIView):
         try:
             validate_email(email)
         except ValidationError:
-            return Response({'error': 'Invalid email address'}, status=400)
+            return Response({'error': 'Bad request'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             user = CustomUser.objects.get(email=email)
         except CustomUser.DoesNotExist:
-            return Response({'error': 'User with this email does not exist'}, status=404)
+            return Response({'error': 'Bad request'}, status=status.HTTP_400_BAD_REQUEST)
 
         jwt_token = Utils.generate_token(user.email, user.pk)
         reset_link = f"{settings.FRONTEND_URL}/auth/password-reset/{jwt_token}/"
         try:
             Utils.send_password_reset_email(email, reset_link)
         except Exception as e:
-            return Response({'error': 'Failed to send email'}, status=500)
+            return Response({'error': 'Failed to send email'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response({'message': 'Password reset email sent successfully'}, status=status.HTTP_200_OK)
 
 
@@ -123,11 +122,15 @@ class PasswordResetView(APIView):
 
     def post(self, request, jwt_token):
         uid, email, exp = Utils.decode_token(jwt_token)
-        user = Utils.get_user(uid, email)
-        if user is not None:
-            serializer = self.serializer_class(instance=user, data=request.data)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return JsonResponse({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
-        else:
-            return JsonResponse({'error': 'Invalid token for password reset'}, status=status.HTTP_400_BAD_REQUEST)
+        if uid and email:
+            user = Utils.get_user(uid, email)
+            if user is not None:
+                serializer = self.serializer_class(instance=user, data=request.data)
+                try:
+                    serializer.is_valid(raise_exception=True)
+                    serializer.save()
+                    return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
+                except ValidationError as e:   
+                    return Response({'error': e.message}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response({'error': 'Invalid token for password reset'}, status=status.HTTP_400_BAD_REQUEST)
