@@ -1,17 +1,16 @@
 import logging
 import jwt
-from authentication.models import CustomUser
 from authentication.permissions import CustomUserUpdatePermission
-from authentication.serializers import (UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer)
+from authentication.serializers import UserRegistrationSerializer, UserUpdateSerializer, PasswordRecoverySerializer, \
+    UserPasswordUpdateSerializer
 from django.contrib.auth import authenticate, user_logged_in, user_login_failed
 from django.conf import settings
-from django.http import JsonResponse
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from rest_framework import status, generics
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework import generics
-from rest_framework import status
+from rest_framework import generics, status
+from rest_framework.response import Response
 from rest_framework.views import APIView
 from authentication.models import CustomUser
 from authentication.permissions import CustomUserUpdatePermission, IsAuthenticated
@@ -19,6 +18,8 @@ from authentication.serializers import UserRegistrationSerializer, UserUpdateSer
 from authentication.authentications import UserAuthentication
 from forum import settings
 from forum.errors import Error
+from .utils import Utils
+from django.http import JsonResponse
 
 
 
@@ -96,3 +97,41 @@ class LogoutView(APIView):
         except Exception as e:
             print("Exception", e)
             return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+class PasswordRecoveryAPIView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        try:
+            validate_email(email)
+        except ValidationError:
+            return Response({'error': 'Invalid email address'}, status=400)
+
+        try:
+            user = CustomUser.objects.get(email=email)
+        except CustomUser.DoesNotExist:
+            return Response({'error': 'User with this email does not exist'}, status=404)
+
+        jwt_token = Utils.generate_token(user.email, user.pk)
+        reset_link = f"{settings.FRONTEND_URL}/auth/password-reset/{jwt_token}/"
+        try:
+            Utils.send_password_reset_email(email, reset_link)
+        except Exception as e:
+            return Response({'error': 'Failed to send email'}, status=500)
+        return Response({'message': 'Password reset email sent successfully'}, status=status.HTTP_200_OK)
+
+
+
+class PasswordResetView(APIView):
+    serializer_class = PasswordRecoverySerializer
+
+    def post(self, request, jwt_token):
+        uid, email, exp = Utils.decode_token(jwt_token)
+        user = Utils.get_user(uid, email)
+        if user is not None:
+            serializer = self.serializer_class(instance=user, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return JsonResponse({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
+        else:
+            return JsonResponse({'error': 'Invalid token for password reset'}, status=status.HTTP_400_BAD_REQUEST)

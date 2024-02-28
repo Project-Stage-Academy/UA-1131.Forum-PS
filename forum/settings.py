@@ -9,11 +9,14 @@ https://docs.djangoproject.com/en/5.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
+import os
+from datetime import timedelta
+from pathlib import Path
+from dotenv import load_dotenv
+from datetime import timedelta
 from datetime import timedelta
 from dotenv import load_dotenv
 import logging
-import os
-from pathlib import Path
 
 
 load_dotenv()
@@ -66,6 +69,7 @@ SIMPLE_JWT = {
     "COMPANY_ID_CLAIM": 'company_id',
     "TOKEN_USER_CLASS": 'authentication.CustomUser'
 }
+
 SIMPLE_JWT_PASSWORD_RECOVERY = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=1),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
@@ -230,4 +234,3 @@ LOGGING = {
         },
     },
 }
-
