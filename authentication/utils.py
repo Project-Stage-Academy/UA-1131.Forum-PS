@@ -64,7 +64,7 @@ class Utils:
     def generate_token(email, user_id):
         uid = urlsafe_base64_encode(force_bytes(user_id))
         refresh_token_lifetime = settings.SIMPLE_JWT_PASSWORD_RECOVERY['ACCESS_TOKEN_LIFETIME']
-        expiration_time = datetime.datetime.utcnow() + refresh_token_lifetime
+        expiration_time = datetime.datetime.now(tz=datetime.timezone.utc) + refresh_token_lifetime
         expiration_timestamp = int(expiration_time.timestamp())
         jwt_token = jwt.encode({'uid': uid, 'email': email, 'exp': expiration_timestamp},
                                settings.SIMPLE_JWT_PASSWORD_RECOVERY['SIGNING_KEY'],

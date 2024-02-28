@@ -134,3 +134,5 @@ class PasswordResetView(APIView):
                     return Response({'error': e.message}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 return Response({'error': 'Invalid token for password reset'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'error': 'Invalid token for password reset'}, status=status.HTTP_400_BAD_REQUEST)   
