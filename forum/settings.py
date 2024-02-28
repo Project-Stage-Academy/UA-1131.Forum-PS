@@ -63,7 +63,7 @@ SIMPLE_JWT = {
     "USER_ID_FIELD": 'user_id',
     "USER_ID_CLAIM": 'user_id',
     "COMPANY_ID_CLAIM": 'company_id',
-    "TOKEN_USER_CLASS": 'authentication.AuthUser'
+    "TOKEN_USER_CLASS": 'authentication.CustomUser'
 }
 
 MIDDLEWARE = [
