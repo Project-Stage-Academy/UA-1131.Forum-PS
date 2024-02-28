@@ -1,25 +1,21 @@
 import logging
 import jwt
-from authentication.permissions import CustomUserUpdatePermission
 from authentication.serializers import UserRegistrationSerializer, UserUpdateSerializer, PasswordRecoverySerializer, \
     UserPasswordUpdateSerializer
-from django.contrib.auth import authenticate, user_logged_in, user_login_failed
+from authentication.models import CustomUser
+from authentication.permissions import CustomUserUpdatePermission, IsAuthenticated
+from authentication.authentications import UserAuthentication
+from django.contrib.auth import authenticate, user_logged_in
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from django.http import JsonResponse
 from rest_framework import status, generics
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from authentication.models import CustomUser
-from authentication.permissions import CustomUserUpdatePermission, IsAuthenticated
-from authentication.serializers import UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer
-from authentication.authentications import UserAuthentication
 from forum import settings
-from forum.errors import Error
 from .utils import Utils
-from django.http import JsonResponse
 
 
 
