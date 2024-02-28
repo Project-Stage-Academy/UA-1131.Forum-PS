@@ -5,7 +5,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.utils import get_md5_hash_password
 from rest_framework_simplejwt.tokens import Token
-from .models import AuthUser, CustomUser, CompanyAndUserRelation
+from .models import  CustomUser, CompanyAndUserRelation
 from forum.errors import Error
 
 
@@ -19,7 +19,7 @@ class UserAuthentication(JWTAuthentication):
     
     """
     
-    def authenticate(self, request: Request) -> Optional[Tuple[AuthUser, Token]]:
+    def authenticate(self, request: Request) -> Optional[Tuple[CustomUser, Token]]:
         """
         This method gets and decodes token from request, then retrieves user with given in the token credentials 
         from the database and returns it as a request.user.
@@ -37,7 +37,7 @@ class UserAuthentication(JWTAuthentication):
         validated_token = self.get_validated_token(raw_token) 
         return self.get_user(validated_token), validated_token 
 
-    def get_user(self, validated_token: Token) -> AuthUser:
+    def get_user(self, validated_token: Token) -> CustomUser:
         """
         This method retrieves the user from the database. If company credentials are present in token,
         company information is added. 
