@@ -9,11 +9,11 @@ https://docs.djangoproject.com/en/5.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
-import os
 from datetime import timedelta
-from pathlib import Path
 from dotenv import load_dotenv
-from datetime import timedelta
+import logging
+import os
+from pathlib import Path
 
 
 load_dotenv()
@@ -41,21 +41,30 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     "rest_framework_simplejwt",
+    'rest_framework_simplejwt.token_blacklist',
     'rest_framework',
     'authentication',
     'password_recovery'
+    'companies',
+    'chats',
+
 ]
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'authentication.authentications.UserAuthentication',
     ),    
 }
+
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    "SIGNING_KEY": os.environ.get('SECRET_KEY') 
+    "SIGNING_KEY": os.environ.get('SECRET_KEY'),
+    "USER_ID_FIELD": 'user_id',
+    "USER_ID_CLAIM": 'user_id',
+    "COMPANY_ID_CLAIM": 'company_id',
+    "TOKEN_USER_CLASS": 'authentication.CustomUser'
 }
 SIMPLE_JWT_PASSWORD_RECOVERY = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=1),
@@ -137,7 +146,8 @@ DATABASES = {
         'NAME': os.environ.get('POSTGRES_DB'),
         'USER': os.environ.get('POSTGRES_USER'),
         'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
-        'HOST': os.environ.get('POSTGRES_DOCKER_DB'),
+        'HOST': os.environ.get('POSTGRES_HOST'),
+        'HOST': os.environ.get('POSTGRES_HOST'),
         'PORT': os.environ.get('POSTGRES_PORT')
     }
 }
@@ -193,3 +203,31 @@ EMAIL_HOST = os.environ.get("EMAIL_HOST")
 EMAIL_PORT = 587
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': os.environ.get("LOG_LEVEL"),
+            'class': 'logging.FileHandler',
+            'filename': os.environ.get("LOG_FILE"),
+            'formatter': 'verbose',
+        },
+    },
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'loggers': {
+        'account_update': {
+            'handlers': ['file'],
+            'level': os.environ.get("LOG_LEVEL"),
+            'propagate': True,
+        },
+    },
+}
+
