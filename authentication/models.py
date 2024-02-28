@@ -40,7 +40,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     is_superuser = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-
+    last_login = None
     company = None
     position = None
     is_authenticated = None
@@ -64,6 +64,15 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
             return self.company.is_startup
         except (KeyError, TypeError):
             raise NotAuthenticated(detail=Error.NO_COMPANY_TYPE.msg)
+
+    def get_email(self):
+        return self.email
+    
+    def get_full_name(self):
+        return f"{self.first_name} {self.surname}"
+
+    def get_short_name(self):
+        return self.first_name
 
     
 
@@ -99,55 +108,6 @@ class CompanyAndUserRelation(models.Model):
     def get_relation(cls, u_id, c_id):
         relation = cls.objects.filter(user_id=u_id, company_id=c_id)[0]
         return relation
-
-
-
-
-
-class AuthUser(AbstractBaseUser):
-    email = models.EmailField(max_length=100, unique=True, blank=True, null=True)
-    first_name = models.CharField(max_length=100, blank=True, null=True)
-    surname = models.CharField(max_length=100, blank=True, null=True)
-    position = models.CharField(max_length=25, blank=True, null=True)
-    company_id = models.IntegerField(blank=True, null=True)
-    brand = models.CharField(max_length=25, blank=True, null=True)
-    user_id = models.IntegerField(blank=True, null=True)
-    is_startup = models.BooleanField(blank=True, null=True)
-    is_verified = models.BooleanField(default=False)
-    is_superuser = models.BooleanField(blank=True, null=True)
-    is_authenticated = models.BooleanField(default=False)
-    error = models.CharField(max_length=150, default='')
-
-    USERNAME_FIELD = 'email'
-    
-    required_fields = ['email',
-                       'password',
-                       'first_name', 
-                       'surname', 
-                       'position', 
-                       'company_id',
-                       'user_id', 
-                       'is_startup', 
-                       'is_verified', 
-                       'is_superuser',]
-    
-    class Meta:
-        managed = False
-
-    def __str__(self): 
-        return str(self.__dict__)
-    
-    def get_email(self):
-        return self.email
-    
-    def get_full_name(self):
-        return f"{self.first_name} {self.surname}"
-
-    def get_short_name(self):
-        return self.first_name
-            
-    
-
 
 
 
