@@ -4,37 +4,47 @@ from bson import ObjectId
 from typing import List, Dict
 from datetime import date
 from pydantic import BaseModel, Field, ValidationError
-from forum.settings import DB
+from forum.settings import DB, EMAIL_HOST_USER
+from django.core.mail import EmailMessage
 
 UPDATE = 'update'
 MESSAGE = 'message'
 
+
 class AlreadyExist(Exception):
     pass
+
+
 class NotificationNotFound(Exception):
     pass
+
+
 class InvalidData(Exception):
     pass
+
+
 class AlreadyViewed(Exception):
     pass
 
 
 class Viewed(BaseModel):
-    user_id:int
-    viewed_at:str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    user_id: int
+    viewed_at: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+
 
 class Notification(BaseModel):
-    created_at:str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    concerned_users:List = Field(default=[])
-    viewed_by:List[Dict[str, Viewed]] = Field(default=[])
+    created_at: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    concerned_users: List = Field(default=[])
+    viewed_by: List[Dict[str, Viewed]] = Field(default=[])
     event_id: int
 
+
 class UpdateNotification(Notification):
-    type:str = Field(default=UPDATE, frozen=True)
+    type: str = Field(default=UPDATE, frozen=True)
+
 
 class MessageNotification(Notification):
-    type:str = Field(default=MESSAGE, frozen=True)
-    
+    type: str = Field(default=MESSAGE, frozen=True)
 
 
 class NotificationManager:
@@ -46,18 +56,18 @@ class NotificationManager:
     """
     UPDATE = 'update'
     MESSAGE = 'message'
-    
+
     db = DB['Notification']
     types = {UPDATE: UpdateNotification,
              MESSAGE: MessageNotification}
-    
+
     @classmethod
     def id_to_string(cls, document):
         """Changes _id field of returned document from ObjectId to string."""
 
         document['_id'] = str(document['_id'])
         return document
-    
+
     @classmethod
     def to_list(cls, cursor):
         """Returns the list of objects from the PyMongo cursor."""
@@ -65,8 +75,8 @@ class NotificationManager:
         res = []
         for el in cursor:
             res.append(cls.id_to_string(el))
-        return res 
-    
+        return res
+
     @classmethod
     def get_notification_by_query(cls, query):
         """Extracting the single document from database filtered by given query."""
@@ -75,7 +85,7 @@ class NotificationManager:
         if not notification:
             raise NotificationNotFound(f"Notification not found")
         return cls.id_to_string(notification)
-    
+
     @classmethod
     def get_notifications_by_query(cls, query, err=None):
         """Extracting the multiple documents from database filtered by given query."""
@@ -87,7 +97,7 @@ class NotificationManager:
         if not notifications:
             raise NotificationNotFound(f"Notifications not found, perhaps due the connection error.")
         return cls.to_list(notifications)
-    
+
     @classmethod
     def delete_notification_by_query(cls, query):
         """Delete notification that matches given conditions."""
@@ -96,7 +106,7 @@ class NotificationManager:
         if not notification:
             raise NotificationNotFound(f"Notification not found")
         return cls.id_to_string(notification)
-    
+
     @classmethod
     def delete_old_notifications(cls):
         """Deleted notifications that are 30 days older than current date."""
@@ -106,7 +116,7 @@ class NotificationManager:
         query = {"created_at": {"$lt": date}}
         res = cls.db.delete_many(query)
         return res.deleted_count
-    
+
     @classmethod
     def create_notification(cls, data):
         """
@@ -123,9 +133,9 @@ class NotificationManager:
         validated_model = model.model_validate(data)
         res = cls.db.insert_one(validated_model.model_dump())
         return str(res.inserted_id)
-    
+
     @classmethod
-    def create_notifications(cls, data:list):
+    def create_notifications(cls, data: list):
         """Creting notifications from the array of data."""
 
         res = []
@@ -136,7 +146,7 @@ class NotificationManager:
             except AlreadyExist:
                 continue
         return res
-    
+
     @classmethod
     def extract_notifications_for_user(cls, u_id):
         """Extracting all the notifications that are regarded to user."""
@@ -163,7 +173,7 @@ class NotificationManager:
         if any(viewed['user_id'] == u_id for viewed in notification.get('viewed_by', [])):
             raise AlreadyViewed(f"User with ID {u_id} already viewed this notification")
         try:
-           viewed = Viewed.model_validate({'user_id': u_id})
+            viewed = Viewed.model_validate({'user_id': u_id})
         except ValidationError as e:
             raise InvalidData(str(e))
         update = {'$push': {'viewed_by': viewed.model_dump()}}
@@ -171,16 +181,51 @@ class NotificationManager:
         if not notification:
             raise NotificationNotFound(f"Notification not found, perhaps due the connection error.")
         return cls.id_to_string(notification)
-    
 
 
+class EmailNotificationManager(NotificationManager):
 
-    
+    @staticmethod
+    def _email_sender(data: Dict):
+        email = EmailMessage(subject=data['email_subject'], body=data['email_body'], from_email=data['from_email'],
+                             to=(data['to_email'],))
+        email.send()
 
-        
+    @classmethod
+    def send_update_notification(cls, company):
+        emails_to_send = [record.investor.email for record in
+                          company.subscription_set.filter(get_email_newsletter=True)]
+        for email in emails_to_send:
+            data = {
+                'email_subject': 'Update in followed company',
+                'email_body': f'Dear user, we would like to inform you about the updates in the {company.brand}',
+                'from_email': EMAIL_HOST_USER,
+                'to _email': email
+            }
+            cls._email_sender(data)
 
+    @classmethod
+    def send_message_notification(cls, message, company):
+        emails_to_send = [record.investor.email for record in
+                          company.subscription_set.filter(get_email_newsletter=True)]
+        for email in emails_to_send:
+            data = {
+                'email_subject': f'A new message from {message.sender.user_id.first_name}',
+                'email_body': f'Dear user, we would like to inform you about a new message from {company.brand}',
+                'from_email': EMAIL_HOST_USER,
+                'to _email': email
+            }
+            cls._email_sender(data)
 
-
-    
-
-
+    @classmethod
+    def send_subscribe_notification(cls, company):
+        emails_to_send = [record.investor.email for record in
+                          company.subscription_set.filter(get_email_newsletter=True)]
+        for email in emails_to_send:
+            data = {
+                'email_subject': f'You have a new subscriber',
+                'email_body': f'Dear user, we would like to inform you about a new subscriber',
+                'from_email': EMAIL_HOST_USER,
+                'to _email': email
+            }
+            cls._email_sender(data)
