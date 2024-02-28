@@ -1,6 +1,7 @@
 from datetime import datetime
 from django.contrib.auth.models import PermissionsMixin
 from django.contrib.auth.base_user import (AbstractBaseUser, BaseUserManager)
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 from rest_framework.exceptions import PermissionDenied, NotAuthenticated
 from forum.errors import Error
@@ -17,7 +18,6 @@ class CustomUserManager(BaseUserManager):
         user:CustomUser = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.registration_date = datetime.now()
-        print(user.user_id)
         user.save()
         return user
 
@@ -40,7 +40,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     is_superuser = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-
+    last_login = None
     company = None
     position = None
     is_authenticated = None
@@ -63,6 +63,12 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
             return self.company.is_startup
         except (KeyError, TypeError):
             raise NotAuthenticated(detail=Error.NO_COMPANY_TYPE.msg)
+          
+    def get_email(self):
+        return self.email
+    
+    def get_full_name(self):
+        return f"{self.first_name} {self.surname}"
 
     
 
@@ -90,60 +96,14 @@ class CompanyAndUserRelation(models.Model):
                         (REPRESENTATIVE, "Representative"))
 
     relation_id = models.BigAutoField(primary_key=True)
-    user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    company_id = models.ForeignKey(Company, on_delete=models.CASCADE)
+    user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="company_relations")
+    company_id = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="user_relations")
     position = models.CharField(default=REPRESENTATIVE, max_length=30, choices=POSITION_CHOICES, blank=False, null=False)
-    def get_relation(self, u_id, c_id):
-        relation = self.objects.filter(user_id=u_id, company_id=c_id)[0]
-        return relation
-
-
-
-
-
-class AuthUser(AbstractBaseUser):
-    email = models.EmailField(max_length=100, unique=True, blank=True, null=True)
-    first_name = models.CharField(max_length=100, blank=True, null=True)
-    surname = models.CharField(max_length=100, blank=True, null=True)
-    position = models.CharField(max_length=25, blank=True, null=True)
-    company_id = models.IntegerField(blank=True, null=True)
-    brand = models.CharField(max_length=25, blank=True, null=True)
-    user_id = models.IntegerField(blank=True, null=True)
-    is_startup = models.BooleanField(blank=True, null=True)
-    is_verified = models.BooleanField(default=False)
-    is_superuser = models.BooleanField(blank=True, null=True)
-    is_authenticated = models.BooleanField(default=False)
-    error = models.CharField(max_length=150, default='')
-
-    USERNAME_FIELD = 'email'
     
-    required_fields = ['email',
-                       'password',
-                       'first_name', 
-                       'surname', 
-                       'position', 
-                       'company_id',
-                       'user_id', 
-                       'is_startup', 
-                       'is_verified', 
-                       'is_superuser',]
-    
-    class Meta:
-        managed = False
-
-    def __str__(self): 
-        return str(self.__dict__)
-    
-    def get_email(self):
-        return self.email
-    
-    def get_full_name(self):
-        return f"{self.first_name} {self.surname}"
-
-    def get_short_name(self):
-        return self.first_name
-            
-    
+    @classmethod
+    def get_relation(cls, u_id, c_id):
+        relation = cls.objects.filter(user_id=u_id, company_id=c_id)[0]
+        return relation 
 
 
 

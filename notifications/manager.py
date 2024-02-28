@@ -11,9 +11,11 @@ MESSAGE = 'message'
 
 class AlreadyExist(Exception):
     pass
-class NoNotificationsFound(Exception):
+class NotificationNotFound(Exception):
     pass
 class InvalidData(Exception):
+    pass
+class AlreadyViewed(Exception):
     pass
 
 
@@ -71,7 +73,7 @@ class NotificationManager:
 
         notification = cls.db.find_one(query)
         if not notification:
-            raise NoNotificationsFound(f"Notification not found")
+            raise NotificationNotFound(f"Notification not found")
         return cls.id_to_string(notification)
     
     @classmethod
@@ -80,10 +82,10 @@ class NotificationManager:
 
         err = "There is no notifications that satisfy given conditions" if not err else err
         if not cls.db.count_documents(query):
-            raise NoNotificationsFound(err)
+            raise NotificationNotFound(err)
         notifications = cls.db.find(query).sort('created_at', pymongo.ASCENDING)
         if not notifications:
-            raise NoNotificationsFound(f"Notifications not found, perhaps due the connection error.")
+            raise NotificationNotFound(f"Notifications not found, perhaps due the connection error.")
         return cls.to_list(notifications)
     
     @classmethod
@@ -92,7 +94,7 @@ class NotificationManager:
 
         notification = cls.db.find_one_and_delete(query)
         if not notification:
-            raise NoNotificationsFound(f"Notification not found")
+            raise NotificationNotFound(f"Notification not found")
         return cls.id_to_string(notification)
     
     @classmethod
@@ -159,7 +161,7 @@ class NotificationManager:
         query = {'$and': [{'_id': ObjectId(nf_id)}, {'concerned_users': u_id}]}
         notification = cls.get_notification_by_query(query)
         if any(viewed['user_id'] == u_id for viewed in notification.get('viewed_by', [])):
-            raise AlreadyExist(f"User with ID {u_id} already viewed this notification")
+            raise AlreadyViewed(f"User with ID {u_id} already viewed this notification")
         try:
            viewed = Viewed.model_validate({'user_id': u_id})
         except ValidationError as e:
@@ -167,7 +169,7 @@ class NotificationManager:
         update = {'$push': {'viewed_by': viewed.model_dump()}}
         notification = cls.db.find_one_and_update(query, update, return_document=pymongo.ReturnDocument.AFTER)
         if not notification:
-            raise NoNotificationsFound(f"Notification not found, perhaps due the connection error.")
+            raise NotificationNotFound(f"Notification not found, perhaps due the connection error.")
         return cls.id_to_string(notification)
     
 

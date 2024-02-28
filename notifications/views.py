@@ -1,7 +1,7 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from forum.settings import DB
-from .manager import NotificationManager as nm, AlreadyExist, NoNotificationsFound
+from .manager import NotificationManager as nm, AlreadyExist, NotificationNotFound
 
 cl = 'Notification'
 
@@ -31,7 +31,7 @@ class GetNotifications(APIView):
         id = data['user_id']
         try:
           res = nm.extract_notifications_for_user(id)
-        except NoNotificationsFound as e:
+        except NotificationNotFound as e:
             return Response({"error": str(e)})
         return Response(res)
     
@@ -41,7 +41,7 @@ class GetNotificationsByType(APIView):
         type = data['type']
         try:
           res = nm.extract_notifications_by_type(type)
-        except NoNotificationsFound as e:
+        except NotificationNotFound as e:
             return Response({"error": str(e)})
         return Response(res)
 
@@ -52,7 +52,7 @@ class NotificationViewed(APIView):
       u_id = data['user_id']
       try:
          notification = nm.store_viewed_user(n_id, u_id)
-      except (NoNotificationsFound, AlreadyExist) as e:
+      except (NotificationNotFound, AlreadyExist) as e:
          return Response({"error": str(e)})
       return Response(notification)
          
