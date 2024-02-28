@@ -181,10 +181,16 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'handlers': {
-        'file': {
-            'level': os.environ.get("LOG_LEVEL"),
+        'info_file': {
+            'level': os.environ.get("INFO_LOG_LEVEL"),
             'class': 'logging.FileHandler',
-            'filename': os.environ.get("LOG_FILE"),
+            'filename': os.environ.get("INFO_LOG_FILE"),
+            'formatter': 'verbose',
+        },
+        'error_file': {
+            'level': os.environ.get("ERROR_LOG_LEVEL"),
+            'class': 'logging.FileHandler',
+            'filename': os.environ.get("ERROR_LOG_FILE"),
             'formatter': 'verbose',
         },
     },
@@ -196,8 +202,13 @@ LOGGING = {
     },
     'loggers': {
         'account_update': {
-            'handlers': ['file'],
-            'level': os.environ.get("LOG_LEVEL"),
+            'handlers': ['info_file'],
+            'level': os.environ.get("INFO_LOG_LEVEL"),
+            'propagate': True,
+        },
+        'websocket_jwt_error': {
+            'handlers': ['error_file'],
+            'level': os.environ.get("ERROR_LOG_LEVEL"),
             'propagate': True,
         },
     },

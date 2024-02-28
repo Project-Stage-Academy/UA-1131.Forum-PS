@@ -1,11 +1,12 @@
-import traceback
-from urllib.parse import parse_qs
+import logging
 
 from channels.auth import AuthMiddlewareStack
 from channels.db import database_sync_to_async
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.db import close_old_connections
+from rest_framework import status
+from rest_framework.response import Response
 from jwt import decode as jwt_decode
 from jwt import InvalidSignatureError, ExpiredSignatureError, DecodeError
 
@@ -32,11 +33,13 @@ class JWTAuthMiddleware:
                 user = await self.get_logged_in_user(user_credentials)
                 scope['user'] = user
             else:
-                scope['user'] = AnonymousUser()
-        except (InvalidSignatureError, KeyError, ExpiredSignatureError, DecodeError):
-            traceback.print_exc()
-        except:
-            scope['user'] = AnonymousUser()
+                logger = logging.getLogger('websocket_jwt_error')
+                logger.error("Troubles with provided jwt token")
+                return Response({'error': "Troubles with provided jwt token"}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger = logging.getLogger('websocket_jwt_error')
+            logger.error(e)
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return await self.app(scope, receive, send)
 
     def get_payload(self, jwt_token):
