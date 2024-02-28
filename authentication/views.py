@@ -69,7 +69,7 @@ class LoginView(APIView):
                 'email': email
             })
         else:
-            return Response({'error':'invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'error':'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class UserUpdateView(generics.RetrieveUpdateAPIView):
