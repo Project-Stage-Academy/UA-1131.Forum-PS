@@ -59,14 +59,17 @@ class LoginView(APIView):
         email = request.data.get('email')
         password = request.data.get('password')
         user = authenticate(request=request, email=email, password=password)
-        user_logged_in.send(sender=user.__class__, request=request, user=user)
-        refresh = RefreshToken.for_user(user)
-        return Response({
-            'refresh': str(refresh),
-            'access': str(refresh.access_token),
-            'user_id': user.user_id,
-            'email': email
-        })
+        if user:
+            user_logged_in.send(sender=user.__class__, request=request, user=user)
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+                'user_id': user.user_id,
+                'email': email
+            })
+        else:
+            return Response({'error':'invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class UserUpdateView(generics.RetrieveUpdateAPIView):
