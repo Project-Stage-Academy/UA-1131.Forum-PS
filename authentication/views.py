@@ -21,17 +21,16 @@ from forum import settings
 from forum.errors import Error
 
 
-
 class UserRegistrationView(APIView):
 
     def post(self, request):
         print(request.user)
         serializer = UserRegistrationSerializer(data=request.data)
         if serializer.is_valid():
-          CustomUser.objects.create_user(**serializer.validated_data)
-          return Response(serializer.data, status=status.HTTP_201_CREATED)
+            CustomUser.objects.create_user(**serializer.validated_data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
-          return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class VerifyEmail(APIView):
@@ -54,7 +53,7 @@ class VerifyEmail(APIView):
 
 
 class LoginView(APIView):
-    
+
     def post(self, request):
         email = request.data.get('email')
         password = request.data.get('password')

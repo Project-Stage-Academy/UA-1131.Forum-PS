@@ -91,7 +91,7 @@ class CompanyFilterTestCase(APITestCase):
         Set up the test by creating multiple companies with different brands and defining the URL for the companies list
          endpoint.
         """
-        self.url = reverse('companies-list-create')  # Ensure the correctness of the URL name for your endpoint
+        self.url = reverse('companies-list-create')
 
         # Create multiple companies with different brands
         Company.objects.create(brand='test_brand1')
@@ -108,6 +108,5 @@ class CompanyFilterTestCase(APITestCase):
         # Assert that the response status code is 200 OK
         self.assertEqual(response.status_code, 200)
 
-        # Assert that the response contains only companies with the brand 'test_brand1'
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['brand'], 'test_brand1')
