@@ -7,6 +7,9 @@ from pydantic import BaseModel, Field, ValidationError
 from forum.settings import DB, EMAIL_HOST_USER
 from django.core.mail import EmailMessage
 
+UPDATE = 'update'
+MESSAGE = 'message'
+
 
 class AlreadyExist(Exception):
     pass
