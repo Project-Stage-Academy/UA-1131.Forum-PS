@@ -6,7 +6,7 @@ from authentication.models import CustomUser, UserLoginActivity
 
 class CustomAdmin(UserAdmin):
     model = CustomUser
-    list_display = ["id",
+    list_display = ["user_id",
                     'email', 'first_name', 'surname', "phone_number",
                     'is_superuser', 'is_verified']
     readonly_fields = ("registration_date",)
@@ -15,7 +15,7 @@ class CustomAdmin(UserAdmin):
         (None, {'fields': ('email', 'password')}),
         ('Personal Info', {'fields': ('first_name', 'surname', "phone_number")}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'is_verified')}),
-        ('Important dates', {'fields': ('last_login', "registration_date")}),
+        ('Important dates', {'fields': ("registration_date",)}),
     )
     add_fieldsets = (
         (None, {

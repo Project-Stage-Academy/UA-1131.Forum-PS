@@ -1,22 +1,19 @@
 import os
-from redis.utils import from_url
-
-from datetime import datetime
 from bson import ObjectId
-from rest_framework import status
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from pymongo import MongoClient
 from pydantic import ValidationError
-
+from datetime import datetime
+from redis.utils import from_url
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from authentication.models import CustomUser
 from .schemas import Conversation
+
 
 client = MongoClient(os.environ.get("MONGODB_HOST"))
 collections = client.livechats.conversations
 
-
-# Create your views here.
 
 class StartConversation(APIView):
     """ Creating conversation, if it doesn`t exists, after this pk or conversation ll be used in web socket link"""
@@ -36,8 +33,8 @@ class StartConversation(APIView):
 
         existing_conversation = collections.find_one({
             "$or": [
-                {"initiator_id": current_user.id, "receiver_id": participant.id},
-                {"initiator_id": participant.id, "receiver_id": current_user.id}
+                {"initiator_id": current_user.user_id, "receiver_id": participant.user_id},
+                {"initiator_id": participant.user_id, "receiver_id": current_user.user_id}
             ]
         })
 
@@ -46,8 +43,8 @@ class StartConversation(APIView):
             return Response({'conversation': existing_conversation})
         else:
             new_conversation = {
-                "initiator_id": current_user.id,
-                "receiver_id": participant.id,
+                "initiator_id": current_user.user_id,
+                "receiver_id": participant.user_id,
                 "start_time": datetime.now(),
                 "messages": []
             }
@@ -78,8 +75,8 @@ class ConversationsList(APIView):
         user = request.user
         conversation_list = collections.find({
             "$or": [
-                {"initiator_id": user.id},
-                {"receiver_id": user.id},
+                {"initiator_id": user.user_id},
+                {"receiver_id": user.user_id},
             ]
         }
         ).sort([("_id", -1)]).limit(5)
@@ -95,10 +92,15 @@ class ConversationsList(APIView):
 
 
 class EmergencyConversationRestart(APIView):
+    """
+    If its needed this view will restart chat by conversation id, if authenticated user is a participant in this chat.
+    Messages are stored in redis, due to messages lifetime
+    """
+
     def post(self, request, convo_id):
         if ObjectId.is_valid(convo_id):
             existing_conversation = collections.find_one({"_id": ObjectId(convo_id)})
-            if request.user.id in [existing_conversation.get("initiator_id"), existing_conversation.get("receiver_id")]:
+            if request.user.user_id in [existing_conversation.get("initiator_id"), existing_conversation.get("receiver_id")]:
                 redis = from_url(
                     os.environ.get("REDIS_HOST"), encoding="utf-8", decode_responses=True
                 )

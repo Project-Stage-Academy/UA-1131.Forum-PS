@@ -9,9 +9,9 @@ https://docs.djangoproject.com/en/5.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
+import os
 from datetime import timedelta
 from dotenv import load_dotenv
-import os
 from pathlib import Path
 
 load_dotenv()
@@ -45,7 +45,7 @@ INSTALLED_APPS = [
     'authentication',
     'companies',
     'chats',
-    'livechatsnew',
+    'livechats',
 
     'corsheaders',
     'channels',
@@ -54,17 +54,18 @@ INSTALLED_APPS = [
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-
-        'rest_framework.authentication.SessionAuthentication',
-    ),    
-
+        'authentication.authentications.UserAuthentication',
+    ),
 }
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    "SIGNING_KEY": os.environ.get('SECRET_KEY')
+    "SIGNING_KEY": os.environ.get('SECRET_KEY'),
+    "USER_ID_FIELD": 'user_id',
+    "USER_ID_CLAIM": 'user_id',
+    "COMPANY_ID_CLAIM": 'company_id',
+    "TOKEN_USER_CLASS": 'authentication.CustomUser'
 }
 
 MIDDLEWARE = [
@@ -131,11 +132,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    "SIGNING_KEY": os.environ.get('SECRET_KEY')
-}
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
@@ -181,10 +177,16 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'handlers': {
-        'file': {
-            'level': os.environ.get("LOG_LEVEL"),
+        'info_file': {
+            'level': os.environ.get("INFO_LOG_LEVEL"),
             'class': 'logging.FileHandler',
-            'filename': os.environ.get("LOG_FILE"),
+            'filename': os.environ.get("INFO_LOG_FILE"),
+            'formatter': 'verbose',
+        },
+        'error_file': {
+            'level': os.environ.get("ERROR_LOG_LEVEL"),
+            'class': 'logging.FileHandler',
+            'filename': os.environ.get("ERROR_LOG_FILE"),
             'formatter': 'verbose',
         },
     },
@@ -196,8 +198,13 @@ LOGGING = {
     },
     'loggers': {
         'account_update': {
-            'handlers': ['file'],
-            'level': os.environ.get("LOG_LEVEL"),
+            'handlers': ['info_file'],
+            'level': os.environ.get("INFO_LOG_LEVEL"),
+            'propagate': True,
+        },
+        'websocket_jwt_error': {
+            'handlers': ['error_file'],
+            'level': os.environ.get("ERROR_LOG_LEVEL"),
             'propagate': True,
         },
     },

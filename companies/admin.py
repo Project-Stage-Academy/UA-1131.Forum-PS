@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Company, CompanyAndUserRelation
+from authentication.models import Company, CompanyAndUserRelation
 
 # Register your models here.
 

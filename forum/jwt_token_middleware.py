@@ -1,14 +1,12 @@
-import traceback
-from urllib.parse import parse_qs
-
+import logging
 from channels.auth import AuthMiddlewareStack
-from channels.db import database_sync_to_async
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
+from channels.db import database_sync_to_async
 from django.db import close_old_connections
 from jwt import decode as jwt_decode
-from jwt import InvalidSignatureError, ExpiredSignatureError, DecodeError
-
+from rest_framework import status
+from rest_framework.response import Response
 from authentication.models import CustomUser
 
 
@@ -25,18 +23,20 @@ class JWTAuthMiddleware:
             token_header = headers.get(b'authorization', b'').decode("utf-8")
             if not token_header.startswith("Bearer "):
                 raise ValueError("Invalid Authorization header format")
-            jwt_token = token_header.split("Bearer ")[1]
+            jwt_token = token_header.split("Bearer ")[-1]
             if jwt_token:
                 jwt_payload = self.get_payload(jwt_token)
                 user_credentials = self.get_user_credentials(jwt_payload)
                 user = await self.get_logged_in_user(user_credentials)
                 scope['user'] = user
             else:
-                scope['user'] = AnonymousUser()
-        except (InvalidSignatureError, KeyError, ExpiredSignatureError, DecodeError):
-            traceback.print_exc()
-        except:
-            scope['user'] = AnonymousUser()
+                logger = logging.getLogger('websocket_jwt_error')
+                logger.error("Troubles with provided jwt token")
+                return Response({'error': "Troubles with provided jwt token"}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger = logging.getLogger('websocket_jwt_error')
+            logger.error(e)
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return await self.app(scope, receive, send)
 
     def get_payload(self, jwt_token):
@@ -62,7 +62,7 @@ class JWTAuthMiddleware:
     @database_sync_to_async
     def get_user(self, user_id):
         try:
-            return CustomUser.objects.get(pk=user_id)
+            return CustomUser.objects.get(user_id=user_id)
         except CustomUser.DoesNotExist:
             return AnonymousUser()
 
