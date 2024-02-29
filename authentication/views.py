@@ -43,14 +43,13 @@ class LoginView(APIView):
         email = request.data.get('email')
         password = request.data.get('password')
         user = CustomUser.get_user(email=email)
+        if not user:
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
         check = user.check_password(password)
         if not check:
             return Response({'error': 'Wrong password'}, status=status.HTTP_401_UNAUTHORIZED)
-        if not user:
-            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
-        else:
-            refresh = RefreshToken.for_user(user)
-            return Response({
+        refresh = RefreshToken.for_user(user)
+        return Response({
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
                 'user_id': user.user_id,
