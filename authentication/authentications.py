@@ -5,7 +5,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.utils import get_md5_hash_password
 from rest_framework_simplejwt.tokens import Token
-from .models import  CustomUser, CompanyAndUserRelation
+from .models import CustomUser, CompanyAndUserRelation
 from forum.errors import Error
 
 
