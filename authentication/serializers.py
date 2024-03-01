@@ -48,7 +48,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer, CustomValidationSe
         return attrs
 
     def create(self,validated_data):
-        user = CustomUser.objects.create_user(validated_data)
+        user = CustomUser.objects.create_user(**validated_data)
         tokens = RefreshToken.for_user(user)
         access_token = str(tokens.access_token)
         Utils.send_verification_email(get_current_site(self.context['request']).domain, user, access_token)
