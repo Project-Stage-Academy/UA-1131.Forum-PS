@@ -1,8 +1,6 @@
 from django.db import models
 from rest_framework.exceptions import ValidationError
-
-
-from authentication.models import CompanyAndUserRelation
+from ..authentication.models import CompanyAndUserRelation
 
 
 # Create your models here.

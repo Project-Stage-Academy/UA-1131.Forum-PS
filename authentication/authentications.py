@@ -26,7 +26,6 @@ class UserAuthentication(JWTAuthentication):
 
         """
         header = self.get_header(request) 
-
         if header is None:
             return None
 

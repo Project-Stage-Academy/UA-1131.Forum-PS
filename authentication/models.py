@@ -53,8 +53,9 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return f"{self.first_name} {self.surname} {self.email}"
     
-    def get_user(self, *args, **kwargs):
-        return self.objects.get(**kwargs)
+    @classmethod
+    def get_user(cls, *args, **kwargs):
+        return cls.objects.get(**kwargs)
     
     def get_company_type(self):
         if not self.company:

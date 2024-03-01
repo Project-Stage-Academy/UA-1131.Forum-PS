@@ -1,24 +1,17 @@
 import logging
 import jwt
-from authentication.models import CustomUser
-from authentication.permissions import CustomUserUpdatePermission
-from authentication.serializers import (UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer)
-from django.contrib.auth import authenticate, user_logged_in, user_login_failed
 from django.conf import settings
-from django.http import JsonResponse
 from rest_framework import status, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework import generics
-from rest_framework import status
-from rest_framework.views import APIView
-from authentication.models import CustomUser
-from authentication.permissions import CustomUserUpdatePermission, IsAuthenticated
-from authentication.serializers import UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer
-from authentication.authentications import UserAuthentication
-from forum import settings
-from forum.errors import Error
+from .models import CustomUser
+from .permissions import CustomUserUpdatePermission, IsAuthenticated
+from .serializers import UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer
+from .authentications import UserAuthentication
+from ..notifications.decorators import add_notifications_for_user
+from ..forum import settings
+
 
 
 
@@ -55,11 +48,14 @@ class VerifyEmail(APIView):
 
 class LoginView(APIView):
     
+    @add_notifications_for_user
     def post(self, request):
         email = request.data.get('email')
         password = request.data.get('password')
-        user = authenticate(request=request, email=email, password=password)
-        user_logged_in.send(sender=user.__class__, request=request, user=user)
+        user = CustomUser.get_user(email=email)
+        check = user.check_password(password)
+        if not check:
+            return Response("wrong password")
         refresh = RefreshToken.for_user(user)
         return Response({
             'refresh': str(refresh),
@@ -67,6 +63,16 @@ class LoginView(APIView):
             'user_id': user.user_id,
             'email': email
         })
+    
+class RelateUserToCompany(APIView):
+    """Binding user to company and insert binded comany's id into token."""
+    def post(self, request):
+        company_id = request.data['company_id']
+        user_id = request.user.user_id
+        payload = {'user_id': user_id, 'company_id': company_id}
+        token = jwt.encode(payload, settings.SECRET_KEY)
+        return Response({'access': f"Bearer {token}"})
+
 
 
 class UserUpdateView(generics.RetrieveUpdateAPIView):

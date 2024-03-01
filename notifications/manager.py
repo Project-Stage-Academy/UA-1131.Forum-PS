@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta
+from typing import List, Dict
 import pymongo
 from bson import ObjectId
-from typing import List, Dict
-from datetime import date
 from pydantic import BaseModel, Field, ValidationError
-from forum.settings import DB, EMAIL_HOST_USER
 from django.core.mail import EmailMessage
+from ..forum.settings import DB, EMAIL_HOST_USER
+
 
 UPDATE = 'update'
 MESSAGE = 'message'
@@ -28,22 +28,28 @@ class AlreadyViewed(Exception):
 
 
 class Viewed(BaseModel):
+    """Model for storing users that has viewed the notification."""
     user_id: int
-    viewed_at: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    viewed_at: str = Field(
+        default_factory=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
 
 class Notification(BaseModel):
-    created_at: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    """Parent class for notification classes."""
+    created_at: str = Field(
+        default_factory=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     concerned_users: List = Field(default=[])
     viewed_by: List[Dict[str, Viewed]] = Field(default=[])
     event_id: int
 
 
 class UpdateNotification(Notification):
+    """Model for update notification"""
     type: str = Field(default=UPDATE, frozen=True)
 
 
 class MessageNotification(Notification):
+    """Model for message notification"""
     type: str = Field(default=MESSAGE, frozen=True)
 
 
@@ -83,7 +89,7 @@ class NotificationManager:
 
         notification = cls.db.find_one(query)
         if not notification:
-            raise NotificationNotFound(f"Notification not found")
+            raise NotificationNotFound("Notification not found")
         return cls.id_to_string(notification)
 
     @classmethod
@@ -93,9 +99,11 @@ class NotificationManager:
         err = "There is no notifications that satisfy given conditions" if not err else err
         if not cls.db.count_documents(query):
             raise NotificationNotFound(err)
-        notifications = cls.db.find(query).sort('created_at', pymongo.ASCENDING)
+        notifications = cls.db.find(query).sort(
+            'created_at', pymongo.ASCENDING)
         if not notifications:
-            raise NotificationNotFound(f"Notifications not found, perhaps due the connection error.")
+            raise NotificationNotFound(
+                "Notifications not found, perhaps due to the connection error.")
         return cls.to_list(notifications)
 
     @classmethod
@@ -104,7 +112,7 @@ class NotificationManager:
 
         notification = cls.db.find_one_and_delete(query)
         if not notification:
-            raise NotificationNotFound(f"Notification not found")
+            raise NotificationNotFound("Notification not found")
         return cls.id_to_string(notification)
 
     @classmethod
@@ -124,12 +132,13 @@ class NotificationManager:
         the notification's creation (for instance update_id or chat_id) and other defined in the model
         information. Data should include type and event_id. 
         """
-        type = data['type']
-        model = cls.types[type]
+        type_ = data['type']
+        model = cls.types[type_]
         event_id = data['event_id']
         query = {'event_id': event_id}
         if cls.db.count_documents(query):
-            raise AlreadyExist(f"Notification for {type} with EVENT_ID {event_id} already exists.")
+            raise AlreadyExist(
+                f"Notification for {type} with EVENT_ID {event_id} already exists.")
         validated_model = model.model_validate(data)
         res = cls.db.insert_one(validated_model.model_dump())
         return str(res.inserted_id)
@@ -141,8 +150,8 @@ class NotificationManager:
         res = []
         for nf in data:
             try:
-                id = cls.create_notification(nf)
-                res.append(id)
+                id_ = cls.create_notification(nf)
+                res.append(id_)
             except AlreadyExist:
                 continue
         return res
@@ -171,16 +180,22 @@ class NotificationManager:
         query = {'$and': [{'_id': ObjectId(nf_id)}, {'concerned_users': u_id}]}
         notification = cls.get_notification_by_query(query)
         if any(viewed['user_id'] == u_id for viewed in notification.get('viewed_by', [])):
-            raise AlreadyViewed(f"User with ID {u_id} already viewed this notification")
+            raise AlreadyViewed(
+                f"User with ID {u_id} already has viewed this notification")
         try:
             viewed = Viewed.model_validate({'user_id': u_id})
         except ValidationError as e:
-            raise InvalidData(str(e))
+            raise InvalidData(str(e)) from e
         update = {'$push': {'viewed_by': viewed.model_dump()}}
-        notification = cls.db.find_one_and_update(query, update, return_document=pymongo.ReturnDocument.AFTER)
+        notification = cls.db.find_one_and_update(
+            query, update, return_document=pymongo.ReturnDocument.AFTER)
         if not notification:
-            raise NotificationNotFound(f"Notification not found, perhaps due the connection error.")
+            raise NotificationNotFound(
+                "Notification not found, perhaps due the connection error.")
         return cls.id_to_string(notification)
+
+
+
 
 
 class EmailNotificationManager(NotificationManager):
