@@ -211,8 +211,3 @@ LOGGING = {
 }
 
 CELERY_BROKER_URL = os.environ.get("REDIS_URL")
-
-# try:
-#     from .local_settings import *
-# except ImportError:
-#     pass
