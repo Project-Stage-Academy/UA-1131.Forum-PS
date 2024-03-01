@@ -13,6 +13,7 @@ services:
       - "8000:8000"
     depends_on:
       - db
+      - redis
     environment:
       - SECRET_KEY=${SECRET_KEY}
       - POSTGRES_HOST=${POSTGRES_HOST}
@@ -20,10 +21,19 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - EMAIL_HOST=${EMAIL_HOST}
+      - EMAIL_HOST_USER=${EMAIL_HOST_USER}
+      - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - LOG_FILE=${LOG_FILE}
+      - MONGO_URL=${MONGO_URL}
+      - MONGO_DATABASE=${MONGO_DATABASE}
+      - REDIS_URL=${REDIS_URL}
+
   db:
     image: postgres:14
     container_name: db
-    restart: always
+    restart: on-failure
     volumes:
       - ./configs/postgres:/docker-entrypoint-initdb.d
       -  db_data:/var/lib/postgresql/data
@@ -47,6 +57,39 @@ services:
       - pgadmin_data:/var/lib/pgadmin/data
     depends_on:
       - db
+
+  mongo:
+   image: mongo:latest
+   container_name: mongo
+   restart: always
+   environment:
+     MONGO_INITDB_DATABASE: db_mongo
+   ports:
+     - "27017:27017"
+
+  redis:
+     image: redis:latest
+     container_name: redis
+     command: redis-server
+     volumes: 
+      - redis_data:/data
+     ports:
+       - "6379:6379"
+
+  celery:
+     build: .
+     image: celery:latest
+     container_name: celery
+     command: celery -A forum.celery worker -l info
+     volumes:
+       - .:/usr/src
+     links:
+       - redis
+     depends_on:
+       - redis
+       - api-dev
+
 volumes:
   db_data:
   pgadmin_data:
+  redis_data:

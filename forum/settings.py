@@ -105,12 +105,10 @@ DATABASES = {
         'NAME': os.environ.get('POSTGRES_DB'),
         'USER': os.environ.get('POSTGRES_USER'),
         'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
-        'HOST': os.environ.get('POSTGRES_HOST'),
-        'HOST': os.environ.get('POSTGRES_HOST'),
+        'HOST': os.environ.get('POSTGRES_DOCKER_DB'),
         'PORT': os.environ.get('POSTGRES_PORT')
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -188,3 +186,9 @@ LOGGING = {
     },
 }
 
+CELERY_BROKER_URL = os.environ.get("REDIS_URL")
+
+# try:
+#     from .local_settings import *
+# except ImportError:
+#     pass
