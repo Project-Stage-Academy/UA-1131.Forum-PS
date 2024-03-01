@@ -56,6 +56,15 @@ class LoginView(APIView):
                 'email': email
             })
 
+class RelateUserToCompany(APIView):
+    """Binding user to company and inserting linked company's id into token."""
+    permission_classes = (IsAuthenticated,)
+    
+    def post(self, request):
+        access_token = CustomUser.generate_company_related_token(request)
+        return Response({'access': f"Bearer {access_token}"})
+    
+
 
 class UserUpdateView(generics.RetrieveUpdateAPIView):
     queryset = CustomUser.objects.all()
