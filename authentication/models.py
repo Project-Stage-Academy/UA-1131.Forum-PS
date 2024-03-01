@@ -55,6 +55,17 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     @classmethod
     def get_user(cls, *args, **kwargs):
         return cls.objects.get(**kwargs)
+
+    @classmethod
+    def generate_company_related_token(cls, request):
+        try:
+            raw_token:str = request.headers.get('Authorization')
+            access_token = raw_token.split(' ')[1]
+            decoded_token = AccessToken(access_token)
+            decoded_token.payload['company_id'] = request.data['company_id']
+            return str(decoded_token)
+        except TokenError as e:
+            raise e
     
     def get_company_type(self):
         if not self.company:
