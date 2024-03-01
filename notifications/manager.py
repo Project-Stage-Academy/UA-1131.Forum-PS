@@ -4,7 +4,7 @@ import pymongo
 from bson import ObjectId
 from pydantic import BaseModel, Field, ValidationError
 from django.core.mail import EmailMessage
-from ..forum.settings import DB, EMAIL_HOST_USER
+from forum.settings import DB, EMAIL_HOST_USER
 
 
 UPDATE = 'update'

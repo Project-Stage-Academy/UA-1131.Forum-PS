@@ -49,3 +49,5 @@ def create_notification_from_view(type_=None):
         return wrapper
   
     return decorator
+
+

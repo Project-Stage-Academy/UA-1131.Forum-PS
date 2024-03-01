@@ -9,8 +9,8 @@ from .models import CustomUser
 from .permissions import CustomUserUpdatePermission, IsAuthenticated
 from .serializers import UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer
 from .authentications import UserAuthentication
-from ..notifications.decorators import add_notifications_for_user
-from ..forum import settings
+from notifications.decorators import add_notifications_for_user
+from forum import settings
 
 
 
@@ -48,7 +48,7 @@ class VerifyEmail(APIView):
 
 class LoginView(APIView):
     
-    @add_notifications_for_user
+    @add_notifications_for_user()
     def post(self, request):
         email = request.data.get('email')
         password = request.data.get('password')

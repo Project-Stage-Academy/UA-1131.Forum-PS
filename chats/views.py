@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from ..authentication.models import CompanyAndUserRelation
+from authentication.models import CompanyAndUserRelation
 from .models import (Message, Chat)
 from .permissions import (ChatParticipantPermission, MessageParticipantPermission)
 from .serializers import (ChatSerializer, MessageSerializer, MailboxSerializer)
