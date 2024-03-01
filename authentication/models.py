@@ -105,7 +105,7 @@ class CompanyAndUserRelation(models.Model):
 
     @classmethod
     def get_relation(cls, u_id, c_id):
-        relation = cls.objects.filter(user_id=u_id, company_id=c_id)[0]
+        relation = cls.objects.filter(user_id=u_id, company_id=c_id).first()
         return relation
 
 
