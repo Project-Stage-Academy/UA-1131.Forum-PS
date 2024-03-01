@@ -25,7 +25,7 @@ class VerifyEmail(APIView):
         token = request.GET.get('token')
         try:
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
-            user = CustomUser.objects.get(id=payload['user_id'])
+            user = CustomUser.objects.get(user_id=payload['user_id'])
             user.is_verified = True
             user.save()
             logger.info(
