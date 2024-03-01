@@ -17,7 +17,6 @@ class CustomUserManager(BaseUserManager):
         user:CustomUser = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.registration_date = datetime.now()
-        print(user.user_id)
         user.save()
         return user
 

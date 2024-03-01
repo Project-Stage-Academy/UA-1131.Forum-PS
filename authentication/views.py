@@ -1,37 +1,21 @@
 import logging
 import jwt
-from authentication.models import CustomUser
-from authentication.permissions import CustomUserUpdatePermission
-from authentication.serializers import (UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer)
-from django.contrib.auth import authenticate, user_logged_in, user_login_failed
 from django.conf import settings
-from django.http import JsonResponse
-from rest_framework import status, generics
-from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.views import APIView
-from authentication.models import CustomUser
-from authentication.permissions import CustomUserUpdatePermission, IsAuthenticated
-from authentication.serializers import UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer
 from authentication.authentications import UserAuthentication
+from authentication.models import CustomUser
+from authentication.permissions import (CustomUserUpdatePermission, IsAuthenticated)
+from authentication.serializers import (UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer)
 from forum import settings
-from forum.errors import Error
 
 
-
-class UserRegistrationView(APIView):
-
-    def post(self, request):
-        print(request.user)
-        serializer = UserRegistrationSerializer(data=request.data)
-        if serializer.is_valid():
-          CustomUser.objects.create_user(**serializer.validated_data)
-          return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-          return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class UserRegistrationView(generics.CreateAPIView):
+    model = CustomUser
+    serializer_class = UserRegistrationSerializer
 
 
 class VerifyEmail(APIView):
@@ -54,22 +38,23 @@ class VerifyEmail(APIView):
 
 
 class LoginView(APIView):
-    
+
     def post(self, request):
         email = request.data.get('email')
         password = request.data.get('password')
-        user = authenticate(request=request, email=email, password=password)
-        if user:
-            user_logged_in.send(sender=user.__class__, request=request, user=user)
-            refresh = RefreshToken.for_user(user)
-            return Response({
+        user = CustomUser.get_user(email=email)
+        if not user:
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+        check = user.check_password(password)
+        if not check:
+            return Response({'error': 'Wrong password'}, status=status.HTTP_401_UNAUTHORIZED)
+        refresh = RefreshToken.for_user(user)
+        return Response({
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
                 'user_id': user.user_id,
                 'email': email
             })
-        else:
-            return Response({'error':'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class UserUpdateView(generics.RetrieveUpdateAPIView):

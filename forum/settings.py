@@ -9,12 +9,10 @@ https://docs.djangoproject.com/en/5.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
+import os
 from datetime import timedelta
 from dotenv import load_dotenv
-import logging
-import os
 from pathlib import Path
-
 
 load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -29,11 +27,12 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -46,15 +45,18 @@ INSTALLED_APPS = [
     'authentication',
     'companies',
     'chats',
+    'livechats',
+
+    'corsheaders',
+    'channels',
 
 ]
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'authentication.authentications.UserAuthentication',
-    ),    
+    ),
 }
-
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
@@ -69,6 +71,7 @@ SIMPLE_JWT = {
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -95,7 +98,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'forum.wsgi.application'
-
+ASGI_APPLICATION = 'forum.asgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
@@ -107,7 +110,8 @@ DATABASES = {
         'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
         'HOST': os.environ.get('POSTGRES_DOCKER_DB'),
         'PORT': os.environ.get('POSTGRES_PORT')
-    }
+    },
+
 }
 
 # Password validation
@@ -127,7 +131,6 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
@@ -159,15 +162,31 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
 
+CORS_ALLOW_ALL_ORIGINS = True
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
 
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'handlers': {
-        'file': {
-            'level': os.environ.get("LOG_LEVEL"),
+        'info_file': {
+            'level': os.environ.get("INFO_LOG_LEVEL"),
             'class': 'logging.FileHandler',
-            'filename': os.environ.get("LOG_FILE"),
+            'filename': os.environ.get("INFO_LOG_FILE"),
+            'formatter': 'verbose',
+        },
+        'error_file': {
+            'level': os.environ.get("ERROR_LOG_LEVEL"),
+            'class': 'logging.FileHandler',
+            'filename': os.environ.get("ERROR_LOG_FILE"),
             'formatter': 'verbose',
         },
     },
@@ -179,8 +198,13 @@ LOGGING = {
     },
     'loggers': {
         'account_update': {
-            'handlers': ['file'],
-            'level': os.environ.get("LOG_LEVEL"),
+            'handlers': ['info_file'],
+            'level': os.environ.get("INFO_LOG_LEVEL"),
+            'propagate': True,
+        },
+        'websocket_jwt_error': {
+            'handlers': ['error_file'],
+            'level': os.environ.get("ERROR_LOG_LEVEL"),
             'propagate': True,
         },
     },
