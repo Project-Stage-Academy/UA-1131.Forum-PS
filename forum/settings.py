@@ -42,19 +42,15 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     'rest_framework_simplejwt.token_blacklist',
     'rest_framework',
-    'django_filters',
-
     'authentication',
     'companies',
     'chats',
-<<<<<<< HEAD
-    'search',
-=======
     'livechats',
+    'search',
 
     'corsheaders',
     'channels',
->>>>>>> develop
+    'django_filters',
 
 ]
 
