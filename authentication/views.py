@@ -1,26 +1,19 @@
 import logging
 import jwt
-from authentication.models import CustomUser
-from authentication.permissions import CustomUserUpdatePermission
-from authentication.serializers import (UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer)
-from django.contrib.auth import authenticate, user_logged_in, user_login_failed
 from django.conf import settings
-from django.http import JsonResponse
-from rest_framework import status, generics
-from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.views import APIView
-from authentication.models import CustomUser
-from authentication.permissions import CustomUserUpdatePermission, IsAuthenticated
-from authentication.serializers import UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer
 from authentication.authentications import UserAuthentication
+from authentication.models import CustomUser
+from authentication.permissions import (CustomUserUpdatePermission, IsAuthenticated)
+from authentication.serializers import (UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer)
 from forum import settings
-from forum.errors import Error
 
 
+<<<<<<< HEAD
 class UserRegistrationView(APIView):
 
     def post(self, request):
@@ -31,6 +24,11 @@ class UserRegistrationView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+=======
+class UserRegistrationView(generics.CreateAPIView):
+    model = CustomUser
+    serializer_class = UserRegistrationSerializer
+>>>>>>> develop
 
 
 class VerifyEmail(APIView):
@@ -40,7 +38,7 @@ class VerifyEmail(APIView):
         token = request.GET.get('token')
         try:
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
-            user = CustomUser.objects.get(id=payload['user_id'])
+            user = CustomUser.objects.get(user_id=payload['user_id'])
             user.is_verified = True
             user.save()
             logger.info(
@@ -57,15 +55,19 @@ class LoginView(APIView):
     def post(self, request):
         email = request.data.get('email')
         password = request.data.get('password')
-        user = authenticate(request=request, email=email, password=password)
-        user_logged_in.send(sender=user.__class__, request=request, user=user)
+        user = CustomUser.get_user(email=email)
+        if not user:
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+        check = user.check_password(password)
+        if not check:
+            return Response({'error': 'Wrong password'}, status=status.HTTP_401_UNAUTHORIZED)
         refresh = RefreshToken.for_user(user)
         return Response({
-            'refresh': str(refresh),
-            'access': str(refresh.access_token),
-            'user_id': user.user_id,
-            'email': email
-        })
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+                'user_id': user.user_id,
+                'email': email
+            })
 
 
 class UserUpdateView(generics.RetrieveUpdateAPIView):
@@ -93,5 +95,4 @@ class LogoutView(APIView):
             token.blacklist()
             return Response(status=status.HTTP_205_RESET_CONTENT)
         except Exception as e:
-            print("Exception", e)
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)

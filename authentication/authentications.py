@@ -53,6 +53,7 @@ class UserAuthentication(JWTAuthentication):
                 raise NotAuthenticated(detail=Error.USER_NOT_FOUND.msg, status_code=Error.USER_NOT_FOUND.status)
         else:
             try:
+<<<<<<< HEAD
                 user_id = validated_token[api_settings.USER_ID_CLAIM]
                 company_id = validated_token[api_settings.COMPANY_ID_CLAIM]
                 relation = CompanyAndUserRelation.get_relation(user_id, company_id)
@@ -63,6 +64,17 @@ class UserAuthentication(JWTAuthentication):
                 raise NotAuthenticated(detail=Error.NO_USER_OR_COMPANY_ID.msg)
             except CompanyAndUserRelation.DoesNotExist:
                 raise NotAuthenticated(detail=Error.NO_RELATED_TO_COMPANY.msg)
+=======
+                user_id = validated_token[api_settings.USER_ID_CLAIM] 
+                company_id = validated_token['company_id'] 
+                user = CustomUser.get_user(user_id=user_id)
+                relation = CompanyAndUserRelation.get_relation(user_id, company_id) 
+                user.company = relation.company_id.__dict__
+                user.position = relation.position
+            except KeyError:
+                raise NotAuthenticated(detail=Error.NO_USER_OR_COMPANY_ID.msg)
+            
+>>>>>>> develop
 
         if api_settings.CHECK_REVOKE_TOKEN:
             if validated_token.get(

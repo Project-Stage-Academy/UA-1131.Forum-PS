@@ -15,7 +15,6 @@ class CustomUserManager(BaseUserManager):
         user: CustomUser = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.registration_date = datetime.now()
-        print(user.user_id)
         user.save()
         return user
 
@@ -54,6 +53,20 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def get_user(cls, *args, **kwargs):
         return cls.objects.get(**kwargs)
 
+<<<<<<< HEAD
+=======
+    @classmethod
+    def generate_company_related_token(cls, request):
+        try:
+            raw_token:str = request.headers.get('Authorization')
+            access_token = raw_token.split(' ')[1]
+            decoded_token = AccessToken(access_token)
+            decoded_token.payload['company_id'] = request.data['company_id']
+            return str(decoded_token)
+        except TokenError as e:
+            raise e
+    
+>>>>>>> develop
     def get_company_type(self):
         if not self.company:
             raise NotAuthenticated(detail=Error.NO_RELATED_TO_COMPANY.msg)
@@ -95,15 +108,22 @@ class CompanyAndUserRelation(models.Model):
                         (REPRESENTATIVE, "Representative"))
 
     relation_id = models.BigAutoField(primary_key=True)
+<<<<<<< HEAD
     user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     company_id = models.ForeignKey(Company, on_delete=models.CASCADE)
     position = models.CharField(default=REPRESENTATIVE, max_length=30, choices=POSITION_CHOICES, blank=False,
                                 null=False)
 
+=======
+    user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="user_relations", db_column="user_id")
+    company_id = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_relations", db_column="company_id")
+    position = models.CharField(default=REPRESENTATIVE, max_length=30, choices=POSITION_CHOICES, blank=False, null=False)
+    
+>>>>>>> develop
     @classmethod
-    def get_relation(cls, u_id, c_id):
-        relation = cls.objects.filter(user_id=u_id, company_id=c_id)[0]
-        return relation
+    def get_relation(cls, u, c):
+        relation = cls.objects.filter(user_id=u, company_id=c).first()
+        return relation 
 
 
 class UserLoginActivity(models.Model):
