@@ -13,22 +13,9 @@ from authentication.serializers import (UserRegistrationSerializer, UserUpdateSe
 from forum import settings
 
 
-<<<<<<< HEAD
-class UserRegistrationView(APIView):
-
-    def post(self, request):
-        print(request.user)
-        serializer = UserRegistrationSerializer(data=request.data)
-        if serializer.is_valid():
-            CustomUser.objects.create_user(**serializer.validated_data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-=======
 class UserRegistrationView(generics.CreateAPIView):
     model = CustomUser
     serializer_class = UserRegistrationSerializer
->>>>>>> develop
 
 
 class VerifyEmail(APIView):

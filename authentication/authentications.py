@@ -16,12 +16,12 @@ class UserAuthentication(JWTAuthentication):
     related company.
     This authentification always returns AuthUser instance (request.user). If no user found or other error occures
     the empty AuthUser instance is returned with error written in related AuthUser field. 
-    
+
     """
 
     def authenticate(self, request: Request) -> Optional[Tuple[CustomUser, Token]]:
         """
-        This method gets and decodes token from request, then retrieves user with given in the token credentials 
+        This method gets and decodes token from request, then retrieves user with given in the token credentials
         from the database and returns it as a request.user.
 
         """
@@ -40,7 +40,7 @@ class UserAuthentication(JWTAuthentication):
     def get_user(self, validated_token: Token) -> CustomUser:
         """
         This method retrieves the user from the database. If company credentials are present in token,
-        company information is added. 
+        company information is added.
 
         """
         if not 'company_id' in validated_token:
@@ -53,28 +53,14 @@ class UserAuthentication(JWTAuthentication):
                 raise NotAuthenticated(detail=Error.USER_NOT_FOUND.msg, status_code=Error.USER_NOT_FOUND.status)
         else:
             try:
-<<<<<<< HEAD
                 user_id = validated_token[api_settings.USER_ID_CLAIM]
-                company_id = validated_token[api_settings.COMPANY_ID_CLAIM]
-                relation = CompanyAndUserRelation.get_relation(user_id, company_id)
-                user = CustomUser(relation.user)
-                user.company = relation.company
-                user.position = relation.position
-            except KeyError:
-                raise NotAuthenticated(detail=Error.NO_USER_OR_COMPANY_ID.msg)
-            except CompanyAndUserRelation.DoesNotExist:
-                raise NotAuthenticated(detail=Error.NO_RELATED_TO_COMPANY.msg)
-=======
-                user_id = validated_token[api_settings.USER_ID_CLAIM] 
-                company_id = validated_token['company_id'] 
+                company_id = validated_token['company_id']
                 user = CustomUser.get_user(user_id=user_id)
-                relation = CompanyAndUserRelation.get_relation(user_id, company_id) 
+                relation = CompanyAndUserRelation.get_relation(user_id, company_id)
                 user.company = relation.company_id.__dict__
                 user.position = relation.position
             except KeyError:
                 raise NotAuthenticated(detail=Error.NO_USER_OR_COMPANY_ID.msg)
-            
->>>>>>> develop
 
         if api_settings.CHECK_REVOKE_TOKEN:
             if validated_token.get(
