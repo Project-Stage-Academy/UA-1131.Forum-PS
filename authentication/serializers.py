@@ -6,7 +6,6 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.tokens import RefreshToken
-
 import logging
 from authentication.models import CustomUser
 from authentication.utils import Utils
@@ -49,12 +48,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer, CustomValidationSe
             raise ValidationError({"phone_number": e.detail})
         return attrs
 
-    def create(self):
-        user = CustomUser.objects.create(**self.validated_data)
-        print(user)
-        user.set_password(self.validated_data.get("password"))
-        user.registration_date = datetime.now()
-        user.save()
+    def create(self,validated_data):
+        user = CustomUser.objects.create_user(**validated_data)
         tokens = RefreshToken.for_user(user)
         access_token = str(tokens.access_token)
         Utils.send_verification_email(get_current_site(self.context['request']).domain, user, access_token)
