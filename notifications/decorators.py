@@ -38,6 +38,7 @@ def create_notification_from_view(type_=None):
         @wraps(func)
         def wrapper(*args, **kwargs):
             response = func(*args, **kwargs)
+            
             if not type_:
                 return response
 

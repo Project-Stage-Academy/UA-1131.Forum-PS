@@ -48,7 +48,6 @@ class IsAuthenticated(BasePermission):
         return True
 
 
-
 class IsRelatedToCompany(BasePermission):
     """
     Checking if user is currently related to company.

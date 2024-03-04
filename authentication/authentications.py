@@ -53,15 +53,13 @@ class UserAuthentication(JWTAuthentication):
         else:
             try:
                 user_id = validated_token[api_settings.USER_ID_CLAIM] 
-                company_id = validated_token[api_settings.COMPANY_ID_CLAIM] 
+                company_id = validated_token['company_id'] 
+                user = CustomUser.get_user(user_id=user_id)
                 relation = CompanyAndUserRelation.get_relation(user_id, company_id) 
-                user = CustomUser(relation.user)
-                user.company = relation.company
+                user.company = relation.company_id.__dict__
                 user.position = relation.position
             except KeyError:
                 raise NotAuthenticated(detail=Error.NO_USER_OR_COMPANY_ID.msg)
-            except CompanyAndUserRelation.DoesNotExist:
-                raise NotAuthenticated(detail=Error.NO_RELATED_TO_COMPANY.msg)
             
 
         if api_settings.CHECK_REVOKE_TOKEN:

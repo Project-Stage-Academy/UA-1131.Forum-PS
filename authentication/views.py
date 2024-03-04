@@ -28,6 +28,7 @@ class UserRegistrationView(APIView):
 
 
 class VerifyEmail(APIView):
+    permission_classes = (IsAuthenticated)
 
     def get(self, request):
         logger = logging.getLogger('account_update')
@@ -47,6 +48,7 @@ class VerifyEmail(APIView):
 
 
 class LoginView(APIView):
+    permission_classes = ()
     
     @add_notifications_for_user()
     def post(self, request):
@@ -65,13 +67,13 @@ class LoginView(APIView):
         })
     
 class RelateUserToCompany(APIView):
-    """Binding user to company and insert binded comany's id into token."""
+    """Binding user to company and insert binded company's id into token."""
+    permission_classes = (IsAuthenticated,)
+    
     def post(self, request):
-        company_id = request.data['company_id']
-        user_id = request.user.user_id
-        payload = {'user_id': user_id, 'company_id': company_id}
-        token = jwt.encode(payload, settings.SECRET_KEY)
-        return Response({'access': f"Bearer {token}"})
+        access_token = CustomUser.generate_company_related_token(request)
+        return Response({'access': f"Bearer {access_token}"})
+    
 
 
 
@@ -90,7 +92,6 @@ class UserPasswordUpdateView(generics.UpdateAPIView):
 
 
 class LogoutView(APIView):
-    authentication_classes = (UserAuthentication,)
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):

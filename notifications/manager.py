@@ -52,8 +52,27 @@ class MessageNotification(Notification):
     """Model for message notification"""
     type: str = Field(default=MESSAGE, frozen=True)
 
+class MongoManager:
 
-class NotificationManager:
+    @classmethod
+    def id_to_string(cls, document):
+        """Changes _id field of returned document from ObjectId to string."""
+
+        document['_id'] = str(document['_id'])
+        return document
+    
+    @classmethod
+    def to_list(cls, cursor):
+        """Returns the list of objects from the PyMongo cursor."""
+
+        res = []
+        for el in cursor:
+            res.append(cls.id_to_string(el))
+        return res
+
+
+
+class NotificationManager(MongoManager):
     """
     NotificationManager is responsible for database interactions, including data validating  
     and serializing, errors handling and retrieved data formatting. To register your model 
@@ -67,21 +86,6 @@ class NotificationManager:
     types = {UPDATE: UpdateNotification,
              MESSAGE: MessageNotification}
 
-    @classmethod
-    def id_to_string(cls, document):
-        """Changes _id field of returned document from ObjectId to string."""
-
-        document['_id'] = str(document['_id'])
-        return document
-
-    @classmethod
-    def to_list(cls, cursor):
-        """Returns the list of objects from the PyMongo cursor."""
-
-        res = []
-        for el in cursor:
-            res.append(cls.id_to_string(el))
-        return res
 
     @classmethod
     def get_notification_by_query(cls, query):
