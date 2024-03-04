@@ -6,6 +6,10 @@ from pydantic import BaseModel, Field, ValidationError
 from django.core.mail import EmailMessage
 from forum.settings import DB, EMAIL_HOST_USER
 
+from authentication.models import Company, CustomUser, CompanyAndUserRelation
+from companies.models import Subscription
+from chats.models import Message
+
 
 UPDATE = 'update'
 MESSAGE = 'message'
@@ -195,28 +199,39 @@ class NotificationManager:
         return cls.id_to_string(notification)
 
 
-
-
-
-class EmailNotificationManager(NotificationManager):
-
+class EmailManager:
     @staticmethod
     def _email_sender(data: Dict):
         email = EmailMessage(subject=data['email_subject'], body=data['email_body'], from_email=data['from_email'],
                              to=(data['to_email'],))
         email.send()
 
+    @staticmethod
+    def _data_formatter(email_subject: str, email_body: str, email: str):
+        return {
+            'email_subject': email_subject,
+            'email_body': email_body,
+            'from_email': EMAIL_HOST_USER,
+            'to_email': email
+        }
+
+    @staticmethod
+    def _email_subscription_filter(company):
+        queryset = Subscription.objects.filter(company=company, get_email_newsletter=True)
+        emails = [record.investor.email for record in queryset]
+        return emails
+
+
+class EmailNotificationManager(EmailManager):
+
     @classmethod
     def send_update_notification(cls, company):
         emails_to_send = [record.investor.email for record in
                           company.subscription_set.filter(get_email_newsletter=True)]
         for email in emails_to_send:
-            data = {
-                'email_subject': 'Update in followed company',
-                'email_body': f'Dear user, we would like to inform you about the updates in the {company.brand}',
-                'from_email': EMAIL_HOST_USER,
-                'to _email': email
-            }
+            email_subject = 'Update in followed company'
+            email_body = f'Dear user, we would like to inform you about the updates in the {company.brand}'
+            data = cls._data_formatter(email_subject=email_subject, email_body=email_body, email=email)
             cls._email_sender(data)
 
     @classmethod
@@ -224,23 +239,17 @@ class EmailNotificationManager(NotificationManager):
         emails_to_send = [record.investor.email for record in
                           company.subscription_set.filter(get_email_newsletter=True)]
         for email in emails_to_send:
-            data = {
-                'email_subject': f'A new message from {message.sender.user_id.first_name}',
-                'email_body': f'Dear user, we would like to inform you about a new message from {company.brand}',
-                'from_email': EMAIL_HOST_USER,
-                'to _email': email
-            }
+            email_subject = f'A new message from {message.sender.user_id.first_name}'
+            email_body = f'Dear user, we would like to inform you about a new message from {company.brand}'
+            data = cls._data_formatter(email_subject=email_subject, email_body=email_body, email=email)
             cls._email_sender(data)
 
     @classmethod
-    def send_subscribe_notification(cls, company):
-        emails_to_send = [record.investor.email for record in
-                          company.subscription_set.filter(get_email_newsletter=True)]
+    def send_subscribe_notification(cls, company, emails_to_send=None):
+        if emails_to_send is None:
+            emails_to_send = cls._email_subscription_filter(company=company)
         for email in emails_to_send:
-            data = {
-                'email_subject': f'You have a new subscriber',
-                'email_body': f'Dear user, we would like to inform you about a new subscriber',
-                'from_email': EMAIL_HOST_USER,
-                'to _email': email
-            }
+            email_subject = 'You have a new subscriber'
+            email_body = 'Dear user, we would like to inform you about a new subscriber'
+            data = cls._data_formatter(email_subject=email_subject, email_body=email_body, email=email)
             cls._email_sender(data)
