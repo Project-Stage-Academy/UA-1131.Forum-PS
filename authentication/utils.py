@@ -1,9 +1,8 @@
 import datetime
-
 import jwt
 from django.conf import settings
-
 from django.urls import reverse
+from celery import shared_task
 import logging
 from jwt.utils import force_bytes
 from django.template.loader import render_to_string
@@ -48,6 +47,7 @@ class Utils:
         Utils.email_sender(data)
 
     @staticmethod
+    @shared_task
     def send_password_reset_email(email, reset_link):
         subject = 'Password Reset'
         html_message = render_to_string('password_reset_email.html', {'reset_link': reset_link})

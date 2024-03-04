@@ -107,7 +107,7 @@ class PasswordRecoveryAPIView(APIView):
         jwt_token = Utils.generate_token(user.email, user.pk)
         reset_link = f"{settings.FRONTEND_URL}/auth/password-reset/{jwt_token}/"
         try:
-            Utils.send_password_reset_email(email, reset_link)
+            Utils.send_password_reset_email.delay(email, reset_link)
         except Exception as e:
             return Response({'error': 'Failed to send email'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response({'message': 'Password reset email sent successfully'}, status=status.HTTP_200_OK)
