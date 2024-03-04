@@ -7,7 +7,7 @@ from rest_framework import generics
 from rest_framework import status
 from rest_framework.views import APIView
 from authentication.authentications import UserAuthentication
-from authentication.models import CustomUser
+from authentication.models import CustomUser, CompanyAndUserRelation
 from authentication.permissions import (CustomUserUpdatePermission, IsAuthenticated)
 from authentication.serializers import (UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer)
 from forum import settings
@@ -65,7 +65,7 @@ class RelateUserToCompany(APIView):
         company_id = request.data['company_id']
         relation = CompanyAndUserRelation.get_relation(user_id, company_id)
         if not relation: 
-            return Response({'error': 'You have no access to this company.'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'error': 'You have no access to this company.'}, status=status.HTTP_403_FORBIDDEN)
         access_token = CustomUser.generate_company_related_token(request)
         return Response({'access': f"Bearer {access_token}"})
     
