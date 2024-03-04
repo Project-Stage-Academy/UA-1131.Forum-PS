@@ -114,7 +114,7 @@ class PasswordRecoveryAPIView(APIView):
 
 
 
-class PasswordResetView(APIView):
+class PasswordResetView(APIView):              # This view will be rewritten after implementing custom authentication into the main branch.
     serializer_class = PasswordRecoverySerializer
 
     def post(self, request, jwt_token):
