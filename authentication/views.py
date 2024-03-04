@@ -61,6 +61,11 @@ class RelateUserToCompany(APIView):
     permission_classes = (IsAuthenticated,)
     
     def post(self, request):
+        user_id = request.user.user_id
+        company_id = request.data['company_id']
+        relation = CompanyAndUserRelation.get_relation(user_id, company_id)
+        if not relation: 
+            return Response({'error': 'You have no access to this company.'}, status=status.HTTP_401_UNAUTHORIZED)
         access_token = CustomUser.generate_company_related_token(request)
         return Response({'access': f"Bearer {access_token}"})
     
