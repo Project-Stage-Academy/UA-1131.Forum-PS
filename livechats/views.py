@@ -1,6 +1,5 @@
 import os
 from bson import ObjectId
-from pymongo import MongoClient
 from pydantic import ValidationError
 from datetime import datetime
 from redis.utils import from_url
@@ -9,10 +8,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from authentication.models import CustomUser
 from .schemas import Conversation
+from forum.settings import DB
 
 
-client = MongoClient(os.environ.get("MONGODB_HOST"))
-collections = client.livechats.conversations
+collections = DB['conversations']
 
 
 class StartConversation(APIView):
@@ -102,7 +101,7 @@ class EmergencyConversationRestart(APIView):
             existing_conversation = collections.find_one({"_id": ObjectId(convo_id)})
             if request.user.user_id in [existing_conversation.get("initiator_id"), existing_conversation.get("receiver_id")]:
                 redis = from_url(
-                    os.environ.get("REDIS_HOST"), encoding="utf-8", decode_responses=True
+                    os.environ.get("REDIS_URL"), encoding="utf-8", decode_responses=True
                 )
                 with redis.client() as conn:
                     users = conn.hgetall(f"{convo_id}_users")

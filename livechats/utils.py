@@ -1,9 +1,9 @@
 import os
 from pymongo import MongoClient
+from forum.settings import DB
 
 
 def mongo_conversations():
     """connecting to MangoDB and getting conversations data"""
-    client = MongoClient(os.environ.get("MONGODB_HOST"))
-    collections = client.livechats.conversations
+    collections = DB['conversations']
     return collections
