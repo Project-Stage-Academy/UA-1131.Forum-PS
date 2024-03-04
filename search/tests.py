@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import Company
+from authentication.models import Company
 
 
 class TestCompanyFilter(APITestCase):

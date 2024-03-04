@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenRefreshView
+
 from authentication.views import LoginView, LogoutView
 
 urlpatterns = [
@@ -12,4 +13,5 @@ urlpatterns = [
     path("api/logout/", LogoutView.as_view(), name='logout'),
     path('companies/', include('companies.urls')),
     path('conversations/', include('livechats.urls')),
+    path('search/', include('search.urls')),
 ]

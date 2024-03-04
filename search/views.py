@@ -3,7 +3,6 @@ import django_filters
 from rest_framework import filters, status
 from rest_framework.response import Response
 
-
 from authentication.models import Company
 from companies.filters import CompanyFilter
 from companies.serializers import CompaniesSerializer
@@ -15,7 +14,7 @@ class SearchCompanyView(ListAPIView):
     API view for searching and filtering companies.
 
     This view allows users to search for companies and apply filters based on various criteria.
-    Filters can be applied to fields like brand.
+    Filters can be applied to fields like name and region.
 
     Attributes:
         queryset (QuerySet): The queryset containing all companies.
@@ -32,7 +31,7 @@ class SearchCompanyView(ListAPIView):
         filters.OrderingFilter,
     ]
     filterset_class = CompanyFilter
-    ordering_fields = ["brand"]
+    ordering_fields = ["name", "region"]
 
     def get_serializer_context(self):
         """
@@ -54,23 +53,8 @@ class SearchCompanyView(ListAPIView):
             context.update({"saved_companies_pk": saved_companies_pk})
         return context
 
-    def get_queryset(self):
-        """
-        Get the queryset for the view.
-
-        This method filters the queryset based on the saved companies
-        for the authenticated user.
-
-        Returns:
-            QuerySet: The filtered queryset.
-        """
-        queryset = super().get_queryset()
-        if self.request.user.is_authenticated:
-            saved_company_ids = SavedCompany.objects.filter(user=self.request.user).values_list('company_id', flat=True)
-            queryset = queryset.filter(id__in=saved_company_ids)
-        return queryset
-
-    def post(self, request, *args, **kwargs):
+    @staticmethod
+    def post(request, *args, **kwargs):
         """
         Save a company for the authenticated user.
 
@@ -85,9 +69,16 @@ class SearchCompanyView(ListAPIView):
         Returns:
             HttpResponse: The HTTP response object.
         """
-        company_id = request.data.get('company_id')
-        if company_id:
-            SavedCompany.objects.create(user=request.user, company_id=company_id)
-            return Response(status=status.HTTP_201_CREATED)
+        # Check if the request is authenticated
+        if not request.user.is_authenticated:
+            company_id = request.data.get('company_id')
+            # Check if the company ID is provided in the request data
+            if company_id:
+                # Save information about the saved company
+                SavedCompany.objects.create(user=request.user, company_id=company_id)
+                return Response(status=status.HTTP_201_CREATED)
+            else:
+                return Response({"error": "Company ID is missing in request data"}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Authentication is required to save a company"},
+                            status=status.HTTP_401_UNAUTHORIZED)

@@ -6,6 +6,6 @@ app_name = "search"
 
 urlpatterns = [
     path(
-        "search/", SearchCompanyView.as_view(), name="search-company"
+        '', SearchCompanyView.as_view(), name="search-company"
     ),
 ]
