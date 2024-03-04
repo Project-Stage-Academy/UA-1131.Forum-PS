@@ -53,7 +53,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         _message = await self.create_message_data(message)
         _message_json = json.dumps(_message)
         redis = await from_url(
-            os.environ.get("REDIS_HOST"), encoding="utf-8", decode_responses=True
+            os.environ.get("REDIS_URL"), encoding="utf-8", decode_responses=True
         )
         async with redis.client() as conn:
             await conn.lpush(_message["conversation_id"], _message_json)
@@ -75,7 +75,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             )
             await self.accept()
             redis = await from_url(
-                os.environ.get("REDIS_HOST"), encoding="utf-8", decode_responses=True
+                os.environ.get("REDIS_URL"), encoding="utf-8", decode_responses=True
             )
             async with redis.client() as conn:
                 user_active = conn.hget(f"{self.room_name}_users", current_user.email)
@@ -96,7 +96,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         current_user = self.scope['user']
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
         redis = await from_url(
-            os.environ.get("REDIS_HOST"), encoding="utf-8", decode_responses=True
+            os.environ.get("REDIS_URL"), encoding="utf-8", decode_responses=True
         )
         messages = None
         async with redis.client() as conn:

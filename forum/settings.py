@@ -13,6 +13,7 @@ import os
 from datetime import timedelta
 from dotenv import load_dotenv
 from pathlib import Path
+import pymongo
 
 load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -116,6 +117,9 @@ DATABASES = {
 
 }
 
+CLIENT = pymongo.MongoClient(os.environ.get('MONGO_URL'), maxPoolSize=400)
+DB = CLIENT[os.environ.get('MONGO_DATABASE')]
+
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 
@@ -170,7 +174,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
+            "hosts": [('redis', 6379)],
         },
     },
 }
@@ -211,3 +215,5 @@ LOGGING = {
         },
     },
 }
+
+CELERY_BROKER_URL = os.environ.get("REDIS_URL")
