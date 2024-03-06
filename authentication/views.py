@@ -1,10 +1,5 @@
 import logging
 import jwt
-from authentication.serializers import UserRegistrationSerializer, UserUpdateSerializer, PasswordRecoverySerializer, \
-    UserPasswordUpdateSerializer
-from authentication.models import CustomUser
-from authentication.permissions import CustomUserUpdatePermission, IsAuthenticated
-from authentication.authentications import UserAuthentication
 from django.contrib.auth import authenticate, user_logged_in
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -13,6 +8,10 @@ from rest_framework import status, generics
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from authentication.authentications import UserAuthentication
+from authentication.models import CustomUser, CompanyAndUserRelation
+from authentication.permissions import (CustomUserUpdatePermission, IsAuthenticated)
+from authentication.serializers import (UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer, PasswordRecoverySerializer)
 from forum import settings
 from .utils import Utils
 
@@ -60,6 +59,20 @@ class LoginView(APIView):
                 'user_id': user.user_id,
                 'email': email
             })
+
+class RelateUserToCompany(APIView):
+    """Binding user to company and inserting linked company's id into token."""
+    permission_classes = (IsAuthenticated,)
+    
+    def post(self, request):
+        user_id = request.user.user_id
+        company_id = request.data['company_id']
+        relation = CompanyAndUserRelation.get_relation(user_id, company_id)
+        if not relation: 
+            return Response({'error': 'You have no access to this company.'}, status=status.HTTP_403_FORBIDDEN)
+        access_token = CustomUser.generate_company_related_token(request)
+        return Response({'access': f"Bearer {access_token}"})
+    
 
 
 class UserUpdateView(generics.RetrieveUpdateAPIView):
