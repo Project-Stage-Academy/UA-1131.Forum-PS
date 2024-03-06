@@ -1,46 +1,47 @@
+import json
 import os
 from bson import ObjectId
-from pymongo import MongoClient
 from pydantic import ValidationError
 from datetime import datetime
 from redis.utils import from_url
 from rest_framework import status
+from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from authentication.authentications import UserAuthentication
 from authentication.models import CustomUser
+from authentication.permissions import IsAuthenticated
 from .schemas import Conversation
+from .utils import mongo_conversations
 
-
-client = MongoClient(os.environ.get("MONGODB_HOST"))
-collections = client.livechats.conversations
+collections = mongo_conversations()
 
 
 class StartConversation(APIView):
     """ Creating conversation, if it doesn`t exists, after this pk or conversation ll be used in web socket link"""
+    authentication_classes = (UserAuthentication,)
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request):
         data = request.data
         user_email = data.get("email")
         current_user = request.user
         if request.user.email == user_email:
-            return Response({'message': 'You cannot chat with yourself'})
-
+            return Response({'message': 'You cannot chat with yourself'}, status=status.HTTP_400_BAD_REQUEST)
         try:
             participant = CustomUser.objects.get(email=user_email)
-
         except CustomUser.DoesNotExist:
-            return Response({'message': 'You cannot chat with a non existent user'})
-
+            return Response({'message': 'You cannot chat with a non existent user'}, status=status.HTTP_400_BAD_REQUEST)
         existing_conversation = collections.find_one({
             "$or": [
                 {"initiator_id": current_user.user_id, "receiver_id": participant.user_id},
                 {"initiator_id": participant.user_id, "receiver_id": current_user.user_id}
             ]
         })
-
         if existing_conversation:
             existing_conversation['_id'] = str(existing_conversation['_id'])
-            return Response({'conversation': existing_conversation})
+            return Response(existing_conversation, status=status.HTTP_200_OK)
         else:
             new_conversation = {
                 "initiator_id": current_user.user_id,
@@ -58,19 +59,29 @@ class StartConversation(APIView):
 
 
 class GetConversations(APIView):
+    authentication_classes = (UserAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
     def get(self, request, convo_id):
         if ObjectId.is_valid(convo_id):
-            conversation = collections.find_one({"_id": ObjectId(convo_id)})
-            if not conversation:
+            existing_conversation = collections.find_one({"_id": ObjectId(convo_id)})
+            if not existing_conversation:
                 return Response({'message': 'Conversation does not exist'}, status=status.HTTP_404_NOT_FOUND)
+            if request.user.user_id in [existing_conversation.get("initiator_id"),
+                                        existing_conversation.get("receiver_id")]:
+                existing_conversation['_id'] = str(existing_conversation['_id'])
+                return Response(existing_conversation)
             else:
-                conversation['_id'] = str(conversation['_id'])
-                return Response(conversation)
+                return Response({"message": "You are not the participant of this live-chat"},
+                                status=status.HTTP_403_FORBIDDEN)
         else:
-            return Response({"message": "Provided invalid chat id"})
+            return Response({"message": "Provided invalid chat id"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ConversationsList(APIView):
+    authentication_classes = (UserAuthentication,)
+    permission_classes = (IsAuthenticated | IsAdminUser,)
+
     def get(self, request):
         user = request.user
         conversation_list = collections.find({
@@ -88,7 +99,7 @@ class ConversationsList(APIView):
                  "initiator_id": conversation["initiator_id"],
                  "receiver_id": conversation["receiver_id"],
                  "start_time": conversation["start_time"]})
-        return Response(conversation_list_serialized)
+        return Response(conversation_list_serialized, status=status.HTTP_200_OK)
 
 
 class EmergencyConversationRestart(APIView):
@@ -96,11 +107,14 @@ class EmergencyConversationRestart(APIView):
     If its needed this view will restart chat by conversation id, if authenticated user is a participant in this chat.
     Messages are stored in redis, due to messages lifetime
     """
+    authentication_classes = (UserAuthentication,)
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request, convo_id):
         if ObjectId.is_valid(convo_id):
             existing_conversation = collections.find_one({"_id": ObjectId(convo_id)})
-            if request.user.user_id in [existing_conversation.get("initiator_id"), existing_conversation.get("receiver_id")]:
+            if request.user.user_id in [existing_conversation.get("initiator_id"),
+                                        existing_conversation.get("receiver_id")]:
                 redis = from_url(
                     os.environ.get("REDIS_HOST"), encoding="utf-8", decode_responses=True
                 )
@@ -108,8 +122,9 @@ class EmergencyConversationRestart(APIView):
                     users = conn.hgetall(f"{convo_id}_users")
                     if users:
                         conn.delete(f"{convo_id}_users")
-                return Response({"message": "Chat was restarted"})
-            return Response({"message": "You are not the participant in this chat"})
+                return Response({"message": "Chat was restarted"}, status=status.HTTP_200_OK)
+            return Response({"message": "You are not the participant of this live-chat"},
+                            status=status.HTTP_403_FORBIDDEN)
 
         else:
-            return Response({"message": "Provided invalid chat id"})
+            return Response({"message": "Provided invalid chat id"}, status=status.HTTP_400_BAD_REQUEST)

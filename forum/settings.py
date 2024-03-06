@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 import os
 from datetime import timedelta
+
+import pymongo
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -113,7 +115,8 @@ DATABASES = {
     },
 
 }
-
+CLIENT = pymongo.MongoClient(os.environ.get('MONGO_HOST'))
+DB = CLIENT[os.environ.get('MONGO_DATABASE')]
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 

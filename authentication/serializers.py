@@ -47,8 +47,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer, CustomValidationSe
             raise ValidationError({"phone_number": e.detail})
         return attrs
 
-    def create(self,validated_data):
-        user = CustomUser.objects.create_user(validated_data)
+    def create(self, validated_data):
+        user = CustomUser.objects.create_user(**validated_data)
         tokens = RefreshToken.for_user(user)
         access_token = str(tokens.access_token)
         Utils.send_verification_email(get_current_site(self.context['request']).domain, user, access_token)
@@ -88,7 +88,7 @@ class UserUpdateSerializer(serializers.ModelSerializer, CustomValidationSerializ
             instance = super().update(instance, validated_data)
             Utils.send_verification_email(get_current_site(self.context['request']).domain, instance, access_token)
             logger.info(
-                    f"User {instance.email} {instance.first_name} {instance.surname} updated his\
+                f"User {instance.email} {instance.first_name} {instance.surname} updated his\
                      account information:{validated_data} (Email in process of verification)")
             return instance
         instance = super().update(instance, validated_data)

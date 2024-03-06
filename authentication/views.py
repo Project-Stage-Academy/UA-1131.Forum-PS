@@ -42,12 +42,12 @@ class LoginView(APIView):
     def post(self, request):
         email = request.data.get('email')
         password = request.data.get('password')
-        user = CustomUser.get_user(email=email)
+        user = CustomUser.objects.get(email=email)
         check = user.check_password(password)
-        if not check:
-            return Response({'error': 'Wrong password'}, status=status.HTTP_401_UNAUTHORIZED)
         if not user:
             return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+        if not check:
+            return Response({'error': 'Wrong password'}, status=status.HTTP_401_UNAUTHORIZED)
         else:
             refresh = RefreshToken.for_user(user)
             return Response({
@@ -83,5 +83,4 @@ class LogoutView(APIView):
             token.blacklist()
             return Response(status=status.HTTP_205_RESET_CONTENT)
         except Exception as e:
-            print("Exception", e)
             return Response(status=status.HTTP_400_BAD_REQUEST)

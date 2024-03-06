@@ -34,7 +34,6 @@ class MessageSerializer(serializers.ModelSerializer):
 
         sender_company_ids = [relation.company_id for relation in sender_company_relations]
         sender_company_id = data.company_id
-        print(sender_company_ids)
         if sender_company_id not in sender_company_ids:
             raise serializers.ValidationError("You are not allowed to send message")
 

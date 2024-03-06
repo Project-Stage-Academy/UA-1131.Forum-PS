@@ -1,4 +1,3 @@
-import aioredis
 import json
 import math
 import os
@@ -6,8 +5,11 @@ from bson import ObjectId
 from django.utils import timezone
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
-from livechats.utils import mongo_conversations
+from redis.asyncio import from_url
+
+# from forum.settings import CLIENT
 from livechats.schemas import Message
+from livechats.utils import mongo_conversations
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -45,7 +47,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             "sender_id": sender.user_id,
             "sender_data": f"{sender.first_name} {sender.surname}, {sender.email}",
             "conversation_id": str(conversation[0].get("_id")),
-
         }
         return message
 
@@ -53,7 +54,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         """Function for adding messages and joining data to cache for 10 hours"""
         _message = await self.create_message_data(message)
         _message_json = json.dumps(_message)
-        redis = await aioredis.from_url(
+        redis = await from_url(
             os.environ.get("REDIS_HOST"), encoding="utf-8", decode_responses=True
         )
         async with redis.client() as conn:
@@ -65,6 +66,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         Connecting to the WS, also adding number Redis activity tracker
          for counting the number of active users in a channel
          """
+
         self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
         self.room_group_name = f"chat_{self.room_name}"
         conversation, initiator, receiver = await self.get_conversation()
@@ -74,9 +76,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.channel_layer.group_add(
                 self.room_group_name, self.channel_name
             )
-
             await self.accept()
-            redis = await aioredis.from_url(
+            redis = await from_url(
                 os.environ.get("REDIS_HOST"), encoding="utf-8", decode_responses=True
             )
             async with redis.client() as conn:
@@ -87,7 +88,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 else:
                     await conn.hincrby(f"{self.room_name}_users", current_user.email, +1)
                     await conn.expire(f"{self.room_name}_users", 36000)
-
         else:
             await self.close()
 
@@ -97,10 +97,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         when num of active users is 0, the chat cache will be sent to MongoBD and Redis cache ll be cleaned.
          """
         current_user = self.scope['user']
-
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
-
-        redis = await aioredis.from_url(
+        redis = await from_url(
             os.environ.get("REDIS_HOST"), encoding="utf-8", decode_responses=True
         )
         messages = None

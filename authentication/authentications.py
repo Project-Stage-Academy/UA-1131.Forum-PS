@@ -25,8 +25,8 @@ class UserAuthentication(JWTAuthentication):
         from the database and returns it as a request.user.
 
         """
-        header = self.get_header(request) 
 
+        header = self.get_header(request)
         if header is None:
             return None
 

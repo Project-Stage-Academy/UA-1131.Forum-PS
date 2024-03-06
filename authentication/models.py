@@ -6,15 +6,13 @@ from rest_framework.exceptions import PermissionDenied, NotAuthenticated
 from forum.errors import Error
 
 
-
-
 class CustomUserManager(BaseUserManager):
 
     def create_user(self, email, password, **extra_fields):
         if not email:
             raise ValueError("The email must be set")
         email = self.normalize_email(email)
-        user:CustomUser = self.model(email=email, **extra_fields)
+        user: CustomUser = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.registration_date = datetime.now()
         user.save()
@@ -44,18 +42,17 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     position = None
     is_authenticated = None
 
-
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["user_id", "password", "first_name", "surname", "phone_number"]
     objects = CustomUserManager()
 
     def __str__(self):
         return f"{self.first_name} {self.surname} {self.email}"
-        
+
     @classmethod
     def get_user(cls, *args, **kwargs):
         return cls.objects.get(**kwargs)
-    
+
     def get_company_type(self):
         if not self.company:
             raise NotAuthenticated(detail=Error.NO_RELATED_TO_COMPANY.msg)
@@ -66,14 +63,13 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def get_email(self):
         return self.email
-    
+
     def get_full_name(self):
         return f"{self.first_name} {self.surname}"
 
     def get_short_name(self):
         return self.first_name
 
-    
 
 class Company(models.Model):
     company_id = models.BigAutoField(primary_key=True)
@@ -91,23 +87,22 @@ class Company(models.Model):
 
 
 class CompanyAndUserRelation(models.Model):
-
     FOUNDER = "F"
     REPRESENTATIVE = "R"
 
-    POSITION_CHOICES = ((FOUNDER, "Founder"), 
+    POSITION_CHOICES = ((FOUNDER, "Founder"),
                         (REPRESENTATIVE, "Representative"))
 
     relation_id = models.BigAutoField(primary_key=True)
     user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     company_id = models.ForeignKey(Company, on_delete=models.CASCADE)
-    position = models.CharField(default=REPRESENTATIVE, max_length=30, choices=POSITION_CHOICES, blank=False, null=False)
+    position = models.CharField(default=REPRESENTATIVE, max_length=30, choices=POSITION_CHOICES, blank=False,
+                                null=False)
 
     @classmethod
     def get_relation(cls, u_id, c_id):
         relation = cls.objects.filter(user_id=u_id, company_id=c_id)[0]
         return relation
-
 
 
 class UserLoginActivity(models.Model):
@@ -116,7 +111,7 @@ class UserLoginActivity(models.Model):
     FAILED = 'F'
 
     LOGIN_STATUS = ((SUCCESS, 'Success'),
-                           (FAILED, 'Failed'))
+                    (FAILED, 'Failed'))
 
     login_IP = models.GenericIPAddressField(null=True, blank=True)
     login_datetime = models.DateTimeField(auto_now=True)
