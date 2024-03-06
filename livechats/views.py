@@ -13,9 +13,16 @@ from authentication.authentications import UserAuthentication
 from authentication.models import CustomUser
 from authentication.permissions import IsAuthenticated
 from .schemas import Conversation
+<<<<<<< HEAD
 from .utils import mongo_conversations
 
 collections = mongo_conversations()
+=======
+from forum.settings import DB
+
+
+collections = DB['conversations']
+>>>>>>> d03a23617daf276dc005bcf525a39ebf482b1a0e
 
 
 class StartConversation(APIView):
@@ -116,7 +123,7 @@ class EmergencyConversationRestart(APIView):
             if request.user.user_id in [existing_conversation.get("initiator_id"),
                                         existing_conversation.get("receiver_id")]:
                 redis = from_url(
-                    os.environ.get("REDIS_HOST"), encoding="utf-8", decode_responses=True
+                    os.environ.get("REDIS_URL"), encoding="utf-8", decode_responses=True
                 )
                 with redis.client() as conn:
                     users = conn.hgetall(f"{convo_id}_users")

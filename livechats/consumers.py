@@ -6,8 +6,12 @@ from django.utils import timezone
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from redis.asyncio import from_url
+<<<<<<< HEAD
 
 # from forum.settings import CLIENT
+=======
+from livechats.utils import mongo_conversations
+>>>>>>> d03a23617daf276dc005bcf525a39ebf482b1a0e
 from livechats.schemas import Message
 from livechats.utils import mongo_conversations
 
@@ -55,7 +59,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
         _message = await self.create_message_data(message)
         _message_json = json.dumps(_message)
         redis = await from_url(
+<<<<<<< HEAD
             os.environ.get("REDIS_HOST"), encoding="utf-8", decode_responses=True
+=======
+            os.environ.get("REDIS_URL"), encoding="utf-8", decode_responses=True
+>>>>>>> d03a23617daf276dc005bcf525a39ebf482b1a0e
         )
         async with redis.client() as conn:
             await conn.lpush(_message["conversation_id"], _message_json)
@@ -78,7 +86,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
             )
             await self.accept()
             redis = await from_url(
+<<<<<<< HEAD
                 os.environ.get("REDIS_HOST"), encoding="utf-8", decode_responses=True
+=======
+                os.environ.get("REDIS_URL"), encoding="utf-8", decode_responses=True
+>>>>>>> d03a23617daf276dc005bcf525a39ebf482b1a0e
             )
             async with redis.client() as conn:
                 user_active = conn.hget(f"{self.room_name}_users", current_user.email)
@@ -99,7 +111,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
         current_user = self.scope['user']
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
         redis = await from_url(
+<<<<<<< HEAD
             os.environ.get("REDIS_HOST"), encoding="utf-8", decode_responses=True
+=======
+            os.environ.get("REDIS_URL"), encoding="utf-8", decode_responses=True
+>>>>>>> d03a23617daf276dc005bcf525a39ebf482b1a0e
         )
         messages = None
         async with redis.client() as conn:
