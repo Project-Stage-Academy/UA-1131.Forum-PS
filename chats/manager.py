@@ -1,5 +1,3 @@
-import json
-
 from bson import ObjectId
 from pydantic import BaseModel, ValidationError
 from forum.settings import DB
@@ -62,7 +60,7 @@ class MessagesManager(MongoManager):
     def get_message(cls, message_id):
         if ObjectId.is_valid(message_id):
             existing_message = cls.db.find_one({"_id": ObjectId(message_id)})
-            existing_message["_id"] = str(existing_message["_id"])
+            existing_message = cls.id_to_string(existing_message)
             if not existing_message:
                 raise MessageNotFound("Message not found")
             return existing_message

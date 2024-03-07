@@ -1,18 +1,17 @@
-import json
-
-from pydantic import ValidationError
-
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from pydantic import ValidationError
 
+from authentication.models import Company
 from authentication.permissions import IsAuthenticated
 from forum.errors import Error
 from .manager import MessagesManager as manager
 from .manager import Message
-from authentication.models import Company
+
+
 
 
 class MessageDetail(APIView):
