@@ -5,10 +5,6 @@ from pydantic import BaseModel, ValidationError
 from forum.settings import DB
 
 
-class MessageAlreadyExist(Exception):
-    pass
-
-
 class MessageNotFound(Exception):
     pass
 
@@ -95,7 +91,7 @@ class MessagesManager(MongoManager):
         cursor = cls.db.find({"$and":
                                   [{"receiver_id": company_id},
                                    {"visible_for_receiver": True}]},
-                             {"visible_for_receiver": 0, "visible_for_sender": 0})
+                                    {"visible_for_receiver": 0, "visible_for_sender": 0})
         return cls.to_list(cursor)
 
     @classmethod
@@ -103,5 +99,5 @@ class MessagesManager(MongoManager):
         cursor = cls.db.find({"$and":
                                   [{"sender_id": company_id},
                                    {"visible_for_sender": True}]},
-                             {"visible_for_receiver": 0, "visible_for_sender": 0})
+                                    {"visible_for_receiver": 0, "visible_for_sender": 0})
         return cls.to_list(cursor)
