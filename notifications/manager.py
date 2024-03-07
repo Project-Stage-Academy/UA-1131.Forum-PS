@@ -146,7 +146,7 @@ class NotificationManager(MongoManager):
         query = {'event_id': event_id}
         if cls.db.count_documents(query):
             raise AlreadyExist(
-                f"Notification for {type} with EVENT_ID {event_id} already exists.")
+                f"Notification for {type_} with EVENT_ID {event_id} already exists.")
         validated_model = model.model_validate(data)
         res = cls.db.insert_one(validated_model.model_dump())
         return str(res.inserted_id)
