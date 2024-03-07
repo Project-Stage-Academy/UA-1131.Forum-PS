@@ -12,4 +12,5 @@ urlpatterns = [
     path("api/logout/", LogoutView.as_view(), name='logout'),
     path('companies/', include('companies.urls')),
     path('conversations/', include('livechats.urls')),
+    path('chats/',include('chats.urls'))
 ]

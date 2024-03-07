@@ -58,7 +58,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     @classmethod
     def generate_company_related_token(cls, request):
         try:
-            raw_token:str = request.headers.get('Authorization')
+            raw_token: str = request.headers.get('Authorization')
             access_token = raw_token.split(' ')[1]
             decoded_token = AccessToken(access_token)
             decoded_token.payload['company_id'] = request.data['company_id']
@@ -98,6 +98,9 @@ class Company(models.Model):
     startup_idea = models.TextField(blank=True)
     tags = models.CharField(max_length=255, blank=True)
 
+    def __str__(self):
+        return self.brand
+
 
 class CompanyAndUserRelation(models.Model):
     FOUNDER = "F"
@@ -108,15 +111,15 @@ class CompanyAndUserRelation(models.Model):
 
     relation_id = models.BigAutoField(primary_key=True)
 
-    user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="user_relations", db_column="user_id")
-    company_id = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_relations", db_column="company_id")
-    position = models.CharField(default=REPRESENTATIVE, max_length=30, choices=POSITION_CHOICES, blank=False, null=False)
-    
+    user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="user_relations", )
+    company_id = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_relations", )
+    position = models.CharField(default=REPRESENTATIVE, max_length=30, choices=POSITION_CHOICES, blank=False,
+                                null=False)
 
     @classmethod
     def get_relation(cls, u, c):
         relation = cls.objects.filter(user_id=u, company_id=c).first()
-        return relation 
+        return relation
 
 
 class UserLoginActivity(models.Model):

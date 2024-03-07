@@ -13,16 +13,10 @@ from authentication.authentications import UserAuthentication
 from authentication.models import CustomUser
 from authentication.permissions import IsAuthenticated
 from .schemas import Conversation
-<<<<<<< HEAD
-from .utils import mongo_conversations
-
-collections = mongo_conversations()
-=======
 from forum.settings import DB
 
 
 collections = DB['conversations']
->>>>>>> d03a23617daf276dc005bcf525a39ebf482b1a0e
 
 
 class StartConversation(APIView):

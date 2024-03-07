@@ -46,7 +46,6 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'rest_framework',
     'authentication',
-    'password_recovery',
     'companies',
     'chats',
     'livechats',
@@ -158,15 +157,9 @@ DATABASES = {
     },
 
 }
-<<<<<<< HEAD
-CLIENT = pymongo.MongoClient(os.environ.get('MONGO_HOST'))
-DB = CLIENT[os.environ.get('MONGO_DATABASE')]
-=======
-
 CLIENT = pymongo.MongoClient(os.environ.get('MONGO_URL'), maxPoolSize=400)
 DB = CLIENT[os.environ.get('MONGO_DATABASE')]
 
->>>>>>> d03a23617daf276dc005bcf525a39ebf482b1a0e
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 
