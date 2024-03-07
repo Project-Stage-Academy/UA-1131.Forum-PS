@@ -110,9 +110,8 @@ class CompanyAndUserRelation(models.Model):
                         (REPRESENTATIVE, "Representative"))
 
     relation_id = models.BigAutoField(primary_key=True)
-
-    user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="user_relations", )
-    company_id = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_relations", )
+    user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="user_relations")
+    company_id = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_relations" )
     position = models.CharField(default=REPRESENTATIVE, max_length=30, choices=POSITION_CHOICES, blank=False,
                                 null=False)
 

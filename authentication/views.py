@@ -1,6 +1,5 @@
 import logging
 import jwt
-from django.contrib.auth import authenticate, user_logged_in
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
@@ -126,8 +125,9 @@ class PasswordRecoveryAPIView(APIView):
         return Response({'message': 'Password reset email sent successfully'}, status=status.HTTP_200_OK)
 
 
-class PasswordResetView(
-    APIView):  # This view will be rewritten after implementing custom authentication into the main branch.
+
+class PasswordResetView(APIView):
+    # This view will be rewritten after implementing custom authentication into the main branch.
     serializer_class = PasswordRecoverySerializer
 
     def post(self, request, jwt_token):
@@ -146,3 +146,4 @@ class PasswordResetView(
                 return Response({'error': 'Invalid token for password reset'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'error': 'Invalid token for password reset'}, status=status.HTTP_400_BAD_REQUEST)
+

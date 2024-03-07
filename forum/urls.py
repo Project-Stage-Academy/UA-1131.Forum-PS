@@ -1,6 +1,5 @@
 from django.contrib import admin
 from django.urls import path, include
-from authentication.views import LoginView
 from rest_framework_simplejwt.views import TokenRefreshView
 from authentication.views import LoginView, LogoutView
 
@@ -13,4 +12,5 @@ urlpatterns = [
     path('companies/', include('companies.urls')),
     path('conversations/', include('livechats.urls')),
     path('messages/', include('chats.urls'))
+    path('search/', include('search.urls')),
 ]
