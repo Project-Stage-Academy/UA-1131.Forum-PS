@@ -1,74 +1,64 @@
-from rest_framework import generics, status
+from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from authentication.models import Company
+from authentication.permissions import IsAuthenticated, IsRelatedToCompany, IsInvestor
 from .models import Subscription
-from .serializers import CompaniesSerializer, SubscriptionSerializer, SubscriptionListSerializer
-from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from .serializers import SubscriptionSerializer, SubscriptionListSerializer
 
-JWT_authenticator = JWTAuthentication()
-
-class CompaniesListCreateView(generics.ListCreateAPIView):
-    queryset = Company.objects.all()
-    serializer_class = CompaniesSerializer
-    permission_classes = (IsAuthenticated,)
-
-
-
-class CompaniesRetrieveUpdateView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Company.objects.all()
-    serializer_class = CompaniesSerializer
-    permission_classes = (IsAuthenticated,)
-
+class CompaniesRetrieveUpdateView(APIView):
+    permission_classes = (IsAuthenticated)
+    def get(request, pk=None):
+        if pk:
+            company = Company.get_company(company_id=pk)
+            return Response(company.get_info(), status=status.HTTP_200_OK)
+        type = request.data.get('company_type')
+        if not type:
+           companies = Company.get_all_companies_info()
+        else:
+            companies = Company.get_all_companies_info(type)
+        return Response(companies, status=status.HTTP_200_OK)
+    
 class SubscriptionCreateAPIView(APIView):
-    permission_classes = (IsAuthenticated,)
-    def post(self, request, *args, **kwargs):
-        
-        auth_response = JWT_authenticator.authenticate(request)
-        if auth_response is None:
-            return Response({'error': "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
-        user_id = auth_response[1].get('user_id')
-        request.data['investor'] = user_id
+    permission_classes = (IsAuthenticated, IsRelatedToCompany, IsInvestor)
+
+    def post(self, request):
+        profile_id = request.user.relation_id
+        company_id = request.data.get('company')
+
+        check_sub = Subscription.get_subcription(
+            investor=profile_id, company=company_id)
+        if check_sub:
+            msg = f"You're already subscribed to {check_sub.company.brand}."
+            return Response({'message': msg}, status=status.HTTP_200_OK)
+        request.data['investor'] = profile_id
         serializer = SubscriptionSerializer(data=request.data)
         if serializer.is_valid():
-            subs = Subscription.objects.filter(investor=user_id, company=request.data.get('company'))
-            if not subs:
-                subscription = serializer.save()
-            else:
-                subscription = subs.first()
-            company = subscription.company
-            brand = company.brand
-            subscription_id = subscription.subscription_id
-            message = f"You're subscribed to {brand}, subscription id: {subscription_id}"
-            return Response({'message': message}, status=status.HTTP_201_CREATED)
+            subscription = serializer.save()
+            msg = f"You're successfully subscribed to {subscription.company.brand}"
+            return Response({'message': self.msg, 'subscription_id': subscription.subscription_id}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class UnsubscribeAPIView(APIView):
-    permission_classes = (IsAuthenticated,)
-    def delete(self, request, subscription_id, *args, **kwargs):
-        response = JWT_authenticator.authenticate(request)
-        if response is None:
-            return Response({'error': "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
-        user_id = response[1].get('user_id')
-
+    permission_classes = (IsAuthenticated, IsRelatedToCompany, IsInvestor)
+    # should we notify startup company who exactly unsubscribed from their startup profile?
+    def delete(self, request, subscription_id):
         try:
-            subscription = Subscription.objects.get(subscription_id=subscription_id, investor_id=user_id)
+            subscription = Subscription.get_subcription(
+                subscription_id=subscription_id)
         except Subscription.DoesNotExist:
             return Response({'error': 'Subscription not found'}, status=status.HTTP_404_NOT_FOUND)
-        
+        company_id = subscription.company.company_id
         subscription.delete()
-        return Response({'message': 'Successfully unsubscribed'}, status=status.HTTP_204_NO_CONTENT)
+        return Response({'message': 'Successfully unsubscribed', 'company_id': company_id}, status=status.HTTP_204_NO_CONTENT)
 
 class SubscriptionListView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, IsRelatedToCompany)
+
     def get(self, request):
-        response = JWT_authenticator.authenticate(request)
-        if response is None:
-            return Response({'error': "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
-        user_id = response[1].get('user_id')
-        subs = Subscription.objects.filter(investor_id=user_id).values()
+        profile_id = request.user.relation_id
+        subs = Subscription.get_subcriptions(investor=profile_id).values()
         if not subs:
-            return Response({'message': "You have no subs"}, status=status.HTTP_204_NO_CONTENT)
+            return Response({'message': "You have no subsriptions yet!"}, status=status.HTTP_204_NO_CONTENT)
         serializer = SubscriptionListSerializer(subs, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
