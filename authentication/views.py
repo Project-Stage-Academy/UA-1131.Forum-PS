@@ -16,7 +16,6 @@ from forum import settings
 from .utils import Utils
 
 
-
 class UserRegistrationView(generics.CreateAPIView):
     model = CustomUser
     serializer_class = UserRegistrationSerializer
@@ -54,11 +53,11 @@ class LoginView(APIView):
             return Response({'error': 'Wrong password'}, status=status.HTTP_401_UNAUTHORIZED)
         refresh = RefreshToken.for_user(user)
         return Response({
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-                'user_id': user.user_id,
-                'email': email
-            })
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'user_id': user.user_id,
+            'email': email
+        })
 
 class RelateUserToCompany(APIView):
     """Binding user to company and inserting linked company's id into token."""
@@ -126,8 +125,8 @@ class PasswordRecoveryAPIView(APIView):
         return Response({'message': 'Password reset email sent successfully'}, status=status.HTTP_200_OK)
 
 
-
-class PasswordResetView(APIView):              # This view will be rewritten after implementing custom authentication into the main branch.
+class PasswordResetView(APIView):
+    # This view will be rewritten after implementing custom authentication into the main branch.
     serializer_class = PasswordRecoverySerializer
 
     def post(self, request, jwt_token):
@@ -140,9 +139,9 @@ class PasswordResetView(APIView):              # This view will be rewritten aft
                     serializer.is_valid(raise_exception=True)
                     serializer.save()
                     return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
-                except ValidationError as e:   
+                except ValidationError as e:
                     return Response({'error': e.message}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 return Response({'error': 'Invalid token for password reset'}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({'error': 'Invalid token for password reset'}, status=status.HTTP_400_BAD_REQUEST)   
+            return Response({'error': 'Invalid token for password reset'}, status=status.HTTP_400_BAD_REQUEST)

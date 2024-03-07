@@ -8,15 +8,13 @@ from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.exceptions import TokenError
 
 
-
-
 class CustomUserManager(BaseUserManager):
 
     def create_user(self, email, password, **extra_fields):
         if not email:
             raise ValueError("The email must be set")
         email = self.normalize_email(email)
-        user:CustomUser = self.model(email=email, **extra_fields)
+        user: CustomUser = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.registration_date = datetime.now()
         user.save()
@@ -46,14 +44,13 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     position = None
     is_authenticated = None
 
-
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["user_id", "password", "first_name", "surname", "phone_number"]
     objects = CustomUserManager()
 
     def __str__(self):
         return f"{self.first_name} {self.surname} {self.email}"
-        
+
     @classmethod
     def get_user(cls, *args, **kwargs):
         return cls.objects.get(**kwargs)
@@ -61,14 +58,14 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     @classmethod
     def generate_company_related_token(cls, request):
         try:
-            raw_token:str = request.headers.get('Authorization')
+            raw_token: str = request.headers.get('Authorization')
             access_token = raw_token.split(' ')[1]
             decoded_token = AccessToken(access_token)
             decoded_token.payload['company_id'] = request.data['company_id']
             return str(decoded_token)
         except TokenError as e:
             raise e
-    
+
     def get_company_type(self):
         if not self.company:
             raise NotAuthenticated(detail=Error.NO_RELATED_TO_COMPANY.msg)
@@ -79,14 +76,13 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def get_email(self):
         return self.email
-    
+
     def get_full_name(self):
         return f"{self.first_name} {self.surname}"
 
     def get_short_name(self):
         return self.first_name
 
-    
 
 class Company(models.Model):
     company_id = models.BigAutoField(primary_key=True)
@@ -104,23 +100,24 @@ class Company(models.Model):
 
 
 class CompanyAndUserRelation(models.Model):
-
     FOUNDER = "F"
     REPRESENTATIVE = "R"
 
-    POSITION_CHOICES = ((FOUNDER, "Founder"), 
+    POSITION_CHOICES = ((FOUNDER, "Founder"),
                         (REPRESENTATIVE, "Representative"))
 
     relation_id = models.BigAutoField(primary_key=True)
-    user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="user_relations", db_column="user_id")
-    company_id = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_relations", db_column="company_id")
-    position = models.CharField(default=REPRESENTATIVE, max_length=30, choices=POSITION_CHOICES, blank=False, null=False)
-    
+    user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="user_relations",
+                                db_column="user_id")
+    company_id = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_relations",
+                                   db_column="company_id")
+    position = models.CharField(default=REPRESENTATIVE, max_length=30, choices=POSITION_CHOICES, blank=False,
+                                null=False)
+
     @classmethod
     def get_relation(cls, u, c):
         relation = cls.objects.filter(user_id=u, company_id=c).first()
-        return relation 
-
+        return relation
 
 
 class UserLoginActivity(models.Model):
@@ -129,7 +126,7 @@ class UserLoginActivity(models.Model):
     FAILED = 'F'
 
     LOGIN_STATUS = ((SUCCESS, 'Success'),
-                           (FAILED, 'Failed'))
+                    (FAILED, 'Failed'))
 
     login_IP = models.GenericIPAddressField(null=True, blank=True)
     login_datetime = models.DateTimeField(auto_now=True)

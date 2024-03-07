@@ -57,3 +57,4 @@ zope.interface==6.2
 zxcvbn==4.4.28
 celery==5.3.6
 psycopg2-binary==2.9.9
+django-filter==23.5
