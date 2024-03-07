@@ -6,6 +6,8 @@ from rest_framework.exceptions import NotAuthenticated
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.exceptions import TokenError
 from forum.errors import Error
+from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework_simplejwt.exceptions import TokenError
 
 STARTUP = 'startup'
 INVESTMENT = 'investment'

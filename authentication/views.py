@@ -1,16 +1,20 @@
 import logging
 import jwt
+from django.contrib.auth import authenticate, user_logged_in
 from django.conf import settings
-from rest_framework.response import Response
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
+from rest_framework import status, generics
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework import generics
-from rest_framework import status
+from rest_framework.response import Response
 from rest_framework.views import APIView
 from authentication.authentications import UserAuthentication
-from authentication.models import CustomUser
+from authentication.models import CustomUser, CompanyAndUserRelation
 from authentication.permissions import (CustomUserUpdatePermission, IsAuthenticated)
-from authentication.serializers import (UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer)
+from authentication.serializers import (UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer, PasswordRecoverySerializer)
 from forum import settings
+from .utils import Utils
+
 
 
 class UserRegistrationView(generics.CreateAPIView):
@@ -56,6 +60,20 @@ class LoginView(APIView):
                 'email': email
             })
 
+class RelateUserToCompany(APIView):
+    """Binding user to company and inserting linked company's id into token."""
+    permission_classes = (IsAuthenticated,)
+    
+    def post(self, request):
+        user_id = request.user.user_id
+        company_id = request.data['company_id']
+        relation = CompanyAndUserRelation.get_relation(user_id, company_id)
+        if not relation: 
+            return Response({'error': 'You have no access to this company.'}, status=status.HTTP_403_FORBIDDEN)
+        access_token = CustomUser.generate_company_related_token(request)
+        return Response({'access': f"Bearer {access_token}"})
+    
+
 
 class UserUpdateView(generics.RetrieveUpdateAPIView):
     queryset = CustomUser.objects.all()
@@ -82,4 +100,49 @@ class LogoutView(APIView):
             token.blacklist()
             return Response(status=status.HTTP_205_RESET_CONTENT)
         except Exception as e:
-            return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+            print("Exception", e)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+class PasswordRecoveryAPIView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        try:
+            validate_email(email)
+        except ValidationError:
+            return Response({'error': 'Bad request'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = CustomUser.objects.get(email=email)
+        except CustomUser.DoesNotExist:
+            return Response({'error': 'Bad request'}, status=status.HTTP_400_BAD_REQUEST)
+
+        jwt_token = Utils.generate_token(user.email, user.pk)
+        reset_link = f"{settings.FRONTEND_URL}/auth/password-reset/{jwt_token}/"
+        try:
+            Utils.send_password_reset_email.delay(email, reset_link)
+        except Exception as e:
+            return Response({'error': 'Failed to send email'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'message': 'Password reset email sent successfully'}, status=status.HTTP_200_OK)
+
+
+
+class PasswordResetView(APIView):              # This view will be rewritten after implementing custom authentication into the main branch.
+    serializer_class = PasswordRecoverySerializer
+
+    def post(self, request, jwt_token):
+        uid, email, exp = Utils.decode_token(jwt_token)
+        if uid and email:
+            user = Utils.get_user(uid, email)
+            if user is not None:
+                serializer = self.serializer_class(instance=user, data=request.data)
+                try:
+                    serializer.is_valid(raise_exception=True)
+                    serializer.save()
+                    return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
+                except ValidationError as e:   
+                    return Response({'error': e.message}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response({'error': 'Invalid token for password reset'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'error': 'Invalid token for password reset'}, status=status.HTTP_400_BAD_REQUEST)   
