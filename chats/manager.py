@@ -47,22 +47,24 @@ class MessagesManager(MongoManager):
     db = DB['long_term_messages']
 
     @classmethod
-    def get_messages_to_company(cls, sender_id, receiver_id):
-        existing_messages = cls.db.find({
-            {"sender_id": sender_id, "receiver_id": receiver_id},
-            {"visible_for_receiver": 0, "visible_for_sender": 0},
-        })
-        if not existing_messages:
+    def get_messages_to_company(cls, company_id):
+        cursor = cls.db.find({"$or": [
+            {"sender_id": company_id},
+            {"receiver_id": company_id}]},
+            {"visible_for_receiver": 0, "visible_for_sender": 0}
+        )
+        if not cursor:
             raise MessageGroupNotFound("No massage with this company")
+        existing_messages = cls.to_list(cursor)
         return existing_messages
 
     @classmethod
     def get_message(cls, message_id):
         if ObjectId.is_valid(message_id):
             existing_message = cls.db.find_one({"_id": ObjectId(message_id)})
-            existing_message = cls.id_to_string(existing_message)
             if not existing_message:
                 raise MessageNotFound("Message not found")
+            existing_message = cls.id_to_string(existing_message)
             return existing_message
         raise ValidationError("Invalid message_id")
 
@@ -89,7 +91,7 @@ class MessagesManager(MongoManager):
         cursor = cls.db.find({"$and":
                                   [{"receiver_id": company_id},
                                    {"visible_for_receiver": True}]},
-                                    {"visible_for_receiver": 0, "visible_for_sender": 0})
+                             {"visible_for_receiver": 0, "visible_for_sender": 0})
         return cls.to_list(cursor)
 
     @classmethod
@@ -97,5 +99,5 @@ class MessagesManager(MongoManager):
         cursor = cls.db.find({"$and":
                                   [{"sender_id": company_id},
                                    {"visible_for_sender": True}]},
-                                    {"visible_for_receiver": 0, "visible_for_sender": 0})
+                             {"visible_for_receiver": 0, "visible_for_sender": 0})
         return cls.to_list(cursor)

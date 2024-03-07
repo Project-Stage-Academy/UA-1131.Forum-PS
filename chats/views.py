@@ -12,9 +12,7 @@ from .manager import MessagesManager as manager
 from .manager import Message
 
 
-
-
-class MessageDetail(APIView):
+class MessageDetailView(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, message_id):
@@ -35,7 +33,7 @@ class MessageDetail(APIView):
         return Response(message, status=status.HTTP_200_OK)
 
 
-class SendMessage(APIView):
+class SendMessageView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -96,6 +94,18 @@ class InboxView(APIView):
         try:
             company_id = request.user.company.get("company_id")
             messages = manager.company_inbox_messages(company_id)
+            return Response(messages, status=status.HTTP_200_OK)
+        except AttributeError:
+            raise NotAuthenticated(detail=Error.NO_USER_OR_COMPANY_ID.msg)
+
+
+class ListMessagesView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self,request):
+        try:
+            company_id = request.user.company.get("company_id")
+            messages = manager.get_messages_to_company(company_id)
             return Response(messages, status=status.HTTP_200_OK)
         except AttributeError:
             raise NotAuthenticated(detail=Error.NO_USER_OR_COMPANY_ID.msg)
