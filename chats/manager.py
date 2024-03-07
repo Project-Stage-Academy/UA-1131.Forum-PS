@@ -56,7 +56,7 @@ class MessagesManager(MongoManager):
     def get_messages_to_company(cls, sender_id, receiver_id):
         existing_messages = cls.db.find({
             {"sender_id": sender_id, "receiver_id": receiver_id},
-
+            {"visible_for_receiver": 0, "visible_for_sender": 0},
         })
         if not existing_messages:
             raise MessageGroupNotFound("No massage with this company")
@@ -66,6 +66,7 @@ class MessagesManager(MongoManager):
     def get_message(cls, message_id):
         if ObjectId.is_valid(message_id):
             existing_message = cls.db.find_one({"_id": ObjectId(message_id)})
+            existing_message["_id"] = str(existing_message["_id"])
             if not existing_message:
                 raise MessageNotFound("Message not found")
             return existing_message
@@ -88,3 +89,19 @@ class MessagesManager(MongoManager):
     def create_message(cls, message):
         cls.db.insert_one(message.model_dump())
         return message.dict()
+
+    @classmethod
+    def company_inbox_messages(cls, company_id):
+        cursor = cls.db.find({"$and":
+                                  [{"receiver_id": company_id},
+                                   {"visible_for_receiver": True}]},
+                             {"visible_for_receiver": 0, "visible_for_sender": 0})
+        return cls.to_list(cursor)
+
+    @classmethod
+    def company_outbox_messages(cls, company_id):
+        cursor = cls.db.find({"$and":
+                                  [{"sender_id": company_id},
+                                   {"visible_for_sender": True}]},
+                             {"visible_for_receiver": 0, "visible_for_sender": 0})
+        return cls.to_list(cursor)
