@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from rest_framework import status, generics
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from authentication.authentications import UserAuthentication
@@ -28,7 +28,7 @@ class VerifyEmail(APIView):
         logger = logging.getLogger('account_update')
         token = request.GET.get('token')
         try:
-            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
+            payload = AccessToken(token).payload
             user = CustomUser.objects.get(user_id=payload['user_id'])
             user.is_verified = True
             user.save()
@@ -42,7 +42,7 @@ class VerifyEmail(APIView):
 
 
 class LoginView(APIView):
-
+    authentication_classes = ()
     def post(self, request):
         email = request.data.get('email')
         password = request.data.get('password')
@@ -59,6 +59,19 @@ class LoginView(APIView):
                 'user_id': user.user_id,
                 'email': email
             })
+    
+class LogoutView(APIView):
+    authentication_classes = (UserAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        try:
+            refresh_token = request.data["refresh_token"]
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response(status=status.HTTP_205_RESET_CONTENT)
+        except Exception as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
 class RelateUserToCompany(APIView):
     """Binding user to company and inserting linked company's id into token."""
@@ -82,29 +95,14 @@ class UserUpdateView(generics.RetrieveUpdateAPIView):
     permission_classes = (IsAuthenticated, CustomUserUpdatePermission)
 
 
-class UserPasswordUpdateView(generics.UpdateAPIView):
+class UserPasswordUpdateView(generics.UpdateAPIView): #doesn't this view double the password reset and recovery functions?
     queryset = CustomUser.objects.all()
     serializer_class = UserPasswordUpdateSerializer
     authentication_classes = (UserAuthentication,)
     permission_classes = (CustomUserUpdatePermission,)
 
 
-class LogoutView(APIView):
-    authentication_classes = (UserAuthentication,)
-    permission_classes = (IsAuthenticated,)
-
-    def post(self, request):
-        try:
-            refresh_token = request.data["refresh_token"]
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-            return Response(status=status.HTTP_205_RESET_CONTENT)
-        except Exception as e:
-            print("Exception", e)
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
-
-class PasswordRecoveryAPIView(APIView):
+class PasswordRecoveryView(APIView):
     def post(self, request):
         email = request.data.get('email')
         try:
@@ -124,7 +122,6 @@ class PasswordRecoveryAPIView(APIView):
         except Exception as e:
             return Response({'error': 'Failed to send email'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response({'message': 'Password reset email sent successfully'}, status=status.HTTP_200_OK)
-
 
 
 class PasswordResetView(APIView):              # This view will be rewritten after implementing custom authentication into the main branch.
