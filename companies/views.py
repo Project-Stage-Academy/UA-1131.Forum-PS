@@ -1,4 +1,4 @@
-from rest_framework import generics, status
+from rest_framework import generics, status, viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from authentication.models import Company
@@ -6,20 +6,15 @@ from .models import Subscription
 from .serializers import CompaniesSerializer, SubscriptionSerializer, SubscriptionListSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from .permissions import EditCopmanyPermission
+from revision.views import CustomRevisionMixin
 
 JWT_authenticator = JWTAuthentication()
 
-class CompaniesListCreateView(generics.ListCreateAPIView):
+class CompaniesViewSet(CustomRevisionMixin, viewsets.ModelViewSet):
     queryset = Company.objects.all()
     serializer_class = CompaniesSerializer
-    permission_classes = (IsAuthenticated,)
-
-
-
-class CompaniesRetrieveUpdateView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Company.objects.all()
-    serializer_class = CompaniesSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (EditCopmanyPermission,)
 
 class SubscriptionCreateAPIView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -72,3 +67,4 @@ class SubscriptionListView(APIView):
             return Response({'message': "You have no subs"}, status=status.HTTP_204_NO_CONTENT)
         serializer = SubscriptionListSerializer(subs, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+

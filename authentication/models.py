@@ -4,6 +4,7 @@ from django.contrib.auth.base_user import (AbstractBaseUser, BaseUserManager)
 from django.db import models
 from rest_framework.exceptions import PermissionDenied, NotAuthenticated
 from forum.errors import Error
+from reversion import register
 
 
 
@@ -75,7 +76,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         return self.first_name
 
     
-
+@register()
 class Company(models.Model):
     company_id = models.BigAutoField(primary_key=True)
     brand = models.CharField(max_length=255, blank=True)

@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenRefreshView
 from authentication.views import LoginView, LogoutView
+from companies.urls import router as company_router
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -11,4 +12,4 @@ urlpatterns = [
     path("api/login", LoginView.as_view(), name='login'),
     path("api/logout", LogoutView.as_view(), name='logout'), 
     path('companies/', include('companies.urls'))
-]
+] + company_router.urls
