@@ -8,10 +8,3 @@ class Subscription(models.Model):
     get_email_newsletter = models.BooleanField(default=False)
     subscribed_at = models.DateTimeField(auto_now_add=True)
 
-
-class CompanyArticle(models.Model):
-    article_id = models.BigAutoField(primary_key=True)
-    relation = models.ForeignKey(CompanyAndUserRelation, on_delete=models.CASCADE)
-    article_text = models.TextField(null=True)
-    article_tags = models.TextField(null=True)
-    added_at = models.DateTimeField(auto_now_add=True)
