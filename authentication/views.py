@@ -19,6 +19,7 @@ from authentication.serializers import (PasswordRecoverySerializer,
                                         UserRegistrationSerializer,
                                         UserUpdateSerializer)
 from forum import settings
+from forum.errors import Error
 from forum.managers import TokenManager
 
 from .utils import Utils
@@ -141,12 +142,12 @@ class PasswordRecoveryAPIView(APIView):
         email = request.data.get('email')
         try:
             validate_email(email)
-        except ValidationError:
-            return Response({'error': 'Bad request'}, status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError as e:
+            return Response({'error': e.message}, status=status.HTTP_400_BAD_REQUEST)
         try:
             user = CustomUser.get_user(email=email)
         except CustomUser.DoesNotExist:
-            return Response({'error': 'User does not exist'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': Error.USER_NOT_FOUND.msg}, status=Error.USER_NOT_FOUND.status)
 
         access_token = TokenManager.generate_token_for_user(user)
         reset_link = f"{settings.FRONTEND_URL}/auth/password-reset/{access_token}/"
@@ -185,7 +186,7 @@ class PasswordResetView(APIView):
         payload = TokenManager.get_payload(jwt_token)
         user_id = payload.get('user_id')
         if user_id is None:
-            return Response({'error': 'Invalid token for password reset'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': Error.INVALID_TOKEN.msg}, status=Error.INVALID_TOKEN.status)
         user = CustomUser.get_user(user_id=user_id)
         serializer = self.serializer_class(data=request.data)
 
