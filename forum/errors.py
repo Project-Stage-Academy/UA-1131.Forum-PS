@@ -38,7 +38,7 @@ class Error:
 
     class USER_NOT_FOUND:
         msg = "User not found"
-        status = status.HTTP_403_FORBIDDEN
+        status = status.HTTP_404_NOT_FOUND
 
     class NO_USER_OR_COMPANY_ID:
         msg = "Token contained no recognizable user or company identification"
