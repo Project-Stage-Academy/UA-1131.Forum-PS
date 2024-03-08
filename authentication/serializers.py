@@ -132,7 +132,6 @@ class UserPasswordUpdateSerializer(serializers.ModelSerializer, CustomValidation
 
 
 class PasswordRecoverySerializer(serializers.ModelSerializer, CustomValidationSerializer):
-
     password = serializers.CharField(write_only=True, required=True)
     password2 = serializers.CharField(write_only=True, required=True)
 
@@ -144,16 +143,9 @@ class PasswordRecoverySerializer(serializers.ModelSerializer, CustomValidationSe
         password1 = attrs.get('password')
         password2 = attrs.get('password2')
         if password1 != password2:
-            raise serializers.ValidationError({"password": "Passwords are different"})
+            raise ValidationError(detail="Passwords are different")
         try:
             self.validation_password(password1)
         except ValidationError as e:
-            raise ValidationError({"password": e.detail})
+            raise ValidationError(detail=e.detail)
         return attrs
-
-    def update(self, instance, validated_data):
-        new_password = validated_data.pop("password")
-        instance.password = make_password(new_password)
-        instance.save()
-        Utils.send_password_update_email(instance)
-        return instance
