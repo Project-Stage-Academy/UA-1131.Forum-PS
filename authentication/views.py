@@ -25,6 +25,7 @@ from forum.managers import TokenManager
 from .utils import Utils
 
 
+
 class UserRegistrationView(generics.CreateAPIView):
     model = CustomUser
     serializer_class = UserRegistrationSerializer
@@ -62,11 +63,11 @@ class LoginView(APIView):
             return Response({'error': 'Wrong password'}, status=status.HTTP_401_UNAUTHORIZED)
         refresh = RefreshToken.for_user(user)
         return Response({
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-                'user_id': user.user_id,
-                'email': email
-            })
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'user_id': user.user_id,
+            'email': email
+        })
 
 class RelateUserToCompany(APIView):
     """Binding user to company and inserting linked company's id into token."""
