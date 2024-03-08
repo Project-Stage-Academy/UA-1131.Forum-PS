@@ -1,5 +1,7 @@
+from rest_framework_simplejwt.exceptions import (AuthenticationFailed,
+                                                 TokenError)
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
-from rest_framework_simplejwt.exceptions import InvalidToken, AuthenticationFailed
+
 from .errors import Error
 
 
@@ -32,6 +34,6 @@ class TokenManager:
 
         try:
             decoded_token = AccessToken(token)
-        except InvalidToken:
+        except TokenError:
             raise AuthenticationFailed(detail=Error.INVALID_TOKEN.msg)
         return decoded_token
