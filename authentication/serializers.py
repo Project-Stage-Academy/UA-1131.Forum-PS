@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from django.contrib.auth.hashers import check_password, make_password
+from django.contrib.auth.hashers import check_password
 from django.contrib.sites.shortcuts import get_current_site
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
