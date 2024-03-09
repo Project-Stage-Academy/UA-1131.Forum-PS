@@ -25,10 +25,10 @@ class SubscriptionCreateAPIView(APIView):
     def post(self, request):
         profile_id = request.user.relation_id
         company_id = request.data.get('company')
-
-        check_sub = Subscription.get_subcription(
-            investor=profile_id, company=company_id)
-        if check_sub:
+        try:
+            check_sub = Subscription.get_subcription(
+                investor=profile_id, company=company_id)
+        except Subscription.DoesNotExist:
             msg = f"You're already subscribed to {check_sub.company.brand}."
             return Response({'message': msg}, status=status.HTTP_200_OK)
         request.data['investor'] = profile_id
