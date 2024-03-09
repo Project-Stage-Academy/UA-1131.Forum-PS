@@ -2,10 +2,11 @@ from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from authentication.models import Company
-from .models import Subscription
-from .serializers import CompaniesSerializer, SubscriptionSerializer, SubscriptionListSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from .models import Subscription
+from .serializers import CompaniesSerializer, SubscriptionSerializer, SubscriptionListSerializer
+from .managers import ArticlesManager as am, LIMIT
 
 JWT_authenticator = JWTAuthentication()
 
@@ -13,8 +14,6 @@ class CompaniesListCreateView(generics.ListCreateAPIView):
     queryset = Company.objects.all()
     serializer_class = CompaniesSerializer
     permission_classes = (IsAuthenticated,)
-
-
 
 class CompaniesRetrieveUpdateView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Company.objects.all()
@@ -72,3 +71,33 @@ class SubscriptionListView(APIView):
             return Response({'message': "You have no subs"}, status=status.HTTP_204_NO_CONTENT)
         serializer = SubscriptionListSerializer(subs, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class RetrieveArticles(APIView):
+    def get(self, request, pk=None, page=None):
+        if not pk or not page:
+            return Response({'error': "No company id or page was provided"}, status=status.HTTP_400_BAD_REQUEST)
+        skip = LIMIT * (page - 1)
+        articles = am.get_articles_for_company(pk, skip=skip, projection=['articles'])
+        return Response(articles, status=status.HTTP_200_OK)
+
+class CreateArticle(APIView):
+    authentication_classes = ()
+    def post(self, request):
+        data = request.data
+        company_id = data.get('company_id')
+        # company_id and relation_id should be retrieved from request.user
+        try:
+            company = Company.get_company(company_id=company_id)
+        except Company.DoesNotExist:
+            return Response({'error':'The company you tried rto create article for does not exist or was deleted.'}, status=status.HTTP_404_NOT_FOUND)
+        res = am.add_article(data)
+        # article = res.get('articles')[0]
+        return Response(res, status=status.HTTP_201_CREATED)
+
+    def patch(self, request):
+        pass
+
+class DeleteArticle(APIView):
+    def delete(self, request, pk):
+        pass
+

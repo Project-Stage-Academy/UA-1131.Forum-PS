@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 import os
+import pymongo
 from datetime import timedelta
 from dotenv import load_dotenv
 from pathlib import Path
@@ -73,7 +74,7 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -101,6 +102,9 @@ WSGI_APPLICATION = 'forum.wsgi.application'
 ASGI_APPLICATION = 'forum.asgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+
+CLIENT = pymongo.MongoClient(os.environ.get('MONGO_URL'), maxPoolSize=400)
+DB = CLIENT[os.environ.get('MONGO_DATABASE')]
 
 DATABASES = {
     'default': {

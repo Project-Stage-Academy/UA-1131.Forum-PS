@@ -101,6 +101,10 @@ class Company(models.Model):
     product_info = models.TextField(blank=True)
     startup_idea = models.TextField(blank=True)
     tags = models.CharField(max_length=255, blank=True)
+    
+    @classmethod
+    def get_company(cls, *args, **kwargs):
+        return cls.objects.get(**kwargs)
 
 
 class CompanyAndUserRelation(models.Model):

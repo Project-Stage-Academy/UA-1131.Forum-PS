@@ -12,4 +12,4 @@ class Article(BaseModel):
     
 class CompanyArticles(BaseModel):
     company_id:int
-    aricles:List[Article]
+    articles:List[Article] = Field(default=[])
