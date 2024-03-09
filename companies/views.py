@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from authentication.models import Company, CustomUser, CompanyAndUserRelation
 from authentication.permissions import IsAuthenticated, IsRelatedToCompany, IsInvestor
 from .models import Subscription
-from .serializers import SubscriptionSerializer, SubscriptionListSerializer, CompaniesSerializer
+from .serializers import SubscriptionSerializer, CompaniesSerializer
 
 class CompaniesListCreateView(APIView):
     permission_classes = (IsAuthenticated,)
