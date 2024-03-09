@@ -56,7 +56,7 @@ class UserAuthentication(JWTAuthentication):
                 user_id = validated_token[api_settings.USER_ID_CLAIM] 
                 company_id = validated_token['company_id'] 
                 user = CustomUser.get_user(user_id=user_id)
-                relation = CompanyAndUserRelation.get_relation(user_id, company_id) 
+                relation = CompanyAndUserRelation.get_relation(user_id=user_id, company_id=company_id)
                 user.company = relation.company_id.__dict__
                 user.position = relation.position
                 user.relation_id = relation.relation_id
