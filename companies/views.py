@@ -1,4 +1,4 @@
-from django_filters.rest_framework import DjangoFilterBackend
+
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -9,23 +9,23 @@ from .models import Subscription
 from .serializers import CompaniesSerializer, SubscriptionSerializer, SubscriptionListSerializer
 from .managers import ArticlesManager as am, LIMIT
 
-JWT_authenticator = JWTAuthentication()
+# JWT_authenticator = JWTAuthentication()
 
 
-class CompaniesListCreateView(generics.ListCreateAPIView):
-    queryset = Company.objects.all()
-    serializer_class = CompaniesSerializer
-    permission_classes = (IsAuthenticated,)
-    filter_backends = [DjangoFilterBackend]
-    filterset_class = CompanyFilter
+# class CompaniesListCreateView(generics.ListCreateAPIView):
+#     queryset = Company.objects.all()
+#     serializer_class = CompaniesSerializer
+#     permission_classes = (IsAuthenticated,)
+#     filter_backends = [DjangoFilterBackend]
+#     filterset_class = CompanyFilter
 
 
-class CompaniesRetrieveUpdateView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Company.objects.all()
-    serializer_class = CompaniesSerializer
-    # permission_classes = (IsAuthenticated,)
-    filter_backends = [DjangoFilterBackend]
-    filterset_class = CompanyFilter
+# class CompaniesRetrieveUpdateView(generics.RetrieveUpdateDestroyAPIView):
+#     queryset = Company.objects.all()
+#     serializer_class = CompaniesSerializer
+#     # permission_classes = (IsAuthenticated,)
+#     filter_backends = [DjangoFilterBackend]
+#     filterset_class = CompanyFilter
 
 
 class SubscriptionCreateAPIView(APIView):
