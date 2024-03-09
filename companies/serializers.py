@@ -15,7 +15,6 @@ class SubscriptionSerializer(CustomValidationSerializer):
         model = Subscription
         fields = ['investor', 'company', 'get_email_newsletter']
 
-class SubscriptionListSerializer(CustomValidationSerializer):
-    class Meta:
-        model = Subscription
-        fields = ['subscription_id', 'company_id', 'get_email_newsletter']
+    def create(self, validated_data):
+        return Subscription.objects.create(**self.validated_data)
+
