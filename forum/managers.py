@@ -10,18 +10,18 @@ from .errors import Error
 class TokenManager:
 
     @classmethod
-    def generate_access_token_for_user(cls, user: CustomUser) -> str:
+    def generate_access_token_for_user(cls, user: CustomUser) -> AccessToken:
         """Generates token for user"""
 
         access_token = AccessToken.for_user(user)
-        return str(access_token)
+        return access_token
 
     @classmethod
-    def generate_refresh_token_for_user(cls, user: CustomUser) -> str:
+    def generate_refresh_token_for_user(cls, user: CustomUser) -> RefreshToken:
         """Generates token for user"""
 
         refresh_token = RefreshToken.for_user(user)
-        return str(refresh_token)
+        return refresh_token
 
     @classmethod
     def get_access_payload(cls, token: str) -> dict:
