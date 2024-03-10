@@ -1,7 +1,9 @@
 from rest_framework import status
-# pre-formatted errors for easier handling
+
 
 class Error:
+    """Pre-formatted errors for easier handling"""
+
     class NO_HEADER:
         msg = "No authentication header provided"
         status = status.HTTP_401_UNAUTHORIZED
@@ -14,6 +16,11 @@ class Error:
         msg = "No company found"
         status = status.HTTP_404_NOT_FOUND
 
+    class INVALID_TOKEN:
+        msg = "Token is invalid or expired"
+        status = status.HTTP_401_UNAUTHORIZED
+
+
     class NO_USER_ID:
         msg = "Token contained no recognizable user identification"
         status = status.HTTP_401_UNAUTHORIZED
@@ -22,7 +29,7 @@ class Error:
         msg = "User is not verified"
         status = status.HTTP_401_UNAUTHORIZED
 
-    class NOT_AUTHENTICATED: 
+    class NOT_AUTHENTICATED:
         msg = "User is not authenticated"
         status = status.HTTP_401_UNAUTHORIZED
 
@@ -36,7 +43,7 @@ class Error:
 
     class USER_NOT_FOUND:
         msg = "User not found"
-        status = status.HTTP_403_FORBIDDEN
+        status = status.HTTP_404_NOT_FOUND
 
     class NO_USER_OR_COMPANY_ID:
         msg = "Token contained no recognizable user or company identification"
@@ -61,7 +68,7 @@ class Error:
     class NOT_FOUNDER:
         msg = "User has not founder position"
         status = status.HTTP_403_FORBIDDEN
-    
+
     class NOT_REPRESENTATIVE:
         msg = "User has not founder position"
         status = status.HTTP_403_FORBIDDEN
