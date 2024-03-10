@@ -28,6 +28,10 @@ class Error:
         msg = "User is not authenticated"
         status = status.HTTP_401_UNAUTHORIZED
 
+    class INVALID_CREDENTIALS:
+        msg = "Invalid credentials"
+        status = status.HTTP_401_UNAUTHORIZED
+
     class NOT_INVESTOR:
         msg = "Related company is not of investment"
         status = status.HTTP_403_FORBIDDEN
