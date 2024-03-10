@@ -50,8 +50,13 @@ class ArticlesManager(MongoManager):
         return res['articles'][-1]
     
     @classmethod
-    def update_article(cls, company_id):
-        pass
+    def update_article(cls, company_id, art_id, data):
+        query = {'company_id': company_id, 'articles.article_id': art_id}
+        update = {'$set': {'articles.$.article_text': data['new_content']}}
+        res = cls.db.update_one(query, update)
+        return res.acknowledged
+
+
 
         
 

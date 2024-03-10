@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from authentication.models import Company
+from authentication.permissions import IsAuthenticated, IsRelatedToCompany, IsVerified, IsStartup
 from .filters import CompanyFilter
 from .models import Subscription
 from .serializers import CompaniesSerializer, SubscriptionSerializer, SubscriptionListSerializer
@@ -87,6 +88,7 @@ class SubscriptionListView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class RetrieveArticles(APIView):
+    # do we need to block access to the articles for an unauthorized viewrs?
     def get(self, request, pk=None, page=None):
         if not pk or not page:
             return Response({'error': "No company id or page was provided"}, status=status.HTTP_400_BAD_REQUEST)
@@ -95,24 +97,29 @@ class RetrieveArticles(APIView):
         return Response(articles, status=status.HTTP_200_OK)
 
 class CreateArticle(APIView):
-    authentication_classes = ()
+    permission_classes = (IsAuthenticated, IsRelatedToCompany, IsStartup)
     def post(self, request):
         data = request.data
-        company_id = data.get('company_id')
-        # company_id and relation_id should be retrieved from request.user
-        try:
-            company = Company.get_company(company_id=company_id)
-        except Company.DoesNotExist:
-            return Response({'error':'The company does not exist or was deleted.'}, status=status.HTTP_404_NOT_FOUND)
+        company_id = request.user.company['company_id']
+        relation_id = request.user.relation_id
+        data['relation'] = relation_id
+        data['company_id'] = company_id
         res = am.add_article(data)
         return Response(res, status=status.HTTP_201_CREATED)
 
-    def patch(self, request, art_id=None):
-        pass
-
+class RedactArticle(APIView):
+    permission_classes = (IsAuthenticated, IsRelatedToCompany)
+    def post(self, request, art_id=None):
+        data = request.data
+        if not data['new_content']:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        company_id = request.user.company.company_id
+        updated_article = am.update_article(company_id, art_id, data)
+        return Response(updated_article)
 
 
 class DeleteArticle(APIView):
+    #authentication is required and permissions should be added
     def delete(self, request, pk):
         pass
 
