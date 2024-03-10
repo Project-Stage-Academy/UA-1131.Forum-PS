@@ -11,16 +11,17 @@ from .models import Subscription
 from .serializers import CompaniesSerializer, SubscriptionSerializer, SubscriptionListSerializer
 from .managers import ArticlesManager as am, LIMIT
 
-JWT_authenticator = JWTAuthentication()
 
-
-class CompaniesListCreateView(generics.ListCreateAPIView):
-    queryset = Company.objects.all()
-    serializer_class = CompaniesSerializer
+class CompaniesListCreateView(APIView):
     permission_classes = (IsAuthenticated,)
-    filter_backends = [DjangoFilterBackend]
-    filterset_class = CompanyFilter
-
+    def post(self, request):
+        serializer = CompaniesSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
 
 class CompaniesRetrieveUpdateView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Company.objects.all()
