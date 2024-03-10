@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from authentication.models import Company
-from authentication.permissions import IsAuthenticated, IsRelatedToCompany, IsVerified, IsStartup, IsInvestor
+from authentication.permissions import IsAuthenticated, IsRelatedToCompany, IsStartup, IsInvestor, IsFounder
 from .filters import CompanyFilter
 from .models import Subscription
 from .serializers import CompaniesSerializer, SubscriptionSerializer, SubscriptionListSerializer
@@ -115,7 +115,7 @@ class CreateArticle(APIView):
         data['relation'] = relation_id
         data['company_id'] = company_id
         res = am.add_article(data)
-        return Response(res, status=status.HTTP_201_CREATED)
+        return Response({'document_was_deleted': res}, status=status.HTTP_201_CREATED)
 
 class RedactArticle(APIView):
     permission_classes = (IsAuthenticated, IsRelatedToCompany)
@@ -123,13 +123,17 @@ class RedactArticle(APIView):
         data = request.data
         if not data['new_content']:
             return Response(status=status.HTTP_204_NO_CONTENT)
-        company_id = request.user.company.company_id
+        company_id = request.user.company['company_id']
         updated_article = am.update_article(company_id, art_id, data)
         return Response(updated_article)
 
 
 class DeleteArticle(APIView):
-    #authentication is required and permissions should be added
-    def delete(self, request, pk):
-        pass
+    permission_classes = (IsAuthenticated, IsRelatedToCompany, IsStartup, IsFounder)
+    def delete(self, request, art_id=None):
+        company_id = request.user.company['company_id']
+        res = am.delete_article(company_id, art_id)
+        return Response(res, status=status.HTTP_200_OK)
+
+        
 

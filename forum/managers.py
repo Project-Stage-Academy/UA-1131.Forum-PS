@@ -55,6 +55,11 @@ class MongoManager:
     def update_document(cls, query, update, **kwargs):
         document = cls.db.find_one_and_update(query, update, return_document=pymongo.ReturnDocument.AFTER, **kwargs)
         return cls.id_to_string(document)
+    
+    @classmethod
+    def delete_document(cls, query, **kwargs):
+        res = cls.db.find_one_and_delete(query, **kwargs)
+        return res
 
    
     
