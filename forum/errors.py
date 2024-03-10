@@ -70,9 +70,13 @@ class Error:
         status = status.HTTP_403_FORBIDDEN
 
     class NOT_REPRESENTATIVE:
-        msg = "User has not founder position"
+        msg = "User has not representative position"
         status = status.HTTP_403_FORBIDDEN
 
     class NO_CREDENTIALS:
         msg = "No credentials were provided"
         status = status.HTTP_400_BAD_REQUEST
+
+    class INVALID_ARTICLE:
+        msg = "Invalid article data provided"
+        status = status.HTTP_400_BAD_REQUEST   

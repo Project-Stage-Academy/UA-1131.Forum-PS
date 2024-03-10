@@ -11,6 +11,7 @@ from .models import Subscription
 from .serializers import CompaniesSerializer, SubscriptionSerializer, SubscriptionListSerializer
 from .managers import ArticlesManager as am, LIMIT
 from forum import errors as er
+from pydantic import ValidationError as PydanticValidationError
 
 
 class CompaniesListCreateView(APIView):
@@ -115,8 +116,11 @@ class CreateArticle(APIView):
         relation_id = request.user.relation_id
         data['relation'] = relation_id
         data['company_id'] = company_id
-        res = am.add_article(data)
-        return Response({'document_was_deleted': res}, status=status.HTTP_201_CREATED)
+        try:
+            res = am.add_article(data)
+        except PydanticValidationError as e:
+            return Response({'error': er.Error.INVALID_ARTICLE.msg}, status=er.Error.INVALID_ARTICLE.status)    
+        return Response({'document_was_created': res}, status=status.HTTP_201_CREATED)
 
 class UpdateArticle(APIView):
     permission_classes = (IsAuthenticated, IsRelatedToCompany)

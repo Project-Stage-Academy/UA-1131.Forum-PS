@@ -59,6 +59,7 @@ class UserAuthentication(JWTAuthentication):
                 relation = CompanyAndUserRelation.get_relation(user_id=user_id, company_id=company_id)
                 user.company = relation.company_id.__dict__
                 user.position = relation.position
+                user.relation_id = relation.relation_id
             except KeyError:
                 raise NotAuthenticated(detail=Error.NO_USER_OR_COMPANY_ID.msg)
 
