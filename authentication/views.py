@@ -150,7 +150,7 @@ class PasswordRecoveryAPIView(APIView):
         except CustomUser.DoesNotExist:
             return Response({'error': Error.USER_NOT_FOUND.msg}, status=Error.USER_NOT_FOUND.status)
 
-        access_token = TokenManager.generate_token_for_user(user)
+        access_token = TokenManager.generate_access_token_for_user(user)
         reset_link = f"{settings.FRONTEND_URL}/auth/password-reset/{access_token}/"
 
         Utils.send_password_reset_email(email, reset_link)  # TO DO: REWRITE WITH DECORATORS
@@ -161,7 +161,7 @@ class PasswordResetView(APIView):
     """
         A view for handling password reset requests.
 
-        This view allows users to reset their password by providing a valid JWT token and a new password.
+        This view allows users to reset their password by providing a valid JWT access token and a new password.
         Upon receiving a valid request, it resets the user's password and sends a password update email.
 
         Note:
@@ -184,13 +184,16 @@ class PasswordResetView(APIView):
     def post(self, request, jwt_token):
         """Handle POST requests for password reset"""
 
-        payload = TokenManager.get_payload(jwt_token)
+        payload = TokenManager.get_access_payload(jwt_token)
         user_id = payload.get('user_id')
         if user_id is None:
             return Response({'error': Error.INVALID_TOKEN.msg}, status=Error.INVALID_TOKEN.status)
-        user = CustomUser.get_user(user_id=user_id)
-        serializer = self.serializer_class(data=request.data)
+        try:
+            user = CustomUser.get_user(user_id=user_id)
+        except CustomUser.DoesNotExist:
+            return Response({'error': Error.USER_NOT_FOUND.msg}, status=Error.USER_NOT_FOUND.status)
 
+        serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             new_password = serializer.validated_data.get("password")
             user.password = make_password(new_password)
