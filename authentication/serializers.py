@@ -33,7 +33,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer, CustomValidationSe
         surname = attrs.get("surname")
         phone_number = attrs.get("phone_number")
         if password != password2:
-            raise serializers.ValidationError({"password": "Passwords are different"})
+            raise ValidationError({"password": "Passwords are different"})
         try:
             self.validation_email(email)
         except ValidationError as e:
@@ -47,13 +47,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer, CustomValidationSe
         except ValidationError as e:
             raise ValidationError({"phone_number": e.detail})
         return attrs
-
-    def create(self,validated_data):
-        user = CustomUser.objects.create_user(**validated_data)
-        tokens = RefreshToken.for_user(user)
-        access_token = str(tokens.access_token)
-        Utils.send_verification_email(get_current_site(self.context['request']).domain, user, access_token)
-        return user
 
 
 class UserUpdateSerializer(serializers.ModelSerializer, CustomValidationSerializer):

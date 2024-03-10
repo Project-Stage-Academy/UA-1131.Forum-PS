@@ -1,14 +1,13 @@
 import logging
 
-import jwt
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
+from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
 
 from authentication.authentications import UserAuthentication
 from authentication.models import CompanyAndUserRelation, CustomUser
@@ -18,7 +17,6 @@ from authentication.serializers import (PasswordRecoverySerializer,
                                         UserPasswordUpdateSerializer,
                                         UserRegistrationSerializer,
                                         UserUpdateSerializer)
-
 from forum import settings
 from forum.errors import Error
 from forum.managers import TokenManager
@@ -26,44 +24,70 @@ from forum.managers import TokenManager
 from .utils import Utils
 
 
-
-class UserRegistrationView(generics.CreateAPIView):
-    model = CustomUser
+class UserRegistrationView(APIView):
+    authentication_classes = ()
+    permission_classes = ()
     serializer_class = UserRegistrationSerializer
+
+    def post(self, request):
+
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            user = CustomUser.objects.create_user(**serializer.validated_data)
+            refresh_token = TokenManager.generate_refresh_token_for_user(user)
+
+            # TO DO: rewrite with EmailManager
+            Utils.send_verification_email(get_current_site(request), user, str(refresh_token.access_token))
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class VerifyEmail(APIView):
+    authentication_classes = (UserAuthentication,)
+    permission_classes = ()
 
     def get(self, request):
-        logger = logging.getLogger('account_update')
         token = request.GET.get('token')
+        if token is None:
+            return Response({'error': Error.NO_TOKEN.msg}, status=Error.NO_TOKEN.status)
+
+        payload = TokenManager.get_access_payload(token)
+        user_id = payload.get('user_id')
+        if user_id is None:
+            return Response({'error': Error.INVALID_TOKEN.msg}, status=Error.INVALID_TOKEN.status)
         try:
-            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
-            user = CustomUser.objects.get(user_id=payload['user_id'])
-            user.is_verified = True
-            user.save()
-            logger.info(
-                f"User {user.email} {user.first_name} {user.surname} : email was verified")
-            return Response({'email': 'Successfully Verified'}, status=status.HTTP_200_OK)
-        except jwt.ExpiredSignatureError as e:
-            return Response({'email': 'Activation Expired'}, status=status.HTTP_400_BAD_REQUEST)
-        except jwt.exceptions.DecodeError as e:
-            return Response({'email': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
+            user = CustomUser.get_user(user_id=user_id)
+        except CustomUser.DoesNotExist:
+            return Response({'error': Error.USER_NOT_FOUND.msg}, status=Error.USER_NOT_FOUND.status)
+
+        user.is_verified = True
+        user.save()
+
+        logger = logging.getLogger('account_update')
+        logger.info(f"User {user.email} {user.first_name} {user.surname} : email was verified")
+        return Response({'email': 'Successfully Verified'}, status=status.HTTP_200_OK)
 
 
 class LoginView(APIView):
+    authentication_classes = ()
+    permission_classes = ()
 
     def post(self, request):
         email = request.data.get('email')
         password = request.data.get('password')
 
-        user = CustomUser.get_user(email=email)
-        if not user:
-            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            user = CustomUser.get_user(email=email)
+        except CustomUser.DoesNotExist:
+            return Response({'error': Error.USER_NOT_FOUND.msg}, status=Error.USER_NOT_FOUND.status)
+
         check = user.check_password(password)
         if not check:
-            return Response({'error': 'Wrong password'}, status=status.HTTP_401_UNAUTHORIZED)
-        refresh = RefreshToken.for_user(user)
+            return Response({'error': Error.INVALID_CREDENTIALS.msg}, status=Error.NOT_AUTHENTICATED.status)
+
+        refresh = TokenManager.generate_refresh_token_for_user(user)
         return Response({
             'refresh': str(refresh),
             'access': str(refresh.access_token),
@@ -105,13 +129,13 @@ class LogoutView(APIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
-        try:
-            refresh_token = request.data["refresh_token"]
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-            return Response(status=status.HTTP_205_RESET_CONTENT)
-        except Exception as e:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        refresh_token = request.data.get("refresh_token")
+        if refresh_token is None:
+            return Response({'error': Error.NO_TOKEN.msg}, status=Error.NO_TOKEN.status)
+
+        decoded_refresh_token, _ = TokenManager.get_refresh_payload(refresh_token)
+        decoded_refresh_token.blacklist()
+        return Response(status=status.HTTP_202_ACCEPTED)
 
 
 class PasswordRecoveryAPIView(APIView):
