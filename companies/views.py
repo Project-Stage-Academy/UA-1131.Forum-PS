@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from authentication.models import Company, CompanyAndUserRelation
+from authentication.models import Company
 from authentication.permissions import IsAuthenticated, IsRelatedToCompany, IsInvestor
 from forum.errors import Error as er
 from .models import Subscription
@@ -21,14 +21,15 @@ class CompaniesListCreateView(APIView):
 class CompanyRetrieveView(APIView):
     permission_classes = (IsAuthenticated,)
     def get(self, request, pk=None):
-        if pk:
-           try:
-               company = Company.get_company(company_id=pk)
-               return Response(company.get_info(), status=status.HTTP_200_OK)
-           except Company.DoesNotExist:
-               return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND) 
-        else: 
-            return Response({'error': er.NO_CREDENTIALS.msg}, status=er.NO_CREDENTIALS.status)
+        if not pk:
+           return er.NO_CREDENTIALS.response()
+        try:
+            company = Company.get_company(company_id=pk)
+            return Response(company.get_info(), status=status.HTTP_200_OK)
+        except Company.DoesNotExist:
+            return er.NO_COMPANY_FOUND.response()
+
+            
     
 class CompaniesRetrieveView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -40,7 +41,7 @@ class CompaniesRetrieveView(APIView):
           else:
              companies = Company.get_all_companies_info(type)
         except Company.DoesNotExist:
-            return Response({'error': er.NO_COMPANY_FOUND.msg}, status=er.NO_COMPANY_FOUND.status)
+            return er.NO_COMPANY_FOUND.response()
         return Response(companies, status=status.HTTP_200_OK)
     
 class SubscriptionCreateAPIView(APIView):
@@ -48,7 +49,7 @@ class SubscriptionCreateAPIView(APIView):
 
     def post(self, request, pk=None):
         if not pk:
-            return Response({'error': er.NO_CREDENTIALS.msg}, status=er.NO_CREDENTIALS.status)
+            return er.NO_CREDENTIALS.response()
         
         profile_id = request.user.relation_id
         company_id = pk
@@ -76,7 +77,7 @@ class UnsubscribeAPIView(APIView):
             subscription = Subscription.get_subscription(
                 subscription_id=subscription_id)
         except Subscription.DoesNotExist:
-            return Response({'error': 'Subscription not found'}, status=status.HTTP_404_NOT_FOUND)
+            return er.SUBSCRIPTION_NOT_FOUND.response()
         company_id = subscription.company.company_id
         subscription.delete()
         return Response({'message': 'Successfully unsubscribed', 'company_id': company_id}, status=status.HTTP_200_OK)
@@ -88,6 +89,6 @@ class SubscriptionListView(APIView):
         profile_id = request.user.relation_id
         subs = Subscription.get_subscriptions(investor=profile_id)
         if not subs:
-            return Response({'message': "You have no subsriptions yet!"}, status=status.HTTP_204_NO_CONTENT)
+            return Response({'message': "You have no subsriptions yet!"}, status=status.HTTP_200_OK)
         data = [sub.get_info() for sub in subs]
         return Response({'subscriptions': data}, status=status.HTTP_200_OK)
