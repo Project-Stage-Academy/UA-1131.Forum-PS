@@ -1,18 +1,26 @@
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from authentication.models import Company
+from .filters import CompanyFilter
 from .models import Subscription
 from .serializers import CompaniesSerializer, SubscriptionSerializer, SubscriptionListSerializer
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 JWT_authenticator = JWTAuthentication()
+
 
 class CompaniesListCreateView(generics.ListCreateAPIView):
     queryset = Company.objects.all()
     serializer_class = CompaniesSerializer
-    permission_classes = (IsAuthenticated,)
+    # permission_classes = (IsAuthenticated,)
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = CompanyFilter
+
 
 class CompaniesRetrieveUpdateView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Company.objects.all()
@@ -21,8 +29,9 @@ class CompaniesRetrieveUpdateView(generics.RetrieveUpdateDestroyAPIView):
 
 class SubscriptionCreateAPIView(APIView):
     permission_classes = (IsAuthenticated,)
+
     def post(self, request, *args, **kwargs):
-        
+
         auth_response = JWT_authenticator.authenticate(request)
         if auth_response is None:
             return Response({'error': "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
@@ -42,8 +51,10 @@ class SubscriptionCreateAPIView(APIView):
             return Response({'message': message}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class UnsubscribeAPIView(APIView):
     permission_classes = (IsAuthenticated,)
+
     def delete(self, request, subscription_id, *args, **kwargs):
         response = JWT_authenticator.authenticate(request)
         if response is None:
@@ -54,12 +65,14 @@ class UnsubscribeAPIView(APIView):
             subscription = Subscription.objects.get(subscription_id=subscription_id, investor_id=user_id)
         except Subscription.DoesNotExist:
             return Response({'error': 'Subscription not found'}, status=status.HTTP_404_NOT_FOUND)
-        
+
         subscription.delete()
         return Response({'message': 'Successfully unsubscribed'}, status=status.HTTP_204_NO_CONTENT)
 
+
 class SubscriptionListView(APIView):
     permission_classes = (IsAuthenticated,)
+
     def get(self, request):
         response = JWT_authenticator.authenticate(request)
         if response is None:

@@ -1,5 +1,4 @@
 from rest_framework.permissions import BasePermission
-from rest_framework import status
 from rest_framework.exceptions import PermissionDenied, NotAuthenticated
 from forum.errors import Error
 
