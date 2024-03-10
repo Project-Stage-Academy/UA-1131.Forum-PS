@@ -1,9 +1,13 @@
+import logging
 from datetime import datetime, timedelta
 from typing import List, Dict
 import pymongo
 from bson import ObjectId
+from django.template.loader import render_to_string
 from pydantic import BaseModel, Field, ValidationError
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMessage, EmailMultiAlternatives
+
+from forum import settings
 from forum.settings import DB, EMAIL_HOST_USER
 
 from authentication.models import Company, CustomUser, CompanyAndUserRelation
@@ -211,6 +215,13 @@ class EmailManager:
         email.send()
 
     @staticmethod
+    def _email_alternative_sender(data: Dict):
+        email_message = EmailMultiAlternatives(subject=data['email_subject'], body=data['email_body'],
+                                               from_email=data['from_email'], to=(data['to_email'],))
+        email_message.content_subtype = "html"
+        email_message.send()
+
+    @staticmethod
     def _data_formatter(email_subject: str, email_body: str, email: str):
         return {
             'email_subject': email_subject,
@@ -226,27 +237,51 @@ class EmailManager:
         return emails
 
 
+class EmailAuthenticationManager(EmailManager):
+
+    @classmethod
+    def send_password_reset_notification(cls, email, reset_link):
+        email_subject = 'Password Reset'
+        html_content = render_to_string('password_reset_email.html', {'reset_link': reset_link})
+        data = cls._data_formatter(email_subject, html_content, email)
+        cls._email_alternative_sender(data)
+
+        # logger = logging.getLogger('email_sending')
+        # logger.error(f'Error during email sending to {email}.')
+
+    @classmethod
+    def send_password_update_notification(cls, user):
+        email_subject = 'Password update'
+        email_body = (f'Dear {user.first_name} {user.surname}.'
+                      ' This is automatically generated email, your password was successfully changed')
+        data = cls._data_formatter(email_subject=email_subject, email_body=email_body, email=user.email)
+        cls._email_sender(data)
+
+        # logger = logging.getLogger('email_sending')
+        # logger.error(f'Error during email sending to {email}.')
+
+
 class EmailNotificationManager(EmailManager):
 
-    @classmethod
-    def send_update_notification(cls, company):
-        emails_to_send = [record.investor.email for record in
-                          company.subscription_set.filter(get_email_newsletter=True)]
-        for email in emails_to_send:
-            email_subject = 'Update in followed company'
-            email_body = f'Dear user, we would like to inform you about the updates in the {company.brand}'
-            data = cls._data_formatter(email_subject=email_subject, email_body=email_body, email=email)
-            cls._email_sender(data)
-
-    @classmethod
-    def send_message_notification(cls, message, company):
-        emails_to_send = [record.investor.email for record in
-                          company.subscription_set.filter(get_email_newsletter=True)]
-        for email in emails_to_send:
-            email_subject = f'A new message from {message.sender.user_id.first_name}'
-            email_body = f'Dear user, we would like to inform you about a new message from {company.brand}'
-            data = cls._data_formatter(email_subject=email_subject, email_body=email_body, email=email)
-            cls._email_sender(data)
+    # @classmethod
+    # def send_update_notification(cls, company):
+    #     emails_to_send = [record.investor.email for record in
+    #                       company.subscription_set.filter(get_email_newsletter=True)]
+    #     for email in emails_to_send:
+    #         email_subject = 'Update in followed company'
+    #         email_body = f'Dear user, we would like to inform you about the updates in the {company.brand}'
+    #         data = cls._data_formatter(email_subject=email_subject, email_body=email_body, email=email)
+    #         cls._email_sender(data)
+    #
+    # @classmethod
+    # def send_message_notification(cls, message, company):
+    #     emails_to_send = [record.investor.email for record in
+    #                       company.subscription_set.filter(get_email_newsletter=True)]
+    #     for email in emails_to_send:
+    #         email_subject = f'A new message from {message.sender.user_id.first_name}'
+    #         email_body = f'Dear user, we would like to inform you about a new message from {company.brand}'
+    #         data = cls._data_formatter(email_subject=email_subject, email_body=email_body, email=email)
+    #         cls._email_sender(data)
 
     @classmethod
     def send_subscribe_notification(cls, company, emails_to_send=None):
@@ -257,3 +292,6 @@ class EmailNotificationManager(EmailManager):
             email_body = 'Dear user, we would like to inform you about a new subscriber'
             data = cls._data_formatter(email_subject=email_subject, email_body=email_body, email=email)
             cls._email_sender(data)
+
+        # logger = logging.getLogger('email_sending')
+        # logger.error(f'Error during email sending to {email}.')
