@@ -47,7 +47,11 @@ class ArticlesManager(MongoManager):
         v_model = model.model_validate(article)
         update = {'$push': {'articles': v_model.model_dump()}}
         res = cls.update_document(query, update, projection={'articles': 1, '_id': 0})
-        return res
+        return res['articles'][-1]
+    
+    @classmethod
+    def update_article(cls, company_id):
+        pass
 
         
 

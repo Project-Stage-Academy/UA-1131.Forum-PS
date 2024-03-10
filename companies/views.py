@@ -103,13 +103,14 @@ class CreateArticle(APIView):
         try:
             company = Company.get_company(company_id=company_id)
         except Company.DoesNotExist:
-            return Response({'error':'The company you tried rto create article for does not exist or was deleted.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error':'The company does not exist or was deleted.'}, status=status.HTTP_404_NOT_FOUND)
         res = am.add_article(data)
-        # article = res.get('articles')[0]
         return Response(res, status=status.HTTP_201_CREATED)
 
-    def patch(self, request):
+    def patch(self, request, art_id=None):
         pass
+
+
 
 class DeleteArticle(APIView):
     def delete(self, request, pk):

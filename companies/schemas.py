@@ -1,9 +1,11 @@
 from datetime import datetime
 from pydantic import BaseModel, Field
+from bson import ObjectId
 from typing import List
 
 
 class Article(BaseModel):
+    article_id:str = Field(default_factory=lambda:str(ObjectId()))
     relation: int
     article_text: str
     article_tags: str
