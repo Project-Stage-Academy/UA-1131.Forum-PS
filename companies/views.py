@@ -10,6 +10,7 @@ from .filters import CompanyFilter
 from .models import Subscription
 from .serializers import CompaniesSerializer, SubscriptionSerializer, SubscriptionListSerializer
 from .managers import ArticlesManager as am, LIMIT
+from forum import errors as er
 
 
 class CompaniesListCreateView(APIView):
@@ -117,7 +118,7 @@ class CreateArticle(APIView):
         res = am.add_article(data)
         return Response({'document_was_deleted': res}, status=status.HTTP_201_CREATED)
 
-class RedactArticle(APIView):
+class UpdateArticle(APIView):
     permission_classes = (IsAuthenticated, IsRelatedToCompany)
     def post(self, request, art_id=None):
         data = request.data

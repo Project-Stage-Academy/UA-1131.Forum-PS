@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 from typing import Dict
 from bson import ObjectId
-from authentication.models import Company, CompanyAndUserRelation
 from forum.managers import MongoManager
 from forum.settings import DB
 from .schemas import Article, CompanyArticles
@@ -36,6 +35,8 @@ class ArticlesManager(MongoManager):
         sorted_articles = articles[::-1]
         skipped_articles = sorted_articles[skip:]
         limited_articles = skipped_articles[0:LIMIT]
+        for article in limited_articles:
+            article['article_id'] = str(article['article_id'])
         return limited_articles
 
     @classmethod
