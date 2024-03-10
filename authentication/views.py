@@ -1,19 +1,29 @@
 import logging
+
 import jwt
-from django.contrib.auth import authenticate, user_logged_in
 from django.conf import settings
+from django.contrib.auth.hashers import make_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from rest_framework import status, generics
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
+
 from authentication.authentications import UserAuthentication
-from authentication.models import CustomUser, CompanyAndUserRelation
-from authentication.permissions import (CustomUserUpdatePermission, IsAuthenticated)
-from authentication.serializers import (UserRegistrationSerializer, UserUpdateSerializer, UserPasswordUpdateSerializer, PasswordRecoverySerializer)
+from authentication.models import CompanyAndUserRelation, CustomUser
+from authentication.permissions import (CustomUserUpdatePermission,
+                                        IsAuthenticated)
+from authentication.serializers import (PasswordRecoverySerializer,
+                                        UserPasswordUpdateSerializer,
+                                        UserRegistrationSerializer,
+                                        UserUpdateSerializer)
 from forum import settings
+from forum.errors import Error
+from forum.managers import TokenManager
+
 from .utils import Utils
+
 
 
 class UserRegistrationView(generics.CreateAPIView):
@@ -104,44 +114,92 @@ class LogoutView(APIView):
 
 
 class PasswordRecoveryAPIView(APIView):
+    """
+       A view for handling password recovery requests.
+
+       This view allows users to request a password reset email by providing their email address.
+       Upon receiving a valid email address, it sends a password reset email to the user's email address.
+
+       Note:
+           This view does not require authentication or permissions.
+
+       Request:
+           - Method: POST
+           - URL: /auth/password-recovery/
+           - Data Params:
+               - email: The email address of the user requesting a password reset (required)
+           - Response:
+               - 200 OK: Password reset email sent successfully
+               - 400 Bad Request: Invalid email format
+               - 404 Not Found: User does not exist
+   """
+
+    authentication_classes = ()
+    permission_classes = ()
+
     def post(self, request):
+        """Handle POST requests for password recovery"""
+
         email = request.data.get('email')
         try:
             validate_email(email)
-        except ValidationError:
-            return Response({'error': 'Bad request'}, status=status.HTTP_400_BAD_REQUEST)
-
+        except ValidationError as e:
+            return Response({'error': e.message}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            user = CustomUser.objects.get(email=email)
+            user = CustomUser.get_user(email=email)
         except CustomUser.DoesNotExist:
-            return Response({'error': 'Bad request'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': Error.USER_NOT_FOUND.msg}, status=Error.USER_NOT_FOUND.status)
 
-        jwt_token = Utils.generate_token(user.email, user.pk)
-        reset_link = f"{settings.FRONTEND_URL}/auth/password-reset/{jwt_token}/"
-        try:
-            Utils.send_password_reset_email.delay(email, reset_link)
-        except Exception as e:
-            return Response({'error': 'Failed to send email'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        access_token = TokenManager.generate_access_token_for_user(user)
+        reset_link = f"{settings.FRONTEND_URL}/auth/password-reset/{access_token}/"
+
+        Utils.send_password_reset_email(email, reset_link)  # TO DO: REWRITE WITH DECORATORS
         return Response({'message': 'Password reset email sent successfully'}, status=status.HTTP_200_OK)
 
 
 class PasswordResetView(APIView):
-    # This view will be rewritten after implementing custom authentication into the main branch.
+    """
+        A view for handling password reset requests.
+
+        This view allows users to reset their password by providing a valid JWT access token and a new password.
+        Upon receiving a valid request, it resets the user's password and sends a password update email.
+
+        Note:
+            This view does not require authentication or permissions.
+
+        Request:
+            - Method: POST
+            - URL: /auth/password-reset/<jwt_token>/
+            - Data Params:
+                - password: The new password for the user (required)
+            - Response:
+                - 200 OK: Password reset successfully
+                - 400 Bad Request: Invalid token or password format
+    """
+    authentication_classes = ()
+    permission_classes = ()
+
     serializer_class = PasswordRecoverySerializer
 
     def post(self, request, jwt_token):
-        uid, email, exp = Utils.decode_token(jwt_token)
-        if uid and email:
-            user = Utils.get_user(uid, email)
-            if user is not None:
-                serializer = self.serializer_class(instance=user, data=request.data)
-                try:
-                    serializer.is_valid(raise_exception=True)
-                    serializer.save()
-                    return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
-                except ValidationError as e:
-                    return Response({'error': e.message}, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                return Response({'error': 'Invalid token for password reset'}, status=status.HTTP_400_BAD_REQUEST)
+        """Handle POST requests for password reset"""
+
+        payload = TokenManager.get_access_payload(jwt_token)
+        user_id = payload.get('user_id')
+        if user_id is None:
+            return Response({'error': Error.INVALID_TOKEN.msg}, status=Error.INVALID_TOKEN.status)
+        try:
+            user = CustomUser.get_user(user_id=user_id)
+        except CustomUser.DoesNotExist:
+            return Response({'error': Error.USER_NOT_FOUND.msg}, status=Error.USER_NOT_FOUND.status)
+
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            new_password = serializer.validated_data.get("password")
+            user.password = make_password(new_password)
+            user.save()
+            Utils.send_password_update_email(user)  # TO DO: REWRITE WITH DECORATORS
+            return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
+
         else:
-            return Response({'error': 'Invalid token for password reset'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
