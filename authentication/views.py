@@ -18,6 +18,7 @@ from authentication.serializers import (PasswordRecoverySerializer,
                                         UserPasswordUpdateSerializer,
                                         UserRegistrationSerializer,
                                         UserUpdateSerializer)
+
 from forum import settings
 from forum.errors import Error
 from forum.managers import TokenManager
@@ -55,6 +56,7 @@ class LoginView(APIView):
     def post(self, request):
         email = request.data.get('email')
         password = request.data.get('password')
+
         user = CustomUser.get_user(email=email)
         if not user:
             return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
@@ -69,10 +71,11 @@ class LoginView(APIView):
             'email': email
         })
 
+
 class RelateUserToCompany(APIView):
     """Binding user to company and inserting linked company's id into token."""
     permission_classes = (IsAuthenticated,)
-    
+
     def post(self, request):
         user_id = request.user.user_id
         company_id = request.data['company_id']
@@ -81,7 +84,6 @@ class RelateUserToCompany(APIView):
             return Response({'error': 'You have no access to this company.'}, status=status.HTTP_403_FORBIDDEN)
         access_token = CustomUser.generate_company_related_token(request)
         return Response({'access': f"Bearer {access_token}"})
-    
 
 
 class UserUpdateView(generics.RetrieveUpdateAPIView):
@@ -109,7 +111,6 @@ class LogoutView(APIView):
             token.blacklist()
             return Response(status=status.HTTP_205_RESET_CONTENT)
         except Exception as e:
-            print("Exception", e)
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -155,6 +156,7 @@ class PasswordRecoveryAPIView(APIView):
 
         Utils.send_password_reset_email(email, reset_link)  # TO DO: REWRITE WITH DECORATORS
         return Response({'message': 'Password reset email sent successfully'}, status=status.HTTP_200_OK)
+
 
 
 class PasswordResetView(APIView):
