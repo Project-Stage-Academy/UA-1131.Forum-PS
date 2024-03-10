@@ -3,8 +3,6 @@ from django.contrib.auth.models import PermissionsMixin
 from django.contrib.auth.base_user import (AbstractBaseUser, BaseUserManager)
 from django.db import models
 from rest_framework.exceptions import NotAuthenticated
-from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework_simplejwt.exceptions import TokenError
 from forum.errors import Error
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.exceptions import TokenError
@@ -112,6 +110,7 @@ class Company(models.Model):
     startup_idea = models.TextField(blank=True)
     tags = models.CharField(max_length=255, blank=True)
 
+
     @classmethod
     def get_company(cls, *args, **kwargs):
         return cls.objects.get(**kwargs)
@@ -119,6 +118,24 @@ class Company(models.Model):
     @classmethod
     def get_companies(cls, *args, **kwargs):
         return cls.objects.filter(**kwargs)
+      
+    @classmethod
+    def get_all_companies(cls):
+        return cls.objects.all()
+    
+    @classmethod
+    def get_all_companies_info(cls, type=None):
+        res = []
+        if type:
+            query = {'is_startup': True} if type == STARTUP else {'is_startup': False}
+            companies = cls.get_companies(**query)
+        else:
+            companies = cls.get_all_companies()
+
+        for company in companies:
+            res.append(company.get_info())
+
+        return res 
     
     def get_company_type(self):
         if self.is_startup == True:
@@ -146,26 +163,11 @@ class Company(models.Model):
         for k in fields:
                 data[k] = self.get_attribute(k)
         return data
-    
-    @classmethod
-    def get_all_companies(cls):
-        return cls.objects.all()
-    
-    @classmethod
-    def get_all_companies_info(cls, type=None):
-        res = []
-        if type:
-            query = {'is_startup': True} if type == STARTUP else {'is_startup': False}
-            companies = cls.get_companies(**query)
-        else:
-            companies = cls.get_all_companies()
 
-        for company in companies:
-            res.append(company.get_info())
+    def __str__(self):
+        return self.brand
 
-        return res
 
-            
 
 class CompanyAndUserRelation(models.Model):
 
@@ -176,10 +178,11 @@ class CompanyAndUserRelation(models.Model):
                         (REPRESENTATIVE, "Representative"))
 
     relation_id = models.BigAutoField(primary_key=True)
-    user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="user_relations", db_column="user_id")
-    company_id = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_relations", db_column="company_id")
-    position = models.CharField(default=REPRESENTATIVE, max_length=30, choices=POSITION_CHOICES, blank=False, null=False)
-    
+
+    user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="user_relations")
+    company_id = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_relations" )
+    position = models.CharField(default=REPRESENTATIVE, max_length=30, choices=POSITION_CHOICES, blank=False,
+                                null=False)
     @classmethod
     def get_relation(cls, *args, **kwargs):
         return cls.objects.get(**kwargs)

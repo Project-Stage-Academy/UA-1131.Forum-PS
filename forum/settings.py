@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 import os
 from datetime import timedelta
+
+import pymongo
 from dotenv import load_dotenv
 from pathlib import Path
 import pymongo
@@ -155,7 +157,6 @@ DATABASES = {
     },
 
 }
-
 CLIENT = pymongo.MongoClient(os.environ.get('MONGO_URL'), maxPoolSize=400)
 DB = CLIENT[os.environ.get('MONGO_DATABASE')]
 

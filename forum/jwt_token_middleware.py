@@ -22,7 +22,7 @@ class JWTAuthMiddleware:
             headers = dict(scope['headers'])
             token_header = headers.get(b'authorization', b'').decode("utf-8")
             if not token_header.startswith("Bearer "):
-                raise ValueError("Invalid Authorization header format")
+                raise ValueError(f"Invalid Authorization header format {token_header}")
             jwt_token = token_header.split("Bearer ")[-1]
             if jwt_token:
                 jwt_payload = self.get_payload(jwt_token)
@@ -64,7 +64,7 @@ class JWTAuthMiddleware:
         try:
             return CustomUser.objects.get(user_id=user_id)
         except CustomUser.DoesNotExist:
-            return AnonymousUser()
+            return Response({'error': "Wrong user id"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 def JWTAuthMiddlewareStack(app):
