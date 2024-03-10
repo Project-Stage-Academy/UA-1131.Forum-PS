@@ -1,8 +1,9 @@
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from authentication.models import Company, CustomUser, CompanyAndUserRelation
+from authentication.models import Company, CompanyAndUserRelation
 from authentication.permissions import IsAuthenticated, IsRelatedToCompany, IsInvestor
+from forum.errors import Error as er
 from .models import Subscription
 from .serializers import SubscriptionSerializer, CompaniesSerializer
 
@@ -12,51 +13,60 @@ class CompaniesListCreateView(APIView):
     def post(self, request):
         serializer = CompaniesSerializer(data=request.data)
         if serializer.is_valid():
-            print(serializer)
-            company = Company(**serializer.data)
-            company.save()
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-class CompaniesRetrieveUpdateView(APIView):
-    permission_classes = (IsAuthenticated)
-    def get(request, pk=None):
+class CompanyRetrieveView(APIView):
+    permission_classes = (IsAuthenticated,)
+    def get(self, request, pk=None):
         if pk:
-            company = Company.get_company(company_id=pk)
-            return Response(company.get_info(), status=status.HTTP_200_OK)
+           try:
+               company = Company.get_company(company_id=pk)
+               return Response(company.get_info(), status=status.HTTP_200_OK)
+           except Company.DoesNotExist:
+               return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND) 
+        else: 
+            return Response({'error': er.NO_CREDENTIALS.msg}, status=er.NO_CREDENTIALS.status)
+    
+class CompaniesRetrieveView(APIView):
+    permission_classes = (IsAuthenticated,)
+    def get(self, request):
         type = request.data.get('company_type')
-        if not type:
-           companies = Company.get_all_companies_info()
-        else:
-            companies = Company.get_all_companies_info(type)
+        try:
+          if not type:
+             companies = Company.get_all_companies_info()
+          else:
+             companies = Company.get_all_companies_info(type)
+        except Company.DoesNotExist:
+            return Response({'error': er.NO_COMPANY_FOUND.msg}, status=er.NO_COMPANY_FOUND.status)
         return Response(companies, status=status.HTTP_200_OK)
     
 class SubscriptionCreateAPIView(APIView):
     permission_classes = (IsAuthenticated, IsRelatedToCompany, IsInvestor)
 
-    def post(self, request):
+    def post(self, request, pk=None):
+        if not pk:
+            return Response({'error': er.NO_CREDENTIALS.msg}, status=er.NO_CREDENTIALS.status)
+        
         profile_id = request.user.relation_id
-        company_id = request.data.get('company_id')
+        company_id = pk
         try:
             check_sub = Subscription.get_subscription(
                 investor=profile_id, company=company_id)
+            msg = f"You're already subscribed to {check_sub.company.brand}."
+            return Response({'message': msg}, status=status.HTTP_200_OK)
         except Subscription.DoesNotExist:
-            try:
-                data = {'investor': CompanyAndUserRelation.get_relation(relation_id=profile_id), 
-                        'company':Company.get_company(company_id=company_id)}
-            except (Company.DoesNotExist, CompanyAndUserRelation.DoesNotExist) as e:
-                return Response({'error': str(e)}, status=status.HTTP_404_NOT_FOUND)
+            data = {'investor': profile_id, 
+                    'company': company_id}
             serializer = SubscriptionSerializer(data=data)
             if serializer.is_valid():
-                subscription = Subscription(**data)
-                subscription.save()
-                msg = f"You're successfully subscribed to {subscription.company.brand}"
-                return Response({'message': msg, 'subscription_id': subscription.subscription_id}, status=status.HTTP_201_CREATED)
+                serializer.save()
+                msg = f"You're successfully subscribed to {serializer.company.brand}"
+                return Response({'message': msg, 'subscription_id': serializer.subscription_id}, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        msg = f"You're already subscribed to {check_sub.company.brand}."
-        return Response({'message': msg}, status=status.HTTP_200_OK)
+
 
 class UnsubscribeAPIView(APIView):
     permission_classes = (IsAuthenticated, IsRelatedToCompany, IsInvestor)

@@ -33,7 +33,7 @@ class CustomUserManager(BaseUserManager):
 
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
-    user_id = models.BigAutoField(primary_key=True, unique=True)
+    user_id = models.BigAutoField(primary_key=True)
     email = models.EmailField(max_length=100, unique=True)
     first_name = models.CharField(max_length=100)
     surname = models.CharField(max_length=100)
@@ -125,7 +125,15 @@ class Company(models.Model):
             return STARTUP
         else: 
             return INVESTMENT
-    
+        
+    def get_attribute(self, k):
+        v = None
+        try:
+           v = self.__getattribute__(k)
+        except AttributeError:
+            pass
+        return v
+
     def get_info(self):
         fields = ('brand', 'common_info', 'contact_phone', 'contact_email')
         startup_fields = ('product_info', 'startup_idea')
@@ -134,9 +142,9 @@ class Company(models.Model):
         data['company_type'] = company_type
         if company_type == STARTUP:
             for k in startup_fields:
-                data[k] = self.__getattribute__(k)
+                  data[k] = self.get_attribute(k)
         for k in fields:
-                data[k] = self.__getattribute__(k)
+                data[k] = self.get_attribute(k)
         return data
     
     @classmethod

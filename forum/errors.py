@@ -10,6 +10,10 @@ class Error:
         msg = "No token provided"
         status = status.HTTP_400_BAD_REQUEST
 
+    class NO_COMPANY_FOUND:
+        msg = "No company found"
+        status = status.HTTP_404_NOT_FOUND
+
     class NO_USER_ID:
         msg = "Token contained no recognizable user identification"
         status = status.HTTP_401_UNAUTHORIZED
@@ -61,3 +65,7 @@ class Error:
     class NOT_REPRESENTATIVE:
         msg = "User has not founder position"
         status = status.HTTP_403_FORBIDDEN
+
+    class NO_CREDENTIALS:
+        msg = "No credentials were provided"
+        status = status.HTTP_400_BAD_REQUEST
