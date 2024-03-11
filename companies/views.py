@@ -124,10 +124,8 @@ class CreateArticle(APIView):
 
 class UpdateArticle(APIView):
     permission_classes = (IsAuthenticated, IsRelatedToCompany)
-    def post(self, request, art_id=None):
+    def patch(self, request, art_id=None):
         data = request.data
-        if not data['new_content']:
-            return Response(status=status.HTTP_204_NO_CONTENT)
         company_id = request.user.company['company_id']
         updated_article = am.update_article(company_id, art_id, data)
         return Response(updated_article)
