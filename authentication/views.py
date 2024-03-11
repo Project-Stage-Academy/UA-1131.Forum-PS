@@ -48,12 +48,8 @@ class VerifyEmail(APIView):
     authentication_classes = (UserAuthentication,)
     permission_classes = ()
 
-    def get(self, request):
-        token = request.GET.get('token')
-        if token is None:
-            return Response({'error': Error.NO_TOKEN.msg}, status=Error.NO_TOKEN.status)
-
-        payload = TokenManager.get_access_payload(token)
+    def get(self, request, jwt_token):
+        payload = TokenManager.get_access_payload(jwt_token)
         user_id = payload.get('user_id')
         if user_id is None:
             return Response({'error': Error.INVALID_TOKEN.msg}, status=Error.INVALID_TOKEN.status)
@@ -103,7 +99,7 @@ class RelateUserToCompany(APIView):
     def post(self, request):
         user_id = request.user.user_id
         company_id = request.data['company_id']
-        relation = CompanyAndUserRelation.get_relation(user_id=user_id, company_id=company_id)
+        relation = CompanyAndUserRelation.get_relation(user_id, company_id)
         if not relation: 
             return Response({'error': 'You have no access to this company.'}, status=status.HTTP_403_FORBIDDEN)
         access_token = CustomUser.generate_company_related_token(request)
@@ -116,12 +112,6 @@ class UserUpdateView(generics.RetrieveUpdateAPIView):
     authentication_classes = (UserAuthentication,)
     permission_classes = (IsAuthenticated, CustomUserUpdatePermission)
 
-
-class UserPasswordUpdateView(generics.UpdateAPIView):
-    queryset = CustomUser.objects.all()
-    serializer_class = UserPasswordUpdateSerializer
-    authentication_classes = (UserAuthentication,)
-    permission_classes = (CustomUserUpdatePermission,)
 
 
 class LogoutView(APIView):
