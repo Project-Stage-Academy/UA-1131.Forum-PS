@@ -61,7 +61,12 @@ class MongoManager:
         res = cls.db.find_one_and_delete(query, **kwargs)
         return res
 
-   
+    @classmethod
+    def delete_from_document(cls, query,delete_part, **kwargs):
+        res = cls.db.update_one(query,delete_part, **kwargs)
+        if res.modified_count == 0:
+            return
+        return res
     
     
 

@@ -138,7 +138,10 @@ class DeleteArticle(APIView):
     def delete(self, request, art_id=None):
         company_id = request.user.company['company_id']
         res = am.delete_article(company_id, art_id)
-        return Response(res, status=status.HTTP_200_OK)
+        if res:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response(er.Error.INVALID_ARTICLE_ID.msg, status=er.Error.INVALID_ARTICLE_ID.status)
 
         
 

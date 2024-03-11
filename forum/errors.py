@@ -79,4 +79,8 @@ class Error:
 
     class INVALID_ARTICLE:
         msg = "Invalid article data provided"
-        status = status.HTTP_400_BAD_REQUEST   
+        status = status.HTTP_400_BAD_REQUEST 
+
+    class INVALID_ARTICLE_ID:
+        msg = "Invalid article id provided"
+        status = status.HTTP_400_BAD_REQUEST 

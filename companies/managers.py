@@ -78,9 +78,8 @@ class ArticlesManager(MongoManager):
     @classmethod
     def delete_article(cls, company_id, art_id):
         query = {'company_id': company_id}
-        update = {'$pull': {'articles': {'article_id': art_id}}}
-        res = cls.update_document(query, update)
-        for article in res['articles']:
-            if article['article_id'] == art_id:
-                return False
-        return True 
+        delete_part = {'$pull': {'articles': {'article_id': art_id}}}
+        res = cls.delete_from_document(query, delete_part)
+        if not res:
+            return False
+        return True
