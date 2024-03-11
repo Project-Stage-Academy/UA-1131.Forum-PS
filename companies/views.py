@@ -6,7 +6,7 @@ from .models import Subscription
 from .serializers import CompaniesSerializer, SubscriptionSerializer, SubscriptionListSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from .permissions import EditCopmanyPermission
+from .permissions import EditCompanyPermission
 from revision.views import CustomRevisionMixin
 
 JWT_authenticator = JWTAuthentication()
@@ -14,7 +14,7 @@ JWT_authenticator = JWTAuthentication()
 class CompaniesViewSet(CustomRevisionMixin, viewsets.ModelViewSet):
     queryset = Company.objects.all()
     serializer_class = CompaniesSerializer
-    permission_classes = (EditCopmanyPermission,)
+    permission_classes = (EditCompanyPermission,)
 
 class SubscriptionCreateAPIView(APIView):
     permission_classes = (IsAuthenticated,)

@@ -1,7 +1,7 @@
 from rest_framework.permissions import BasePermission
 from authentication.models import CompanyAndUserRelation
 
-class EditCopmanyPermission(BasePermission):
+class EditCompanyPermission(BasePermission):
     """
     Custom permission to allow editing company objects only for users who have a relation to the company.
     """
@@ -11,7 +11,7 @@ class EditCopmanyPermission(BasePermission):
         Return `True` if the requesting user has a relation to the company (obj), `False` otherwise.
         """  
         try:
-            CompanyAndUserRelation.objects.get(user_id=request.user.user_id, company_id=obj.company_id)
+            relation = CompanyAndUserRelation.objects.get(user_id=request.user, company_id=obj.company_id)
             return True
         except CompanyAndUserRelation.DoesNotExist:
             return False

@@ -4,7 +4,9 @@ from reversion.errors import RegistrationError
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import APIException
+from rest_framework import status
 from .serializers import RevisionSerializer
+
 
 
 class CustomRevisionMixin(RevisionMixin):
@@ -14,7 +16,7 @@ class CustomRevisionMixin(RevisionMixin):
         try:
             versions = Version.objects.get_for_object(instance)
         except RegistrationError:
-            raise APIException(detail='model has not been registered for revision.')
+            raise APIException(status.HTTP_409_CONFLICT)
         current_version = versions[0]
         versions = versions.exclude(pk=current_version.id)
         return instance, versions
