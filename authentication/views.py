@@ -22,9 +22,8 @@ from forum import settings
 from forum.errors import Error
 from forum.managers import TokenManager
 from notifications.decorators import add_notifications_for_user
-from notifications.manager import EmailAuthenticationManager
+from notifications.tasks import send_password_update_notification, send_password_reset_notification
 
-from .utils import Utils
 
 
 class UserRegistrationView(generics.CreateAPIView):
@@ -153,7 +152,7 @@ class PasswordRecoveryAPIView(APIView):
         access_token = TokenManager.generate_access_token_for_user(user)
         reset_link = f"{settings.FRONTEND_URL}/auth/password-reset/{access_token}/"
 
-        EmailAuthenticationManager.send_password_reset_notification(email, reset_link)
+        send_password_reset_notification.delay(email, reset_link)
         return Response({'message': 'Password reset email sent successfully'}, status=status.HTTP_200_OK)
 
 
@@ -199,7 +198,7 @@ class PasswordResetView(APIView):
             user.password = make_password(new_password)
             user.save()
 
-            EmailAuthenticationManager.send_password_update_notification(user)
+            send_password_update_notification.delay(user)
             return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
 
         else:
