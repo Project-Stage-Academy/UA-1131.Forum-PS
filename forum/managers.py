@@ -88,6 +88,7 @@ class MongoManager:
     
     @classmethod
     def check_if_exist(cls, query):
+        """Checks if the document that matching to the given filter exist."""
         res = cls.db.count_documents(query)
         if not res: 
             return False
@@ -95,16 +96,19 @@ class MongoManager:
     
     @classmethod
     def get_document(cls, query, **kwargs):
+        """Retrieves the document from the database."""
         document = cls.db.find_one(query, **kwargs)
         return cls.id_to_string(document)
     
     @classmethod
     def get_documents(cls, query, **kwargs):
+        """Retrieves the multiple documents from the database."""
         document = cls.db.find(query, **kwargs)
         return cls.to_list(document)
     
     @classmethod
     def create_document(cls, data, key) -> str | None:
+        """Creates document. Key is needed to use proper model for validation."""
         model:BaseModel = cls.types[key]
         validated_model = model.model_validate(data)
         res = cls.db.insert_one(validated_model.model_dump())
@@ -112,19 +116,22 @@ class MongoManager:
     
     @classmethod
     def update_document(cls, query, update, **kwargs):
+        """Updates the document."""
         document = cls.db.find_one_and_update(query, update, return_document=pymongo.ReturnDocument.AFTER, **kwargs)
         return cls.id_to_string(document)
     
     @classmethod
     def delete_document(cls, query, **kwargs):
+        """Delete the document from database."""
         res = cls.db.find_one_and_delete(query, **kwargs)
         return res
 
     @classmethod
     def delete_from_document(cls, query,delete_part, **kwargs):
-        res = cls.db.update_one(query,delete_part, **kwargs)
+        """Deletes the specific part of the document."""
+        res = cls.db.update_one(query, delete_part, **kwargs)
         if res.modified_count == 0:
-            return
+            return None
         return res
     
     
