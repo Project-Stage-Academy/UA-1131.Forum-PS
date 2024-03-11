@@ -1,32 +1,38 @@
 from pydantic import BaseModel
-from typing import Dict
+from pymongo import MongoClient
+from typing import Dict, Any
 from bson import ObjectId
 from forum.managers import MongoManager
 from forum.settings import DB
 from .schemas import Article, CompanyArticles
 
-
 class NoCompanyProvided(Exception):
     pass
 
-
 class CompanyDoesNotExist(Exception):
     pass
-
 
 ARTICLE = 'article'
 COMPANY_ARTICLES = 'company_articles'
 LIMIT = 10
 
-
 class ArticlesManager(MongoManager):
-    db = DB['Articles']
+    """This manager is responsible for adding, retrieving, redacting and deleting the articles."""
+    db:MongoClient = DB['Articles']
     types: Dict[str, BaseModel] = {
         ARTICLE: Article, COMPANY_ARTICLES: CompanyArticles}
-    limit = LIMIT
+    limit:int = LIMIT
 
     @classmethod
-    def get_articles_for_company(cls, company_id, skip=0, **kwargs):
+    def get_articles_for_company(cls, company_id:int, skip=0, **kwargs) -> list[dict[str, Any]]:
+        """Retrieves articles for the specific company. 
+           10 articles is returned, the latest ones first. 
+           Required parameters:
+             - company_id: id of the company in question;
+             - skip: the number of articles we have to skip;
+                     this parameter is depending on paginating
+                     and is the result of this formula: LIMIT * (page - 1);
+        """
         query = {'company_id': company_id}
         company_articles = cls.get_document(query, **kwargs)
         if not company_articles:
@@ -40,7 +46,10 @@ class ArticlesManager(MongoManager):
         return limited_articles
 
     @classmethod
-    def add_article(cls, article: dict):
+    def add_article(cls, article: dict) -> dict[str, Any]:
+        """Insert article into the database. Takes dict as a paramreter.
+           Id of the company in question (company_id) should be inside the dict.
+        """
         company_id = int(article.pop('company_id', None))
         if not company_id:
             raise NoCompanyProvided(
@@ -57,17 +66,24 @@ class ArticlesManager(MongoManager):
         update = {'$push': {'articles': v_model.model_dump()}}
         res = cls.update_document(query, update, projection={
                                   'articles': 1, '_id': 0})
-        return res['articles'][-1]
+        return cls.id_to_string(res['articles'][-1])
 
     @classmethod
-    def update_article(cls, company_id, art_id, data):
+    def update_article(cls, company_id:int, art_id:str, data:dict) -> dict[str, Any] | None:
+        """Updates the article. Required parameters:
+           - company_id;
+           - article_id;
+           - dict with updates;
+
+           Fields that is posiible for updating: article_text, article_title, article_tags.
+        """
         query = {'company_id': company_id, 'articles.article_id': art_id}
         possible_fields_to_update = ['article_text', 'article_title', 'article_tags']
-        update_fiels = {}
+        update_fields = {}
         for field in data:
             if field in possible_fields_to_update:
-                update_fiels[f'articles.$.{field}'] = data[field] 
-        update = {'$set': update_fiels}
+                update_fields[f'articles.$.{field}'] = data[field] 
+        update = {'$set': update_fields}
         projection = {'articles.article_id': art_id}
         res = cls.update_document(query, update, projection=projection)
         if res:
@@ -81,7 +97,8 @@ class ArticlesManager(MongoManager):
         return None
 
     @classmethod
-    def delete_article(cls, company_id, art_id):
+    def delete_article(cls, company_id, art_id) -> bool:
+        """Deletes article from the database."""
         query = {'company_id': company_id}
         delete_part = {'$pull': {'articles': {'article_id': art_id}}}
         res = cls.delete_from_document(query, delete_part)

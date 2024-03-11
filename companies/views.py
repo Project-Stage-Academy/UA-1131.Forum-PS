@@ -1,14 +1,13 @@
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import generics, status
+from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.authentication import JWTAuthentication
 from authentication.models import Company
 from authentication.permissions import IsAuthenticated, IsRelatedToCompany, IsStartup, IsInvestor, IsFounder
 from .filters import CompanyFilter
 from .models import Subscription
-from .serializers import CompaniesSerializer, SubscriptionSerializer, SubscriptionListSerializer
+from .serializers import CompaniesSerializer, SubscriptionSerializer
 from .managers import ArticlesManager as am, LIMIT
 from forum import errors as er
 from pydantic import ValidationError as PydanticValidationError
@@ -100,7 +99,7 @@ class SubscriptionListView(APIView):
         return Response({'subscriptions': data}, status=status.HTTP_200_OK)
 
 class RetrieveArticles(APIView):
-    # do we need to block access to the articles for an unauthorized viewrs?
+    # do we need to block access to the articles for an unauthorized viewers?
     def get(self, request, pk=None, page=None):
         if not pk or not page:
             return Response({'error': "No company id or page was provided"}, status=status.HTTP_400_BAD_REQUEST)
