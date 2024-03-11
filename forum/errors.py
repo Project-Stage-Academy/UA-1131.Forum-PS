@@ -73,7 +73,7 @@ class Error:
         msg = "Password is wrong"
         status = status.HTTP_401_UNAUTHORIZED
 
-    class NOT_FOUNDER:
+    class NOT_FOUNDER(BaseError):
         msg = "User has not founder position"
         status = status.HTTP_403_FORBIDDEN
 
