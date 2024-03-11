@@ -135,7 +135,7 @@ class LogoutView(APIView):
 
         decoded_refresh_token, _ = TokenManager.get_refresh_payload(refresh_token)
         decoded_refresh_token.blacklist()
-        return Response(status=status.HTTP_202_ACCEPTED)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class PasswordRecoveryAPIView(APIView):
