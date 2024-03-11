@@ -1,6 +1,7 @@
 from rest_framework import status
 
 
+
 class Error:
     """Pre-formatted errors for easier handling"""
 
@@ -19,7 +20,6 @@ class Error:
     class INVALID_TOKEN:
         msg = "Token is invalid or expired"
         status = status.HTTP_401_UNAUTHORIZED
-
 
     class NO_USER_ID:
         msg = "Token contained no recognizable user identification"
