@@ -1,5 +1,8 @@
 from django.urls import path
-from .views import CompaniesListCreateView, CompaniesRetrieveUpdateView, SubscriptionCreateAPIView, UnsubscribeAPIView, SubscriptionListView
+
+from .views import (CompaniesListCreateView, CompaniesRetrieveUpdateView,
+                    SubscriptionCreateAPIView, SubscriptionListView,
+                    UnsubscribeAPIView)
 
 urlpatterns = [
     path('', CompaniesListCreateView.as_view(), name='companies-list-create'),

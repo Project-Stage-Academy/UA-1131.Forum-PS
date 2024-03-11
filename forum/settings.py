@@ -11,11 +11,10 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 import os
 from datetime import timedelta
+from pathlib import Path
 
 import pymongo
 from dotenv import load_dotenv
-from pathlib import Path
-import pymongo
 
 load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.

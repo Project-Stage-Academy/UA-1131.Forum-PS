@@ -1,8 +1,9 @@
 import re
+from string import punctuation
+
+import zxcvbn
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from string import punctuation
-import zxcvbn
 
 
 class CustomValidationSerializer(serializers.Serializer):

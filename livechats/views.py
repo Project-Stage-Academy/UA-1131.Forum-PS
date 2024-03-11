@@ -1,20 +1,22 @@
-import json
+
 import os
-from bson import ObjectId
-from pydantic import ValidationError
 from datetime import datetime
-from redis.utils import from_url
+
 from rest_framework import status
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from bson import ObjectId
+from pydantic import ValidationError
+from redis.utils import from_url
+
 from authentication.authentications import UserAuthentication
 from authentication.models import CustomUser
 from authentication.permissions import IsAuthenticated
-from .schemas import Conversation
 from forum.settings import DB
 
+from .schemas import Conversation
 
 collections = DB['conversations']
 

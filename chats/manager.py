@@ -1,5 +1,6 @@
 from bson import ObjectId
 from pydantic import BaseModel, ValidationError
+
 from forum.settings import DB
 
 

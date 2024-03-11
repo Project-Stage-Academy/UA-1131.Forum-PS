@@ -1,6 +1,7 @@
-from rest_framework.test import APITestCase, APIClient
 from django.urls import reverse
-from authentication.models import CustomUser, Company
+from rest_framework.test import APIClient, APITestCase
+
+from authentication.models import Company, CustomUser
 
 
 class CompanyTestAuthenticatedUser(APITestCase):

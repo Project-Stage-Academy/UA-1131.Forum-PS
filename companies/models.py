@@ -1,6 +1,8 @@
 from django.db import models
 
-from authentication.models import CustomUser, Company
+from authentication.models import Company, CustomUser
+
+
 class Subscription(models.Model):
     subscription_id = models.BigAutoField(primary_key=True)
     investor = models.ForeignKey(CustomUser, on_delete=models.CASCADE)

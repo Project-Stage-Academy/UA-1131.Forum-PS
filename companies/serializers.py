@@ -1,8 +1,8 @@
 import re
+
 from rest_framework import serializers
 
 from .models import Company, Subscription
-import re
 
 
 class CompaniesSerializer(serializers.ModelSerializer):

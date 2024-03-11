@@ -1,7 +1,7 @@
 from datetime import datetime
-from pydantic import BaseModel
 from typing import Optional
 
+from pydantic import BaseModel
 
 
 class Message(BaseModel):
@@ -19,4 +19,3 @@ class Conversation(BaseModel):
     receiver_id: int
     start_time: datetime
     messages: Optional[list[Message]]
-

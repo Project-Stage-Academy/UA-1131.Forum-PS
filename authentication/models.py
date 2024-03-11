@@ -1,11 +1,15 @@
 from datetime import datetime
+
+from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
-from django.contrib.auth.base_user import (AbstractBaseUser, BaseUserManager)
 from django.db import models
+
 from rest_framework.exceptions import NotAuthenticated
-from forum.errors import Error
-from rest_framework_simplejwt.tokens import AccessToken
+
 from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import AccessToken
+
+from forum.errors import Error
 
 
 class CustomUserManager(BaseUserManager):
@@ -111,7 +115,7 @@ class CompanyAndUserRelation(models.Model):
 
     relation_id = models.BigAutoField(primary_key=True)
     user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="user_relations")
-    company_id = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_relations" )
+    company_id = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_relations")
     position = models.CharField(default=REPRESENTATIVE, max_length=30, choices=POSITION_CHOICES, blank=False,
                                 null=False)
 
