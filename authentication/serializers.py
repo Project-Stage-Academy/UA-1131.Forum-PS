@@ -93,37 +93,6 @@ class UserUpdateSerializer(serializers.ModelSerializer, CustomValidationSerializ
         return instance
 
 
-class UserPasswordUpdateSerializer(serializers.ModelSerializer, CustomValidationSerializer):
-    previous_password = serializers.CharField(label="Previous password", required=True, write_only=True)
-    new_password = serializers.CharField(label="New password", required=True, write_only=True)
-
-    class Meta:
-        model = CustomUser
-        fields = ("previous_password", "new_password")
-
-    def validate(self, attrs):
-        previous_password = attrs.get("previous_password")
-        new_password = attrs.get("new_password")
-        user = self.instance
-        if not check_password(previous_password, user.password):
-            raise ValidationError({"previous_password": "Wrong previous password"})
-        try:
-            self.validation_password(new_password)
-        except ValidationError as e:
-            raise ValidationError({"password": e.detail})
-        return attrs
-
-    def update(self, instance, validated_data):
-        logger = logging.getLogger('account_update')
-        new_password = validated_data.pop("new_password")
-        instance.set_password(new_password)
-        instance = super().update(instance, validated_data)
-        Utils.send_password_update_email(instance)
-        logger.info(
-            f"{datetime.now()}: User {instance.email} {instance.first_name} {instance.surname} updated his password")
-        return instance
-
-
 class PasswordRecoverySerializer(serializers.ModelSerializer, CustomValidationSerializer):
     password = serializers.CharField(write_only=True, required=True)
     password2 = serializers.CharField(write_only=True, required=True)
