@@ -9,6 +9,7 @@ from django.core.mail import EmailMessage, EmailMultiAlternatives
 
 from forum import settings
 from forum.settings import DB, EMAIL_HOST_USER
+from forum.managers import MongoManager
 
 from authentication.models import Company, CustomUser, CompanyAndUserRelation
 from companies.models import Subscription
@@ -60,23 +61,6 @@ class MessageNotification(Notification):
     """Model for message notification"""
     type: str = Field(default=MESSAGE, frozen=True)
 
-class MongoManager:
-
-    @classmethod
-    def id_to_string(cls, document):
-        """Changes _id field of returned document from ObjectId to string."""
-
-        document['_id'] = str(document['_id'])
-        return document
-    
-    @classmethod
-    def to_list(cls, cursor):
-        """Returns the list of objects from the PyMongo cursor."""
-
-        res = []
-        for el in cursor:
-            res.append(cls.id_to_string(el))
-        return res
 
 
 
@@ -87,8 +71,6 @@ class NotificationManager(MongoManager):
     in manager you have to include it in types collection, with type as a key and model
     as a value
     """
-    UPDATE = 'update'
-    MESSAGE = 'message'
 
     db = DB['Notification']
     types = {UPDATE: UpdateNotification,
@@ -96,36 +78,35 @@ class NotificationManager(MongoManager):
 
 
     @classmethod
-    def get_notification_by_query(cls, query):
+    def get_notification_by_query(cls, query, **kwargs):
         """Extracting the single document from database filtered by given query."""
 
-        notification = cls.db.find_one(query)
+        notification = cls.get_document(query, **kwargs)
         if not notification:
             raise NotificationNotFound("Notification not found")
-        return cls.id_to_string(notification)
+        return notification
 
     @classmethod
     def get_notifications_by_query(cls, query, err=None):
         """Extracting the multiple documents from database filtered by given query."""
 
         err = "There is no notifications that satisfy given conditions" if not err else err
-        if not cls.db.count_documents(query):
+        if not cls.check_if_exist(query):
             raise NotificationNotFound(err)
-        notifications = cls.db.find(query).sort(
-            'created_at', pymongo.ASCENDING)
+        notifications = cls.get_and_sort_documents(query, sort_options=('created_at', pymongo.ASCENDING))
         if not notifications:
             raise NotificationNotFound(
                 "Notifications not found, perhaps due to the connection error.")
-        return cls.to_list(notifications)
+        return notifications
 
     @classmethod
-    def delete_notification_by_query(cls, query):
+    def delete_notification_by_query(cls, query, **kwargs):
         """Delete notification that matches given conditions."""
 
-        notification = cls.db.find_one_and_delete(query)
+        notification = cls.delete_document(query, **kwargs)
         if not notification:
             raise NotificationNotFound("Notification not found")
-        return cls.id_to_string(notification)
+        return notification
 
     @classmethod
     def delete_old_notifications(cls):
@@ -134,8 +115,8 @@ class NotificationManager(MongoManager):
         date = datetime.now() - timedelta(days=30)
         date = date.strftime("%Y-%m-%d %H:%M:%S")
         query = {"created_at": {"$lt": date}}
-        res = cls.db.delete_many(query)
-        return res.deleted_count
+        res = cls.delete_documents(query)
+        return res
 
     @classmethod
     def create_notification(cls, data):
@@ -144,20 +125,18 @@ class NotificationManager(MongoManager):
         the notification's creation (for instance update_id or chat_id) and other defined in the model
         information. Data should include type and event_id. 
         """
-        type_ = data['type']
-        model = cls.types[type_]
+        type_ = data.pop('type')
         event_id = data['event_id']
         query = {'event_id': event_id}
-        if cls.db.count_documents(query):
+        if cls.check_if_exist(query):
             raise AlreadyExist(
                 f"Notification for {type_} with EVENT_ID {event_id} already exists.")
-        validated_model = model.model_validate(data)
-        res = cls.db.insert_one(validated_model.model_dump())
-        return str(res.inserted_id)
+        res = cls.create_document(data, type_)
+        return res
 
     @classmethod
     def create_notifications(cls, data: list):
-        """Creting notifications from the array of data."""
+        """Creating notifications from the array of data."""
 
         res = []
         for nf in data:
@@ -199,12 +178,12 @@ class NotificationManager(MongoManager):
         except ValidationError as e:
             raise InvalidData(str(e)) from e
         update = {'$push': {'viewed_by': viewed.model_dump()}}
-        notification = cls.db.find_one_and_update(
+        notification = cls.update_document(
             query, update, return_document=pymongo.ReturnDocument.AFTER)
         if not notification:
             raise NotificationNotFound(
                 "Notification not found, perhaps due the connection error.")
-        return cls.id_to_string(notification)
+        return notification
 
 
 class EmailManager:

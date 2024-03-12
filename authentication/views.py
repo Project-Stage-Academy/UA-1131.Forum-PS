@@ -54,6 +54,8 @@ class VerifyEmail(APIView):
 
 class LoginView(APIView):
     authentication_classes = ()
+    
+    @add_notifications_for_user
     def post(self, request):
         email = request.data.get('email')
         password = request.data.get('password')
@@ -90,6 +92,7 @@ class RelateUserToCompany(APIView):
     """Binding user to company and insert binded company's id into token."""
     permission_classes = (IsAuthenticated,)
 
+    @add_notifications_for_user
     def post(self, request):
         user_id = request.user.user_id
         company_id = request.data['company_id']
