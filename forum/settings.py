@@ -142,7 +142,6 @@ TEMPLATES = [
     },
 ]
 
-
 WSGI_APPLICATION = 'forum.wsgi.application'
 ASGI_APPLICATION = 'forum.asgi.application'
 # Database
@@ -206,7 +205,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 FRONTEND_URL = os.environ.get('FRONTEND_URL')
 
-
 AUTH_USER_MODEL = 'authentication.CustomUser'
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -218,11 +216,12 @@ EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+# for docker use "hosts": [('redis', 6379)], for local machine "hosts": [('localhost', 6379)]
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [('redis', 6379)],
+            "hosts": [('localhost', 6379)],
         },
     },
 }

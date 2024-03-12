@@ -1,13 +1,11 @@
+import math
 from datetime import datetime
-
 from bson import ObjectId
 from pydantic import BaseModel
 from typing import Optional
 
-from rest_framework import status
-
 from forum.settings import DB
-
+from forum.managers import MongoManager
 
 class Message(BaseModel):
     """Pydentic BaseModel class for Messages validations"""
@@ -26,32 +24,13 @@ class Conversation(BaseModel):
     messages: Optional[list[Message]]
 
 
-class MongoManager:
-
-    @classmethod
-    def id_to_string(cls, document):
-        """Changes _id field of returned document from ObjectId to string."""
-
-        document['_id'] = str(document['_id'])
-        return document
-
-    @classmethod
-    def to_list(cls, cursor):
-        """Returns the list of objects from the PyMongo cursor."""
-
-        res = []
-        for el in cursor:
-            res.append(cls.id_to_string(el))
-        return res
-
-
 class LiveChatManager(MongoManager):
-    collections = DB['conversations']
+    db = DB['conversations']
 
     @classmethod
     def create_conversation(cls, new_conversation):
         new_conversation_serialized = Conversation.parse_obj(new_conversation).dict()
-        cls.collections.insert_one(new_conversation_serialized)
+        cls.db.insert_one(new_conversation_serialized)
         return cls.id_to_string(new_conversation_serialized)
 
     @classmethod
@@ -62,7 +41,7 @@ class LiveChatManager(MongoManager):
                 {"initiator_id": participant.user_id, "receiver_id": initiator.user_id}
             ]
         }
-        conversation = cls.collections.find_one(query)
+        conversation = cls.get_document(query)
         if conversation:
             return cls.id_to_string(conversation)
         return None
@@ -74,7 +53,7 @@ class LiveChatManager(MongoManager):
                 {"initiator_id": participant.user_id},
                 {"receiver_id": participant.user_id},
             ]}
-        conversations = cls.collections.find(query, {"messages": 0})
+        conversations = cls.db.find(query, {"messages": 0})
         conversation_list = cls.to_list(conversations)
         conversation_list = conversation_list.reverse()
         return conversation_list
@@ -82,7 +61,20 @@ class LiveChatManager(MongoManager):
     @classmethod
     def get_conversation_by_id(cls, conversation_id):
         query = {"_id": ObjectId(conversation_id)}
-        existing_conversation = cls.collections.find_one(query)
+        existing_conversation = cls.get_document(query)
         if existing_conversation:
             return cls.id_to_string(existing_conversation)
         return None
+
+    @classmethod
+    def upgrade_messages(cls, conversation_id, messages):
+        if len(messages) > 50:
+            for i in range(math.ceil(messages / 50)):
+                if len(messages) > 50:
+                    cls.db.update_one({"_id": ObjectId(conversation_id)}, {"$push": {"messages": messages[0:50]}})
+                    messages = messages[50::]
+                else:
+                    cls.db.update_one({"_id": ObjectId(conversation_id)}, {"$push": {"messages": messages}})
+                    break
+        else:
+            cls.db.update_one({"_id": ObjectId(conversation_id)}, {"$push": {"messages": messages}})

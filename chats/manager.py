@@ -1,6 +1,7 @@
 from bson import ObjectId
 from pydantic import BaseModel, ValidationError
 from forum.settings import DB
+from forum.managers import MongoManager
 
 
 class MessageNotFound(Exception):
@@ -22,25 +23,6 @@ class Message(BaseModel):
     receiver_data: str
     visible_for_sender: bool
     visible_for_receiver: bool
-
-
-class MongoManager:
-
-    @classmethod
-    def id_to_string(cls, document):
-        """Changes _id field of returned document from ObjectId to string."""
-
-        document['_id'] = str(document['_id'])
-        return document
-
-    @classmethod
-    def to_list(cls, cursor):
-        """Returns the list of objects from the PyMongo cursor."""
-
-        res = []
-        for el in cursor:
-            res.append(cls.id_to_string(el))
-        return res
 
 
 class MessagesManager(MongoManager):
