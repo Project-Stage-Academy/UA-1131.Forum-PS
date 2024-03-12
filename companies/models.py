@@ -1,4 +1,4 @@
-from authentication.models import CustomUser, Company, CompanyAndUserRelation
+from authentication.models import CustomUser, Company
 from django.db import models
 
 class Subscription(models.Model):
