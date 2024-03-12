@@ -1,3 +1,5 @@
+import pymongo
+from pydantic import BaseModel
 from rest_framework_simplejwt.exceptions import (AuthenticationFailed,
                                                  TokenError)
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
@@ -5,6 +7,7 @@ from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from authentication.models import CustomUser
 
 from .errors import Error
+from .settings import EMAIL_HOST
 
 
 class TokenManager:
@@ -57,3 +60,93 @@ class TokenManager:
         except TokenError:
             raise AuthenticationFailed(detail=Error.INVALID_TOKEN.msg)
         return decoded_token, decoded_access_token
+    
+
+
+class MongoManager:
+    db = None
+    types = {}
+
+    @classmethod
+    def id_to_string(cls, document):
+        """Changes _id field of returned document from ObjectId to string."""
+        try:
+            document['_id'] = str(document['_id'])
+        except (KeyError, TypeError):
+            pass
+        return document
+    
+    @classmethod
+    def to_list(cls, cursor):
+        """Returns the list of objects from the PyMongo cursor."""
+
+        res = []
+        for el in cursor:
+            res.append(cls.id_to_string(el))
+        return res
+    
+    @classmethod
+    def check_if_exist(cls, query):
+        """Checks if the document that matching to the given filter exist."""
+        res = cls.db.count_documents(query)
+        if not res: 
+            return False
+        return True
+    
+    @classmethod
+    def get_document(cls, query, **kwargs):
+        """Retrieves the document from the database."""
+        document = cls.db.find_one(query, **kwargs)
+        return cls.id_to_string(document)
+    
+    @classmethod
+    def get_documents(cls, query, **kwargs):
+        """Retrieves the multiple documents from the database."""
+        document = cls.db.find(query, **kwargs)
+        return cls.to_list(document)
+    
+    @classmethod
+    def create_document(cls, data, key) -> str | None:
+        """Creates document. Key is needed to use proper model for validation."""
+        model:BaseModel = cls.types[key]
+        validated_model = model.model_validate(data)
+        res = cls.db.insert_one(validated_model.model_dump())
+        return str(res.inserted_id) if res.acknowledged else None
+    
+    @classmethod
+    def update_document(cls, query, update, **kwargs):
+        """Updates the document."""
+        document = cls.db.find_one_and_update(query, update, return_document=pymongo.ReturnDocument.AFTER, **kwargs)
+        return cls.id_to_string(document)
+    
+    @classmethod
+    def delete_document(cls, query, **kwargs):
+        """Delete the document from database."""
+        res = cls.db.find_one_and_delete(query, **kwargs)
+        return res
+
+    @classmethod
+    def delete_from_document(cls, query,delete_part, **kwargs):
+        """Deletes the specific part of the document."""
+        res = cls.db.update_one(query, delete_part, **kwargs)
+        if res.modified_count == 0:
+            return None
+        return res
+    
+    
+
+class EmailManager:
+    @staticmethod
+    def _email_sender(data: Dict):
+        email = EmailMessage(subject=data['email_subject'], body=data['email_body'], from_email=data['from_email'],
+                             to=(data['to_email'],))
+        email.send()
+
+    @staticmethod
+    def _data_formatter(email_subject: str, email_body: str, email: str):
+        return {
+            'email_subject': email_subject,
+            'email_body': email_body,
+            'from_email': EMAIL_HOST_USER,
+            'to_email': email
+        }
