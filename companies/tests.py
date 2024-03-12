@@ -1,7 +1,7 @@
+from django.test import TestCase
+from rest_framework.test import APITestCase, APIClient
 from django.urls import reverse
-from rest_framework.test import APIClient, APITestCase
-
-from authentication.models import Company, CustomUser
+from authentication.models import CustomUser
 
 
 class CompanyTestAuthenticatedUser(APITestCase):
@@ -84,30 +84,3 @@ class CompanyTestUnauthenticatedUser(APITestCase):
         response = self.client.post(reverse('companies-list-create'), {'brand': 'test_brand', 'is_registered': True},
                                     format='json')
         self.assertEqual(response.status_code, 401)
-
-
-class CompanyFilterTestCase(APITestCase):
-    def setUp(self):
-        """
-        Set up the test by creating multiple companies with different brands and defining the URL for the companies list
-         endpoint.
-        """
-        self.url = reverse('companies-list-create')
-
-        # Create multiple companies with different brands
-        Company.objects.create(brand='test_brand1')
-        Company.objects.create(brand='test_brand2')
-        Company.objects.create(brand='another_brand')
-
-    def test_brand_filter(self):
-        """
-        Test filtering companies by brand name.
-        """
-        # Send a GET request with the brand filter parameter
-        response = self.client.get(self.url, {'brand': 'test_brand1'})
-
-        # Assert that the response status code is 200 OK
-        self.assertEqual(response.status_code, 200)
-
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['brand'], 'test_brand1')

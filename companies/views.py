@@ -1,89 +1,102 @@
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import generics, status
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
+from rest_framework import status, viewsets
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
-
+from rest_framework.response import Response
 from authentication.models import Company
-
+from authentication.permissions import IsAuthenticated, IsRelatedToCompany, IsInvestor
+from forum.errors import Error as er
 from .filters import CompanyFilter
 from .models import Subscription
-from .serializers import (CompaniesSerializer, SubscriptionListSerializer,
-                          SubscriptionSerializer)
+from .serializers import CompaniesSerializer, SubscriptionSerializer
+from .permissions import EditCompanyPermission
+from revision.views import CustomRevisionMixin
 
-JWT_authenticator = JWTAuthentication()
 
-
-class CompaniesListCreateView(generics.ListCreateAPIView):
+class CompaniesViewSet(CustomRevisionMixin, viewsets.ModelViewSet):
     queryset = Company.objects.all()
     serializer_class = CompaniesSerializer
-    # permission_classes = (IsAuthenticated,)
+    permission_classes = (EditCompanyPermission,)
     filter_backends = [DjangoFilterBackend]
     filterset_class = CompanyFilter
 
 
-class CompaniesRetrieveUpdateView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Company.objects.all()
-    serializer_class = CompaniesSerializer
-    # permission_classes = (IsAuthenticated,)
+class CompanyRetrieveView(APIView):
+    permission_classes = (IsAuthenticated,)
     filter_backends = [DjangoFilterBackend]
     filterset_class = CompanyFilter
 
-
-class SubscriptionCreateAPIView(APIView):
-    permission_classes = (IsAuthenticated,)
-
-    def post(self, request, *args, **kwargs):
-
-        auth_response = JWT_authenticator.authenticate(request)
-        if auth_response is None:
-            return Response({'error': "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
-        user_id = auth_response[1].get('user_id')
-        request.data['investor'] = user_id
-        serializer = SubscriptionSerializer(data=request.data)
-        if serializer.is_valid():
-            subs = Subscription.objects.filter(investor=user_id, company=request.data.get('company'))
-            if not subs:
-                subscription = serializer.save()
-            else:
-                subscription = subs.first()
-            company = subscription.company
-            brand = company.brand
-            subscription_id = subscription.subscription_id
-            message = f"You're subscribed to {brand}, subscription id: {subscription_id}"
-            return Response({'message': message}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class UnsubscribeAPIView(APIView):
-    permission_classes = (IsAuthenticated,)
-
-    def delete(self, request, subscription_id, *args, **kwargs):
-        response = JWT_authenticator.authenticate(request)
-        if response is None:
-            return Response({'error': "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
-        user_id = response[1].get('user_id')
-
+    def get(self, request, pk=None):
+        if not pk:
+            return er.NO_CREDENTIALS.response()
         try:
-            subscription = Subscription.objects.get(subscription_id=subscription_id, investor_id=user_id)
-        except Subscription.DoesNotExist:
-            return Response({'error': 'Subscription not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        subscription.delete()
-        return Response({'message': 'Successfully unsubscribed'}, status=status.HTTP_204_NO_CONTENT)
+            company = Company.get_company(company_id=pk)
+            return Response(company.get_info(), status=status.HTTP_200_OK)
+        except Company.DoesNotExist:
+            return er.NO_COMPANY_FOUND.response()
 
 
-class SubscriptionListView(APIView):
+class CompaniesRetrieveView(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request):
-        response = JWT_authenticator.authenticate(request)
-        if response is None:
-            return Response({'error': "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
-        user_id = response[1].get('user_id')
-        subs = Subscription.objects.filter(investor_id=user_id).values()
+        type = request.data.get('company_type')
+        try:
+            if not type:
+                companies = Company.get_all_companies_info()
+            else:
+                companies = Company.get_all_companies_info(type)
+        except Company.DoesNotExist:
+            return er.NO_COMPANY_FOUND.response()
+        return Response(companies, status=status.HTTP_200_OK)
+
+
+class SubscriptionCreateAPIView(APIView):
+    permission_classes = (IsAuthenticated, IsRelatedToCompany, IsInvestor)
+
+    def post(self, request, pk=None):
+        if not pk:
+            return er.NO_CREDENTIALS.response()
+
+        profile_id = request.user.relation_id
+        company_id = pk
+        try:
+            check_sub = Subscription.get_subscription(
+                investor=profile_id, company=company_id)
+            msg = f"You're already subscribed to {check_sub.company.brand}."
+            return Response({'message': msg}, status=status.HTTP_200_OK)
+        except Subscription.DoesNotExist:
+            data = {'investor': profile_id,
+                    'company': company_id}
+            serializer = SubscriptionSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+                msg = f"You're successfully subscribed to {serializer.company.brand}"
+                return Response({'message': msg, 'subscription_id': serializer.subscription_id},
+                                status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UnsubscribeAPIView(APIView):
+    permission_classes = (IsAuthenticated, IsRelatedToCompany, IsInvestor)
+
+    def delete(self, request, subscription_id):
+        try:
+            subscription = Subscription.get_subscription(
+                subscription_id=subscription_id)
+        except Subscription.DoesNotExist:
+            return er.SUBSCRIPTION_NOT_FOUND.response()
+        company_id = subscription.company.company_id
+        subscription.delete()
+        return Response({'message': 'Successfully unsubscribed', 'company_id': company_id}, status=status.HTTP_200_OK)
+
+
+class SubscriptionListView(APIView):
+    permission_classes = (IsAuthenticated, IsRelatedToCompany)
+
+    def get(self, request):
+        profile_id = request.user.relation_id
+        subs = Subscription.get_subscriptions(investor=profile_id)
         if not subs:
-            return Response({'message': "You have no subs"}, status=status.HTTP_204_NO_CONTENT)
-        serializer = SubscriptionListSerializer(subs, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response({'message': "You have no subsriptions yet!"}, status=status.HTTP_200_OK)
+        data = [sub.get_info() for sub in subs]
+        return Response({'subscriptions': data}, status=status.HTTP_200_OK)

@@ -1,17 +1,15 @@
 import logging
-
+import jwt
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 
-from rest_framework import generics, status
+from rest_framework import status, generics
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
-from rest_framework_simplejwt.tokens import RefreshToken
-
-import jwt
 
 from authentication.authentications import UserAuthentication
 from authentication.models import CompanyAndUserRelation, CustomUser
@@ -40,7 +38,7 @@ class VerifyEmail(APIView):
         logger = logging.getLogger('account_update')
         token = request.GET.get('token')
         try:
-            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
+            payload = AccessToken(token).payload
             user = CustomUser.objects.get(user_id=payload['user_id'])
             user.is_verified = True
             user.save()
@@ -54,6 +52,7 @@ class VerifyEmail(APIView):
 
 
 class LoginView(APIView):
+    authentication_classes = ()
 
     def post(self, request):
         email = request.data.get('email')
@@ -74,6 +73,20 @@ class LoginView(APIView):
         })
 
 
+class LogoutView(APIView):
+    authentication_classes = (UserAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        try:
+            refresh_token = request.data["refresh_token"]
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except TokenError as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
 class RelateUserToCompany(APIView):
     """Binding user to company and inserting linked company's id into token."""
     permission_classes = (IsAuthenticated,)
@@ -81,8 +94,11 @@ class RelateUserToCompany(APIView):
     def post(self, request):
         user_id = request.user.user_id
         company_id = request.data['company_id']
-        relation = CompanyAndUserRelation.get_relation(user_id=user_id, company_id=company_id)
-        if not relation:
+
+        try:
+            relation = CompanyAndUserRelation.get_relation(user_id=user_id, company_id=company_id)
+        except CompanyAndUserRelation.DoesNotExist:
+
             return Response({'error': 'You have no access to this company.'}, status=status.HTTP_403_FORBIDDEN)
         access_token = CustomUser.generate_company_related_token(request)
         return Response({'access': f"Bearer {access_token}"})
@@ -95,7 +111,8 @@ class UserUpdateView(generics.RetrieveUpdateAPIView):
     permission_classes = (IsAuthenticated, CustomUserUpdatePermission)
 
 
-class UserPasswordUpdateView(generics.UpdateAPIView):
+class UserPasswordUpdateView(
+    generics.UpdateAPIView):  # doesn't this view double the password reset and recovery functions?
     queryset = CustomUser.objects.all()
     serializer_class = UserPasswordUpdateSerializer
     authentication_classes = (UserAuthentication,)
@@ -204,4 +221,5 @@ class PasswordResetView(APIView):
             Utils.send_password_update_email(user)  # TO DO: REWRITE WITH DECORATORS
             return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
