@@ -1,12 +1,11 @@
 import logging
 
-import jwt
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from rest_framework import status, generics
+from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -17,7 +16,6 @@ from authentication.permissions import (CustomUserUpdatePermission,
 from authentication.serializers import (PasswordRecoverySerializer,
                                         UserRegistrationSerializer,
                                         UserUpdateSerializer)
-
 from forum import settings
 from forum.errors import Error
 from forum.managers import TokenManager
@@ -26,11 +24,29 @@ from .utils import Utils
 
 
 class UserRegistrationView(APIView):
+    """
+        A view for handling user registration requests.
+
+        This view allows users to register by providing necessary information such as email, password, etc.
+        Upon receiving a valid registration request, it creates a new user and sends a verification email.
+
+        Request:
+            - Method: POST
+            - URL: /auth/register/
+            - Data Params:
+                - email: The email address of the user (required)
+                - password: The password for the user (required)
+                - other fields: Additional information for user registration (optional)
+            - Response:
+                - 201 Created: User registered successfully, verification email sent
+                - 400 Bad Request: Invalid data provided for user registration
+    """
     authentication_classes = ()
     permission_classes = ()
     serializer_class = UserRegistrationSerializer
 
     def post(self, request):
+        """Handle POST requests for user registration"""
 
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
@@ -46,10 +62,26 @@ class UserRegistrationView(APIView):
 
 
 class VerifyEmail(APIView):
+    """
+        A view for handling email verification requests.
+
+        This view allows users to verify their email address by providing a valid JWT access token.
+
+        Request:
+            - Method: GET
+            - URL: /auth/verify-email/<jwt_token>/
+        Response:
+            - 200 OK: Email verification successful
+            - 400 Bad Request: Invalid or expired token
+            - 404 Not Found: User not found
+            - 409 Conflict: User's email is already verified
+    """
     authentication_classes = ()
     permission_classes = ()
 
     def get(self, request, jwt_token):
+        """Handle GET requests for email verification"""
+
         payload = TokenManager.get_access_payload(jwt_token)
         user_id = payload.get('user_id')
         if user_id is None:
@@ -71,10 +103,27 @@ class VerifyEmail(APIView):
 
 
 class LoginView(APIView):
+    """
+        A view for handling user login requests.
+
+        This view allows users to log in by providing their email and password.
+
+        Request:
+            - Method: POST
+            - URL: /auth/login/
+            - Data Params:
+                - email: The email address of the user (required)
+                - password: The password of the user (required)
+        Response:
+            - 200 OK: Login successful
+            - 404 Not Found: User not found
+            - 401 Unauthorized: Invalid credentials
+    """
     authentication_classes = ()
     permission_classes = ()
 
     def post(self, request):
+        """Handle POST requests for user login"""
         email = request.data.get('email')
         password = request.data.get('password')
 
@@ -97,10 +146,25 @@ class LoginView(APIView):
 
 
 class RelateUserToCompany(APIView):
-    """Binding user to company and inserting linked company's id into token."""
+    """
+        A view for binding a user to a company and inserting the linked company's id into the token.
+
+        This view requires authentication and permission.
+
+        Request:
+            - Method: POST
+            - URL: /auth/relate/
+            - Data Params:
+                - company_id: The id of the company to bind the user to (required)
+        Response:
+            - 200 OK: User successfully bound to the company
+            - 403 Forbidden: User has no access to this company
+            - 401 Unauthorized: Token is invalid or expired
+    """
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
+        """Handle POST requests for binding a user"""
         user_id = request.user.user_id
         company_id = request.data['company_id']
         try:
@@ -114,6 +178,23 @@ class RelateUserToCompany(APIView):
 
 
 class UserUpdateView(generics.RetrieveUpdateAPIView):
+    """
+        A view for updating user information.
+
+        This view allows authenticated users to update their email, first name, surname, and phone number.
+
+        Request:
+            - Method: PATCH
+            - URL: /auth/users/id
+            - Data Params:
+                - email: The new email address for the user (required)
+                - first_name: The new first name for the user (required)
+                - surname: The new surname for the user (required)
+                - phone_number: The new phone number for the user (required)
+        Response:
+            - 200 OK: User information updated successfully
+            - 400 Bad Request: Invalid data format
+    """
     queryset = CustomUser.objects.all()
     serializer_class = UserUpdateSerializer
     authentication_classes = (UserAuthentication,)
@@ -122,10 +203,25 @@ class UserUpdateView(generics.RetrieveUpdateAPIView):
 
 
 class LogoutView(APIView):
+    """
+        A view for handling user logout.
+
+        This view allows authenticated users to log out by providing their refresh token.
+
+        Request:
+            - Method: POST
+            - URL: /auth/logout/
+            - Data Params:
+                - refresh_token: The refresh token of the user (required)
+        Response:
+            - 204 No Content: User logged out successfully
+            - 400 Bad Request: No refresh token provided
+    """
     authentication_classes = (UserAuthentication,)
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
+        """Handle POST requests for logout the user"""
         refresh_token = request.data.get("refresh_token")
         if refresh_token is None:
             return Response({'error': Error.NO_TOKEN.msg}, status=Error.NO_TOKEN.status)
@@ -193,22 +289,30 @@ class PasswordResetView(APIView):
         Request:
             - Method: POST
             - URL: /auth/password-reset/<jwt_token>/
+            - URL: /auth/password-update/
             - Data Params:
                 - password: The new password for the user (required)
             - Response:
                 - 200 OK: Password reset successfully
                 - 400 Bad Request: Invalid token or password format
+                - 404 Not found: User not found
     """
-    authentication_classes = ()
+    authentication_classes = (UserAuthentication,)
     permission_classes = ()
 
     serializer_class = PasswordRecoverySerializer
 
-    def post(self, request, jwt_token):
+    def post(self, request, jwt_token=None):
         """Handle POST requests for password reset"""
 
-        payload = TokenManager.get_access_payload(jwt_token)
-        user_id = payload.get('user_id')
+        if request.user.is_authenticated:
+            # handle password update
+            user_id = request.user.user_id
+        else:
+            # handle password reset
+            payload = TokenManager.get_access_payload(jwt_token)
+            user_id = payload.get('user_id')
+
         if user_id is None:
             return Response({'error': Error.INVALID_TOKEN.msg}, status=Error.INVALID_TOKEN.status)
         try:
