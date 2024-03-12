@@ -39,7 +39,7 @@ class Error:
 
     class USER_ALREADY_VERIFIED(BaseError):
         msg = "User is already verified"
-        status = status.HTTP_400_BAD_REQUEST
+        status = status.HTTP_409_CONFLICT
 
     class NOT_AUTHENTICATED(BaseError):
         msg = "User is not authenticated"
