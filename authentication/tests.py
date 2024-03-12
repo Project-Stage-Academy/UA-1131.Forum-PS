@@ -7,6 +7,7 @@ from rest_framework.test import APIClient, APITestCase
 
 from forum import settings
 from forum.managers import TokenManager
+from faker import Faker
 
 from .models import Company, CompanyAndUserRelation, CustomUser
 
@@ -19,6 +20,7 @@ class AuthenticationUserApiTest(APITestCase):
         self.user2 = CustomUser.objects.create_user(email='test3@gmail.com', password='password123')
         self.user3 = CustomUser.objects.create_user(email='test4@gmail.com', password='password123')
         self.company = Company.objects.create(brand='Pepsi')
+        self.fake = Faker()
 
     def _authenticate_user(self, refresh_token):
         jwt_token = f'Bearer {refresh_token.access_token}'
@@ -26,28 +28,36 @@ class AuthenticationUserApiTest(APITestCase):
 
     @patch('authentication.utils.Utils.send_verification_email')
     def test_register_user(self, mock_send_verification_email):
-        data_to_send = {'email': 'register@mail.com',
-                        'password': 'Test_password123456',
-                        'password2': 'Test_password123456',
-                        'first_name': 'TestName',
-                        'surname': 'TestSurname',
-                        'phone_number': '+380676342542'}
+        email = self.fake.email()
+        password = self.fake.password()
+        first_name = self.fake.first_name()
+        surname = self.fake.last_name()
+        phone = self.fake.phone_number()
+
+        data_to_send = {'email': email,
+                        'password': password,
+                        'password2': password,
+                        'first_name': first_name,
+                        'surname': surname,
+                        'phone_number': phone}
         returned_response = self.client.post(reverse('auth_register'), data_to_send, format='json')
 
         response_to_expect = {
-            "email": "register@mail.com",
-            "first_name": "TestName",
-            "surname": "TestSurname",
-            "phone_number": "+380676342542"
+            "email": email,
+            "first_name": first_name,
+            "surname": surname,
+            "phone_number": phone
         }
         self.assertEqual(returned_response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(returned_response.data, response_to_expect)
         mock_send_verification_email.assert_called_once()
 
     def test_register_user_invalid_data(self):
+        email = self.fake.email()
+        password = self.fake.password()
         data = {
-            'email': 'register@mail.com',
-            'password': 'Test_password123456',
+            'email': email,
+            'password': password,
         }
         returned_response = self.client.post(reverse('auth_register'), data, format='json')
 
@@ -72,10 +82,13 @@ class AuthenticationUserApiTest(APITestCase):
         response = self.client.post(reverse('login'), data, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_logout_success(self):
+    @patch('forum.managers.TokenManager.generate_access_token_for_user')
+    def test_logout_success(self, mock_generate_access_token_for_user):
         refresh_token = TokenManager.generate_refresh_token_for_user(self.user)
         self._authenticate_user(refresh_token)
-        data = {'refresh_token': str(refresh_token)}
+        mock_token = 'mock_token'
+        mock_generate_access_token_for_user.return_value = mock_token
+        data = {'refresh_token': mock_token}
         response = self.client.post(reverse('logout'), data, format='json')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
@@ -166,13 +179,17 @@ class AuthenticationUserApiTest(APITestCase):
         self.assertEqual(response.data['error'], 'You have no access to this company.')
 
     @patch('authentication.utils.Utils.send_verification_email')
-    def test_user_password_update_success(self, mock_send_verification_email: mock.MagicMock):
+    def test_user_update_success(self, mock_send_verification_email: mock.MagicMock):
         url = reverse('user_details', args=(self.user.user_id,))
+        email = self.fake.email()
+        first_name = self.fake.first_name()
+        surname = self.fake.last_name()
+        phone = self.fake.phone_number()
         data = {
-            'email': 'new_email@example.com',
-            'first_name': 'Arseniy',
-            'surname': 'LikePython',
-            'phone_number': '+38987654321'
+            'email': email,
+            'first_name': first_name,
+            'surname': surname,
+            'phone_number': phone
         }
         refresh_token = TokenManager.generate_refresh_token_for_user(self.user)
         self._authenticate_user(refresh_token=refresh_token)
@@ -181,13 +198,13 @@ class AuthenticationUserApiTest(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.user.refresh_from_db()
-        self.assertEqual(response.data['email'], 'new_email@example.com')
-        self.assertEqual(response.data['first_name'], 'Arseniy')
-        self.assertEqual(response.data['surname'], 'LikePython')
-        self.assertEqual(response.data['phone_number'], '+38987654321')
+        self.assertEqual(response.data['email'], email)
+        self.assertEqual(response.data['first_name'], first_name)
+        self.assertEqual(response.data['surname'], surname)
+        self.assertEqual(response.data['phone_number'], phone)
         mock_send_verification_email.assert_called_once()
 
-    def test_user_password_update_invalid_data(self):
+    def test_user_update_invalid_data(self):
         url = reverse('user_details', args=(self.user.user_id,))
         data = {
             'email': 'Nothing',
