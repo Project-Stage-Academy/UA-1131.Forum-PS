@@ -29,7 +29,7 @@ class CompanyTypePermission(BasePermission):
     error = None
 
     def has_permission(self, request, view):
-        if not request.user.get_company_type() == self.type:
+        if request.user.get_company_type() != self.type:
             raise PermissionDenied(detail=self.error.msg)
         return True
     

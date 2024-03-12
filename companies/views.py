@@ -9,7 +9,7 @@ from .filters import CompanyFilter
 from .models import Subscription
 from .serializers import CompaniesSerializer, SubscriptionSerializer
 from .managers import ArticlesManager as am, LIMIT
-from forum import errors as er
+from forum.errors import Error as er
 from pydantic import ValidationError as PydanticValidationError
 
 
@@ -32,21 +32,18 @@ class CompanyRetrieveView(APIView):
                company = Company.get_company(company_id=pk)
                return Response(company.get_info(), status=status.HTTP_200_OK)
            except Company.DoesNotExist:
-               return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND) 
+               return er.NO_COMPANY_FOUND.response()
         else: 
-            return Response({'error': er.NO_CREDENTIALS.msg}, status=er.NO_CREDENTIALS.status)
+            return er.NO_COMPANY_ID.response()
     
 class CompaniesRetrieveView(APIView):
     permission_classes = (IsAuthenticated,)
     def get(self, request):
-        type = request.data.get('company_type')
-        try:
-          if not type:
-             companies = Company.get_all_companies_info()
-          else:
-             companies = Company.get_all_companies_info(type)
-        except Company.DoesNotExist:
-            return Response({'error': er.NO_COMPANY_FOUND.msg}, status=er.NO_COMPANY_FOUND.status)
+        request.query_params.get('company_type')
+        if not type:
+            companies = Company.get_all_companies_info()
+        else:
+            companies = Company.get_all_companies_info(type)
         return Response(companies, status=status.HTTP_200_OK)
     
 class SubscriptionCreateAPIView(APIView):
@@ -54,7 +51,7 @@ class SubscriptionCreateAPIView(APIView):
 
     def post(self, request, pk=None):
         if not pk:
-            return Response({'error': er.NO_CREDENTIALS.msg}, status=er.NO_CREDENTIALS.status)
+            return er.NO_COMPANY_ID.response()
         
         profile_id = request.user.relation_id
         company_id = pk
@@ -82,7 +79,7 @@ class UnsubscribeAPIView(APIView):
             subscription = Subscription.get_subscription(
                 subscription_id=subscription_id)
         except Subscription.DoesNotExist:
-            return Response({'error': 'Subscription not found'}, status=status.HTTP_404_NOT_FOUND)
+            return er.SUBSCRIPTION_NOT_FOUND.response()
         company_id = subscription.company.company_id
         subscription.delete()
         return Response({'message': 'Successfully unsubscribed', 'company_id': company_id}, status=status.HTTP_200_OK)
