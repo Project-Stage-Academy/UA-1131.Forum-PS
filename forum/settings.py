@@ -50,11 +50,9 @@ INSTALLED_APPS = [
     'companies',
     'chats',
     'livechats',
-    'search',
 
     'corsheaders',
     'channels',
-    'django_filters',
 
 ]
 

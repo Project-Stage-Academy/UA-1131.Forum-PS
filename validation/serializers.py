@@ -1,11 +1,17 @@
 import re
+from string import punctuation
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from string import punctuation
 import zxcvbn
 
 
 class CustomValidationSerializer(serializers.Serializer):
+    @staticmethod
+    def validate_edrpou(value):
+        if not isinstance(value, int) or len(str(value)) != 8:
+            raise serializers.ValidationError("EDRPOU must be an 8-digit number")
+        return value
+    
     @staticmethod
     def validation_email(email_to_validate: str):
         pattern = r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+'

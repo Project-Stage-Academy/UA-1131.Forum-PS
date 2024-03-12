@@ -12,3 +12,4 @@ urlpatterns = [
     path('delete_article/<str:art_id>/', views.DeleteArticle.as_view(), name='delete_article'),
     path('update_article/<str:art_id>/', views.UpdateArticle.as_view(), name='update_article'),
 ]
+

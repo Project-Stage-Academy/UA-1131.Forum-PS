@@ -1,8 +1,8 @@
+from pydantic import ValidationError as PydanticValidationError
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from authentication.models import Company
 from authentication.permissions import IsAuthenticated, IsRelatedToCompany, IsStartup, IsInvestor, IsFounder
 from .filters import CompanyFilter
@@ -10,7 +10,7 @@ from .models import Subscription
 from .serializers import CompaniesSerializer, SubscriptionSerializer
 from .managers import ArticlesManager as am, LIMIT
 from forum.errors import Error as er
-from pydantic import ValidationError as PydanticValidationError
+
 
 
 class CompaniesListCreateView(APIView):
@@ -35,6 +35,7 @@ class CompanyRetrieveView(APIView):
                return er.NO_COMPANY_FOUND.response()
         else: 
             return er.NO_COMPANY_ID.response()
+
     
 class CompaniesRetrieveView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -44,6 +45,7 @@ class CompaniesRetrieveView(APIView):
             companies = Company.get_all_companies_info()
         else:
             companies = Company.get_all_companies_info(type)
+
         return Response(companies, status=status.HTTP_200_OK)
     
 class SubscriptionCreateAPIView(APIView):
@@ -52,7 +54,6 @@ class SubscriptionCreateAPIView(APIView):
     def post(self, request, pk=None):
         if not pk:
             return er.NO_COMPANY_ID.response()
-        
         profile_id = request.user.relation_id
         company_id = pk
         try:
@@ -71,9 +72,9 @@ class SubscriptionCreateAPIView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+
 class UnsubscribeAPIView(APIView):
     permission_classes = (IsAuthenticated, IsRelatedToCompany, IsInvestor)
-
     def delete(self, request, subscription_id):
         try:
             subscription = Subscription.get_subscription(
@@ -91,7 +92,7 @@ class SubscriptionListView(APIView):
         profile_id = request.user.relation_id
         subs = Subscription.get_subscriptions(investor=profile_id)
         if not subs:
-            return Response({'message': "You have no subsriptions yet!"}, status=status.HTTP_204_NO_CONTENT)
+            return Response({'message': "You have no subsriptions yet!"}, status=status.HTTP_200_OK)
         data = [sub.get_info() for sub in subs]
         return Response({'subscriptions': data}, status=status.HTTP_200_OK)
 
