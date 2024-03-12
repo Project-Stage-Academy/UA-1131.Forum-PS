@@ -201,7 +201,6 @@ class UserUpdateView(generics.RetrieveUpdateAPIView):
     permission_classes = (IsAuthenticated, CustomUserUpdatePermission)
 
 
-
 class LogoutView(APIView):
     """
         A view for handling user logout.
@@ -273,7 +272,6 @@ class PasswordRecoveryAPIView(APIView):
 
         Utils.send_password_reset_email(email, reset_link)  # TO DO: REWRITE WITH DECORATORS
         return Response({'message': 'Password reset email sent successfully'}, status=status.HTTP_200_OK)
-
 
 
 class PasswordResetView(APIView):
