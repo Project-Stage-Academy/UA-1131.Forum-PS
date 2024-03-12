@@ -1,25 +1,24 @@
 import logging
+
 import jwt
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-
-from rest_framework import status, generics
-from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
-from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
 from authentication.authentications import UserAuthentication
 from authentication.models import CompanyAndUserRelation, CustomUser
-from authentication.permissions import CustomUserUpdatePermission, IsAuthenticated
-from authentication.serializers import (
-    PasswordRecoverySerializer,
-    UserPasswordUpdateSerializer,
-    UserRegistrationSerializer,
-    UserUpdateSerializer,
-)
+from authentication.permissions import (CustomUserUpdatePermission,
+                                        IsAuthenticated)
+from authentication.serializers import (PasswordRecoverySerializer,
+                                        UserPasswordUpdateSerializer,
+                                        UserRegistrationSerializer,
+                                        UserUpdateSerializer)
 from forum import settings
 from forum.errors import Error
 from forum.managers import TokenManager

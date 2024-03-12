@@ -1,5 +1,7 @@
 from rest_framework.permissions import BasePermission
+
 from authentication.models import CompanyAndUserRelation
+
 
 class EditCompanyPermission(BasePermission):
     """

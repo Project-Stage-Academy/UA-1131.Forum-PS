@@ -1,15 +1,18 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
-from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from authentication.models import Company
-from authentication.permissions import IsAuthenticated, IsRelatedToCompany, IsInvestor
+from authentication.permissions import (IsAuthenticated, IsInvestor,
+                                        IsRelatedToCompany)
 from forum.errors import Error as er
+from revision.views import CustomRevisionMixin
+
 from .filters import CompanyFilter
 from .models import Subscription
-from .serializers import CompaniesSerializer, SubscriptionSerializer
 from .permissions import EditCompanyPermission
-from revision.views import CustomRevisionMixin
+from .serializers import CompaniesSerializer, SubscriptionSerializer
 
 
 class CompaniesViewSet(CustomRevisionMixin, viewsets.ModelViewSet):

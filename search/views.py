@@ -1,7 +1,6 @@
+import django_filters
 from rest_framework import filters
 from rest_framework.generics import ListAPIView
-
-import django_filters
 
 from authentication.models import Company
 from companies.filters import CompanyFilter

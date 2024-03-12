@@ -1,12 +1,14 @@
 from datetime import datetime
+
+from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
-from django.contrib.auth.base_user import (AbstractBaseUser, BaseUserManager)
 from django.db import models
 from rest_framework.exceptions import NotAuthenticated
-from forum.errors import Error
-from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import AccessToken
 from reversion import register
+
+from forum.errors import Error
 
 STARTUP = 'startup'
 INVESTMENT = 'investment'

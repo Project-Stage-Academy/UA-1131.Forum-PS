@@ -1,5 +1,6 @@
 from django.db import models
-from authentication.models import CompanyAndUserRelation, Company
+
+from authentication.models import Company, CompanyAndUserRelation
 
 
 class Subscription(models.Model):

@@ -2,7 +2,6 @@ from typing import Optional, Tuple
 
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.request import Request
-
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.tokens import Token

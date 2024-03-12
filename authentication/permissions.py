@@ -1,8 +1,9 @@
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.permissions import BasePermission
 
-from rest_framework.exceptions import PermissionDenied, NotAuthenticated
 from forum.errors import Error
-from .models import STARTUP, INVESTMENT
+
+from .models import INVESTMENT, STARTUP
 
 
 class PositionPermission(BasePermission):
