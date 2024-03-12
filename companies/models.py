@@ -1,3 +1,4 @@
+from authentication.models import CustomUser, Company
 from django.db import models
 from authentication.models import CompanyAndUserRelation, Company
 
@@ -7,7 +8,7 @@ class Subscription(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     get_email_newsletter = models.BooleanField(default=False)
     subscribed_at = models.DateTimeField(auto_now_add=True)
-
+    
     @classmethod
     def get_subscription(cls, *args, **kwargs):
         return cls.objects.get(**kwargs)
@@ -21,3 +22,4 @@ class Subscription(models.Model):
                 'company_name': self.company.brand, 
                 'company_id': self.company.company_id}
         return data
+
