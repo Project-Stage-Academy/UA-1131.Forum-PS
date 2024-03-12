@@ -6,7 +6,6 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.tokens import RefreshToken
-
 import logging
 from authentication.models import CustomUser
 from authentication.utils import Utils
@@ -49,12 +48,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer, CustomValidationSe
             raise ValidationError({"phone_number": e.detail})
         return attrs
 
-    def create(self):
-        user = CustomUser.objects.create(**self.validated_data)
-        print(user)
-        user.set_password(self.validated_data.get("password"))
-        user.registration_date = datetime.now()
-        user.save()
+    def create(self,validated_data):
+        user = CustomUser.objects.create_user(**validated_data)
         tokens = RefreshToken.for_user(user)
         access_token = str(tokens.access_token)
         Utils.send_verification_email(get_current_site(self.context['request']).domain, user, access_token)
@@ -94,7 +89,7 @@ class UserUpdateSerializer(serializers.ModelSerializer, CustomValidationSerializ
             instance = super().update(instance, validated_data)
             Utils.send_verification_email(get_current_site(self.context['request']).domain, instance, access_token)
             logger.info(
-                    f"User {instance.email} {instance.first_name} {instance.surname} updated his\
+                f"User {instance.email} {instance.first_name} {instance.surname} updated his\
                      account information:{validated_data} (Email in process of verification)")
             return instance
         instance = super().update(instance, validated_data)
@@ -134,3 +129,23 @@ class UserPasswordUpdateSerializer(serializers.ModelSerializer, CustomValidation
         logger.info(
             f"{datetime.now()}: User {instance.email} {instance.first_name} {instance.surname} updated his password")
         return instance
+
+
+class PasswordRecoverySerializer(serializers.ModelSerializer, CustomValidationSerializer):
+    password = serializers.CharField(write_only=True, required=True)
+    password2 = serializers.CharField(write_only=True, required=True)
+
+    class Meta:
+        model = CustomUser
+        fields = ['password', 'password2']
+
+    def validate(self, attrs):
+        password1 = attrs.get('password')
+        password2 = attrs.get('password2')
+        if password1 != password2:
+            raise ValidationError(detail="Passwords are different")
+        try:
+            self.validation_password(password1)
+        except ValidationError as e:
+            raise ValidationError(detail=e.detail)
+        return attrs

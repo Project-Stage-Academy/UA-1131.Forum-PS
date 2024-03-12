@@ -2,12 +2,14 @@ from datetime import datetime
 from django.contrib.auth.models import PermissionsMixin
 from django.contrib.auth.base_user import (AbstractBaseUser, BaseUserManager)
 from django.db import models
-from rest_framework.exceptions import PermissionDenied, NotAuthenticated
+from rest_framework.exceptions import NotAuthenticated
 from forum.errors import Error
+from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework_simplejwt.exceptions import TokenError
 from reversion import register
 
-
-
+STARTUP = 'startup'
+INVESTMENT = 'investment'
 
 class CustomUserManager(BaseUserManager):
 
@@ -18,7 +20,6 @@ class CustomUserManager(BaseUserManager):
         user:CustomUser = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.registration_date = datetime.now()
-        print(user.user_id)
         user.save()
         return user
 
@@ -31,7 +32,7 @@ class CustomUserManager(BaseUserManager):
 
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
-    user_id = models.BigAutoField(primary_key=True, unique=True)
+    user_id = models.BigAutoField(primary_key=True)
     email = models.EmailField(max_length=100, unique=True)
     first_name = models.CharField(max_length=100)
     surname = models.CharField(max_length=100)
@@ -44,6 +45,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     last_login = None
     company = None
     position = None
+    relation_id = None
     is_authenticated = None
 
 
@@ -58,11 +60,30 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def get_user(cls, *args, **kwargs):
         return cls.objects.get(**kwargs)
     
+    @classmethod
+    def generate_token(cls, payload, token=None):
+        decoded_token = AccessToken(token)
+        decoded_token.payload = {**decoded_token.payload, **payload}
+        return str(decoded_token)
+    
+    @classmethod
+    def generate_company_related_token(cls, request):
+        try:
+            raw_token:str = request.headers.get('Authorization')
+            access_token = raw_token.split(' ')[1]
+            company_id = request.data['company_id']
+            return cls.generate_token({'company_id': company_id}, token=access_token)
+        except TokenError as e:
+            raise e
+    
     def get_company_type(self):
-        if not self.company:
+        if self.company is None:
             raise NotAuthenticated(detail=Error.NO_RELATED_TO_COMPANY.msg)
         try:
-            return self.company.is_startup
+            if self.company['is_startup']:
+                return STARTUP
+            else:
+                return INVESTMENT
         except (KeyError, TypeError):
             raise NotAuthenticated(detail=Error.NO_COMPANY_TYPE.msg)
 
@@ -74,7 +95,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def get_short_name(self):
         return self.first_name
-
     
 @register()
 class Company(models.Model):
@@ -92,6 +112,64 @@ class Company(models.Model):
     tags = models.CharField(max_length=255, blank=True)
 
 
+    @classmethod
+    def get_company(cls, *args, **kwargs):
+        return cls.objects.get(**kwargs)
+    
+    @classmethod
+    def get_companies(cls, *args, **kwargs):
+        return cls.objects.filter(**kwargs)
+      
+    @classmethod
+    def get_all_companies(cls):
+        return cls.objects.all()
+    
+    @classmethod
+    def get_all_companies_info(cls, type=None):
+        res = []
+        if type:
+            query = {'is_startup': True} if type == STARTUP else {'is_startup': False}
+            companies = cls.get_companies(**query)
+        else:
+            companies = cls.get_all_companies()
+
+        for company in companies:
+            res.append(company.get_info())
+
+        return res 
+    
+    def get_company_type(self):
+        if self.is_startup == True:
+            return STARTUP
+        else: 
+            return INVESTMENT
+        
+    def get_attribute(self, k):
+        v = None
+        try:
+           v = self.__getattribute__(k)
+        except AttributeError:
+            pass
+        return v
+
+    def get_info(self):
+        fields = ('brand', 'common_info', 'contact_phone', 'contact_email')
+        startup_fields = ('product_info', 'startup_idea')
+        data = {}
+        company_type = self.get_company_type()
+        data['company_type'] = company_type
+        if company_type == STARTUP:
+            for k in startup_fields:
+                  data[k] = self.get_attribute(k)
+        for k in fields:
+                data[k] = self.get_attribute(k)
+        return data
+
+    def __str__(self):
+        return self.brand
+
+
+
 class CompanyAndUserRelation(models.Model):
 
     FOUNDER = "F"
@@ -101,14 +179,15 @@ class CompanyAndUserRelation(models.Model):
                         (REPRESENTATIVE, "Representative"))
 
     relation_id = models.BigAutoField(primary_key=True)
-    user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    company_id = models.ForeignKey(Company, on_delete=models.CASCADE)
-    position = models.CharField(default=REPRESENTATIVE, max_length=30, choices=POSITION_CHOICES, blank=False, null=False)
 
+    user_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="user_relations")
+    company_id = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="company_relations" )
+    position = models.CharField(default=REPRESENTATIVE, max_length=30, choices=POSITION_CHOICES, blank=False,
+                                null=False)
     @classmethod
-    def get_relation(cls, u_id, c_id):
-        relation = cls.objects.filter(user_id=u_id, company_id=c_id)[0]
-        return relation
+    def get_relation(cls, *args, **kwargs):
+        return cls.objects.get(**kwargs)
+
 
 
 

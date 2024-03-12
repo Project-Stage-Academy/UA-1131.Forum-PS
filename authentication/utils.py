@@ -1,6 +1,10 @@
+import logging
+
 from django.conf import settings
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMessage, EmailMultiAlternatives
+from django.template.loader import render_to_string
 from django.urls import reverse
+from django.utils.html import strip_tags
 
 
 class Utils:
@@ -33,3 +37,17 @@ class Utils:
                 'email_body': email_body,
                 'email_subject': "Password update"}
         Utils.email_sender(data)
+
+    @staticmethod
+    # @shared_task
+    def send_password_reset_email(email, reset_link):
+        subject = 'Password Reset'
+        html_message = render_to_string('password_reset_email.html', {'reset_link': reset_link})
+        plain_message = strip_tags(html_message)
+        try:
+            email_message = EmailMultiAlternatives(subject, plain_message, settings.EMAIL_HOST_USER, [email])
+            email_message.attach_alternative(html_message, "text/html")
+            email_message.send()
+        except:
+            logger = logging.getLogger('email_sending') 
+            logger.error(f'Error during email sending to {email}.')   

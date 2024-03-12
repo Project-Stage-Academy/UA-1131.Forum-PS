@@ -5,7 +5,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.utils import get_md5_hash_password
 from rest_framework_simplejwt.tokens import Token
-from .models import  CustomUser, CompanyAndUserRelation
+from .models import CustomUser, CompanyAndUserRelation
 from forum.errors import Error
 
 
@@ -25,8 +25,7 @@ class UserAuthentication(JWTAuthentication):
         from the database and returns it as a request.user.
 
         """
-        header = self.get_header(request) 
-
+        header = self.get_header(request)
         if header is None:
             return None
 
@@ -54,15 +53,14 @@ class UserAuthentication(JWTAuthentication):
         else:
             try:
                 user_id = validated_token[api_settings.USER_ID_CLAIM] 
-                company_id = validated_token[api_settings.COMPANY_ID_CLAIM] 
-                relation = CompanyAndUserRelation.get_relation(user_id, company_id) 
-                user = CustomUser(relation.user)
-                user.company = relation.company
+                company_id = validated_token['company_id'] 
+                user = CustomUser.get_user(user_id=user_id)
+                relation = CompanyAndUserRelation.get_relation(user_id=user_id, company_id=company_id)
+                user.company = relation.company_id.__dict__
                 user.position = relation.position
+                user.relation_id = relation.relation_id
             except KeyError:
                 raise NotAuthenticated(detail=Error.NO_USER_OR_COMPANY_ID.msg)
-            except CompanyAndUserRelation.DoesNotExist:
-                raise NotAuthenticated(detail=Error.NO_RELATED_TO_COMPANY.msg)
             
 
         if api_settings.CHECK_REVOKE_TOKEN:

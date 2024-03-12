@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from authentication.models import CustomUser, UserLoginActivity
+from authentication.models import CustomUser, UserLoginActivity, CompanyAndUserRelation, Company
 
 
 class CustomAdmin(UserAdmin):
@@ -33,8 +33,19 @@ class CustomAdmin(UserAdmin):
 
 admin.site.register(CustomUser, CustomAdmin)
 
+
+class CompanyAndUserRelationAdmin(admin.ModelAdmin):
+    list_display = ('relation_id', 'user_id', 'company_id', 'position')
+    list_per_page = 20
+
+
+admin.site.register(CompanyAndUserRelation, CompanyAndUserRelationAdmin)
+
+
 class UserLoginActivityAdmin(admin.ModelAdmin):
-    list_display = ["login_email", "status", "login_datetime" ]
+    list_display = ["login_email", "status", "login_datetime"]
+
 
 admin.site.register(UserLoginActivity, UserLoginActivityAdmin)
+admin.site.register(Company)
 
