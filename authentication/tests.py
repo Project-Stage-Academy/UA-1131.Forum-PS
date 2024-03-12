@@ -1,13 +1,13 @@
 from unittest import mock
 from unittest.mock import patch
 
+from faker import Faker
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APIClient, APITestCase
 
 from forum import settings
 from forum.managers import TokenManager
-from faker import Faker
 
 from .models import Company, CompanyAndUserRelation, CustomUser
 
