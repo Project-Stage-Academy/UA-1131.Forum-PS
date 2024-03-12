@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from authentication.models import Company
 from authentication.permissions import IsAuthenticated
 from forum.errors import Error
-from .manager import MessagesManager as manager
+from .manager import MessagesManager as mm
 from .manager import Message
 
 
@@ -16,7 +16,7 @@ class MessageDetailView(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, message_id):
-        message = manager.get_message(message_id)
+        message = mm.get_message(message_id)
         company_id = request.user.company.get("company_id")
         if message.get("sender_id") == company_id:
             if bool(message.get("visible_for_sender")):
@@ -56,7 +56,7 @@ class SendMessageView(APIView):
             }
             try:
                 message_validated = Message.parse_obj(message)
-                message_validated = manager.create_message(message_validated)
+                message_validated = mm.create_message(message_validated)
                 return Response(message_validated, status=status.HTTP_201_CREATED)
             except ValidationError as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -69,7 +69,7 @@ class MessageDeleteView(APIView):
     def post(self, request, message_id):
         try:
             company_id = request.user.company.get("company_id")
-            manager.delete_message(company_id, message_id)
+            mm.delete_message(company_id, message_id)
             return Response({"message": "Message was deleted"}, status=status.HTTP_200_OK)
         except AttributeError:
             raise NotAuthenticated(detail=Error.NO_USER_OR_COMPANY_ID.msg)
@@ -81,7 +81,7 @@ class OutboxView(APIView):
     def get(self, request):
         try:
             company_id = request.user.company.get("company_id")
-            messages = manager.company_outbox_messages(company_id)
+            messages = mm.company_outbox_messages(company_id)
             return Response(messages, status=status.HTTP_200_OK)
         except AttributeError:
             raise NotAuthenticated(detail=Error.NO_USER_OR_COMPANY_ID.msg)
@@ -93,7 +93,7 @@ class InboxView(APIView):
     def get(self, request):
         try:
             company_id = request.user.company.get("company_id")
-            messages = manager.company_inbox_messages(company_id)
+            messages = mm.company_inbox_messages(company_id)
             return Response(messages, status=status.HTTP_200_OK)
         except AttributeError:
             raise NotAuthenticated(detail=Error.NO_USER_OR_COMPANY_ID.msg)
@@ -102,10 +102,10 @@ class InboxView(APIView):
 class ListMessagesView(APIView):
     permission_classes = (IsAuthenticated,)
 
-    def get(self,request):
+    def get(self, request):
         try:
             company_id = request.user.company.get("company_id")
-            messages = manager.get_messages_to_company(company_id)
+            messages = mm.get_messages_to_company(company_id)
             return Response(messages, status=status.HTTP_200_OK)
         except AttributeError:
             raise NotAuthenticated(detail=Error.NO_USER_OR_COMPANY_ID.msg)
