@@ -20,7 +20,7 @@ class AuthenticationUserApiTest(APITestCase):
         self.user2 = CustomUser.objects.create_user(email='test3@gmail.com', password='password123')
         self.user3 = CustomUser.objects.create_user(email='test4@gmail.com', password='password123')
         self.company = Company.objects.create(brand='Pepsi')
-        self.fake = Faker()
+        self.fake = Faker(locale='uk_UA')
 
     def _authenticate_user(self, refresh_token):
         jwt_token = f'Bearer {refresh_token.access_token}'
@@ -32,7 +32,7 @@ class AuthenticationUserApiTest(APITestCase):
         password = self.fake.password()
         first_name = self.fake.first_name()
         surname = self.fake.last_name()
-        phone = self.fake.phone_number()
+        phone = '+380974562325'
 
         data_to_send = {'email': email,
                         'password': password,
@@ -82,15 +82,19 @@ class AuthenticationUserApiTest(APITestCase):
         response = self.client.post(reverse('login'), data, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    @patch('forum.managers.TokenManager.get_refresh_payload')
     @patch('forum.managers.TokenManager.generate_access_token_for_user')
-    def test_logout_success(self, mock_generate_access_token_for_user):
+    def test_logout_success(self, mock_generate_access_token_for_user, mock_refresh_payload: mock.MagicMock):
         refresh_token = TokenManager.generate_refresh_token_for_user(self.user)
         self._authenticate_user(refresh_token)
         mock_token = 'mock_token'
         mock_generate_access_token_for_user.return_value = mock_token
+
+        mock_refresh_payload.return_value = (mock.MagicMock(), mock.MagicMock())
         data = {'refresh_token': mock_token}
         response = self.client.post(reverse('logout'), data, format='json')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        mock_refresh_payload.assert_called_once()
 
     def test_logout_invalid_token(self):
         data = {'refresh_token': 'my_magic_token'}
@@ -130,6 +134,35 @@ class AuthenticationUserApiTest(APITestCase):
         self.assertTrue(self.user3.check_password(password))
 
     @patch('forum.managers.TokenManager.get_access_payload')
+    def test_password_update_success(self, mock_get_access_payload):
+        password = 'new_password321!ABC'
+        mock_get_access_payload.return_value = {'user_id': self.user3.user_id}
+
+        refresh_token = TokenManager.generate_refresh_token_for_user(self.user3)
+        self._authenticate_user(refresh_token)
+
+        response = self.client.post(reverse('password_update'),
+                                    {'password': password, 'password2': password}, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['message'], 'Password reset successfully')
+        self.user3.refresh_from_db()
+        self.assertTrue(self.user3.check_password(password))
+
+    @patch('forum.managers.TokenManager.get_access_payload')
+    def test_password_update_invalid_password(self, mock_get_access_payload):
+        password = '123'
+        mock_get_access_payload.return_value = {'user_id': self.user3.user_id}
+
+        refresh_token = TokenManager.generate_refresh_token_for_user(self.user3)
+        self._authenticate_user(refresh_token)
+
+        response = self.client.post(reverse('password_update'),
+                                    {'password': password, 'password2': password}, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch('forum.managers.TokenManager.get_access_payload')
     def test_password_reset_short_password(self, mock_get_access_payload):
         jwt_token = 'mock_jwt_token'
         password = '123'
@@ -154,7 +187,7 @@ class AuthenticationUserApiTest(APITestCase):
         mock_token = None
         response = self.client.get(reverse('email_verify', args=(mock_token,)), format='json')
 
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(response.data['detail'], 'Token is invalid or expired')
 
     def test_relate_user_to_company_success(self):
@@ -184,7 +217,7 @@ class AuthenticationUserApiTest(APITestCase):
         email = self.fake.email()
         first_name = self.fake.first_name()
         surname = self.fake.last_name()
-        phone = self.fake.phone_number()
+        phone = '+380965673526'
         data = {
             'email': email,
             'first_name': first_name,
