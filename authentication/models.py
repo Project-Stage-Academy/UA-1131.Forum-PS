@@ -59,22 +59,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def get_user(cls, *args, **kwargs):
         return cls.objects.get(**kwargs)
     
-    @classmethod
-    def generate_token(cls, payload, token=None):
-        decoded_token = AccessToken(token)
-        decoded_token.payload = {**decoded_token.payload, **payload}
-        return str(decoded_token)
-    
-    @classmethod
-    def generate_company_related_token(cls, request):
-        try:
-            raw_token:str = request.headers.get('Authorization')
-            access_token = raw_token.split(' ')[1]
-            company_id = request.data['company_id']
-            return cls.generate_token({'company_id': company_id}, token=access_token)
-        except TokenError as e:
-            raise e
-    
     def get_company_type(self):
         if self.company is None:
             raise NotAuthenticated(detail=Error.NO_RELATED_TO_COMPANY.msg)

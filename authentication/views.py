@@ -107,7 +107,9 @@ class RelateUserToCompany(APIView):
             relation = CompanyAndUserRelation.get_relation(user_id=user_id, company_id=company_id)
         except CompanyAndUserRelation.DoesNotExist:
             return Response({'error': 'You have no access to this company.'}, status=status.HTTP_403_FORBIDDEN)
-        access_token = CustomUser.generate_company_related_token(request)
+
+        user_token = request.auth.token
+        access_token = TokenManager.generate_company_related_token(company_id=company_id, token=user_token)
         return Response({'access': f"Bearer {access_token}"})
 
 
