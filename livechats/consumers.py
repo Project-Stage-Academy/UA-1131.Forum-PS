@@ -6,8 +6,8 @@ from django.utils import timezone
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from redis.asyncio import from_url
-from livechats.utils import mongo_conversations
 from livechats.schemas import Message
+from livechats.utils import mongo_conversations
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -64,6 +64,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         Connecting to the WS, also adding number Redis activity tracker
          for counting the number of active users in a channel
          """
+
         self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
         self.room_group_name = f"chat_{self.room_name}"
         conversation, initiator, receiver = await self.get_conversation()
@@ -101,9 +102,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
         messages = None
         async with redis.client() as conn:
             await conn.hincrby(f"{self.room_name}_users", current_user.email, -1)
-            user_activity = await conn.hget(f"{self.room_name}_users", current_user.email,)
+            user_activity = await conn.hget(f"{self.room_name}_users", current_user.email, )
             if user_activity == "0":
-                await conn.hdel(f"{self.room_name}_users", current_user.email,)
+                await conn.hdel(f"{self.room_name}_users", current_user.email, )
                 if not await conn.hgetall(f"{self.room_name}_users"):
                     conn.delete(f"{self.room_name}_users")
                     messages = await conn.lrange(self.room_name, 0, -1)

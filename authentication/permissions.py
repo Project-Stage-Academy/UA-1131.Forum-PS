@@ -1,7 +1,7 @@
 from rest_framework.permissions import BasePermission
 from rest_framework.exceptions import PermissionDenied, NotAuthenticated
 from forum.errors import Error
-
+from .models import STARTUP, INVESTMENT
 
 
 class PositionPermission(BasePermission):
@@ -15,16 +15,32 @@ class PositionPermission(BasePermission):
         if not request.user.position == self.position:
             raise PermissionDenied(detail=self.error.msg)
         return True
-            
+    
 class IsFounder(PositionPermission):
     position = 'Founder'
     error = Error.NOT_FOUNDER
         
 class IsRepresentative(PositionPermission):
     position = 'Representative'
-    error = Error.NOT_REPRESENTATIVE
+    error = Error.NOT_REPRESENTATIVE  
 
+class CompanyTypePermission(BasePermission):
+    type = None
+    error = None
 
+    def has_permission(self, request, view):
+        if not request.user.get_company_type() == self.type:
+            raise PermissionDenied(detail=self.error.msg)
+        return True
+    
+class IsInvestor(CompanyTypePermission):
+    type = INVESTMENT
+    error = Error.NOT_INVESTOR
+
+class IsStartup(CompanyTypePermission):
+    type = STARTUP
+    error = Error.NOT_STARTUP
+            
 class IsVerified(BasePermission):
     """
     Checking if registered user was verified.
@@ -46,7 +62,6 @@ class IsAuthenticated(BasePermission):
             raise NotAuthenticated(detail=Error.NOT_AUTHENTICATED.msg)
         return True
 
-
 class IsRelatedToCompany(BasePermission):
     """
     Checking if user is currently related to company.
@@ -57,25 +72,7 @@ class IsRelatedToCompany(BasePermission):
             raise NotAuthenticated(detail=Error.NO_RELATED_TO_COMPANY.msg)
         return True
 
-class IsInvestor(BasePermission):
-    """
-    Checking if company user is currently related to is of investment.
-    
-    """
-    def has_permission(self, request, view):
-        if request.user.get_company_type():
-            raise PermissionDenied(detail=Error.NOT_INVESTOR.msg)
-        return True
 
-class IsStartup(BasePermission):
-    """
-    Checking if company user is currently related to is startup.
-    
-    """
-    def has_permission(self, request, view):
-        if not request.user.get_company_type():
-            raise PermissionDenied(detail=Error.NOT_STARTUP.msg)
-        return True
 
 class CustomUserUpdatePermission(BasePermission):
     def has_object_permission(self, request, view, obj):
