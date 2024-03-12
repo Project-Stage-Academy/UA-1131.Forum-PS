@@ -5,7 +5,7 @@ from authentication.models import Company
 from authentication.permissions import IsAuthenticated, IsRelatedToCompany, IsInvestor
 from forum.errors import Error as er
 from .models import Subscription
-from .serializers import CompaniesSerializer, SubscriptionSerializer, SubscriptionListSerializer
+from .serializers import CompaniesSerializer, SubscriptionSerializer
 from .permissions import EditCompanyPermission
 from revision.views import CustomRevisionMixin
 
