@@ -1,5 +1,8 @@
 import pymongo
-from pydantic import BaseModel
+from typing import Dict
+from pydantic import BaseModel, ValidationError
+from django.core.mail import EmailMessage
+from .settings import EMAIL_HOST_USER
 from rest_framework_simplejwt.exceptions import (AuthenticationFailed,
                                                  TokenError)
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
@@ -60,7 +63,6 @@ class TokenManager:
         except TokenError:
             raise AuthenticationFailed(detail=Error.INVALID_TOKEN.msg)
         return decoded_token, decoded_access_token
-    
 
 
 class MongoManager:
@@ -150,3 +152,4 @@ class EmailManager:
             'from_email': EMAIL_HOST_USER,
             'to_email': email
         }
+

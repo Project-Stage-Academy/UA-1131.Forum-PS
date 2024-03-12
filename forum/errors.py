@@ -88,3 +88,8 @@ class Error:
     class SUBSCRIPTION_NOT_FOUND(BaseError):
         msg = "Subscription not found"
         status = status.HTTP_404_NOT_FOUND
+
+    class NO_COMPANY_ID(BaseError):
+        msg = "Company ID required"
+        status = status.HTTP_400_BAD_REQUEST
+
