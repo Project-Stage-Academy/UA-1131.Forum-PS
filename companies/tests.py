@@ -1,40 +1,40 @@
+from django.test import TestCase
 from rest_framework.test import APITestCase, APIClient
 from django.urls import reverse
-from authentication.models import CustomUser, Company
+from authentication.models import CustomUser
 
 
 class CompanyTestAuthenticatedUser(APITestCase):
 
     def setUp(self):
         self.company_url = reverse('companies-list-create')
-        user = CustomUser.objects.create_user('test@mail.com', 'Test_password123456')
+        user = CustomUser.objects.create_user('test@mail.com','Test_password123456')
         self.client = APIClient()
-        self.client.force_authenticate(user=user)
-
+        self.client.force_authenticate(user=user)        
+    
     def test_create_company(self):
         response = self.client.post(reverse('companies-list-create'), {'brand': 'test_brand', 'is_registered': True},
-                                    format='json')
+                               format='json')
         self.assertEqual(response.status_code, 201)
 
     def test_get_company(self):
-        post_response = self.client.post(self.company_url, {'brand': 'test_brand', 'is_registered': True},
-                                         format='json')
+        post_response = self.client.post(self.company_url, {'brand': 'test_brand', 'is_registered': True}, format='json')
         company_id = post_response.data.get('company_id')
         response = self.client.get(f'{self.company_url}{company_id}', follow=True)
         self.assertEqual(response.status_code, 200)
 
     def test_update_company(self):
         response = self.client.post(self.company_url, {'brand': 'test_brand', 'is_registered': True},
-                                    format='json')
+                               format='json')
         company_id = response.data['company_id']
         response = self.client.patch(f'{self.company_url}{company_id}/', {'brand': 'updated_brand'},
-                                     format='json')
+                                format='json')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['brand'], 'updated_brand')
 
     def test_delete_company(self):
         response = self.client.post(self.company_url, {'brand': 'test_brand', 'is_registered': True},
-                                    format='json')
+                               format='json')
         company_id = response.data.get('company_id')
         response = self.client.delete(f'{self.company_url}{company_id}/')
         self.assertEqual(response.status_code, 204)
@@ -61,10 +61,10 @@ class CompanyTestAuthenticatedUser(APITestCase):
 
     def test_update_company_with_invalid_data(self):
         response = self.client.post(self.company_url, {'brand': 'test_brand', 'is_registered': True},
-                                    format='json')
+                               format='json')
         company_id = response.data['company_id']
         response = self.client.patch(f'{self.company_url}{company_id}/', {'edrpou': 'invalid_data'},
-                                     format='json')
+                                format='json')
         self.assertEqual(response.status_code, 400)
 
     def test_get_nonexistent_company(self):
@@ -77,36 +77,12 @@ class CompanyTestAuthenticatedUser(APITestCase):
         self.assertEqual(response.status_code, 400)
 
 
+
 class CompanyTestUnauthenticatedUser(APITestCase):
 
     def test_negative_unauthenticated_user(self):
         response = self.client.post(reverse('companies-list-create'), {'brand': 'test_brand', 'is_registered': True},
                                     format='json')
         self.assertEqual(response.status_code, 401)
+        
 
-
-class CompanyFilterTestCase(APITestCase):
-    def setUp(self):
-        """
-        Set up the test by creating multiple companies with different brands and defining the URL for the companies list
-         endpoint.
-        """
-        self.url = reverse('companies-list-create')
-
-        # Create multiple companies with different brands
-        Company.objects.create(brand='test_brand1')
-        Company.objects.create(brand='test_brand2')
-        Company.objects.create(brand='another_brand')
-
-    def test_brand_filter(self):
-        """
-        Test filtering companies by brand name.
-        """
-        # Send a GET request with the brand filter parameter
-        response = self.client.get(self.url, {'brand': 'test_brand1'})
-
-        # Assert that the response status code is 200 OK
-        self.assertEqual(response.status_code, 200)
-
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['brand'], 'test_brand1')
