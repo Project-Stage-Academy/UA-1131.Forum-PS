@@ -112,7 +112,6 @@ class Company(models.Model):
     startup_idea = models.TextField(blank=True)
     tags = models.CharField(max_length=255, blank=True)
 
-
     @classmethod
     def get_company(cls, *args, **kwargs):
         return cls.objects.get(**kwargs)
@@ -126,66 +125,10 @@ class Company(models.Model):
         return cls.objects.all()
     
     @classmethod
-    def get_all_companies_info(cls, type=None):
+    def get_all_companies_info(cls, company_type=None):
         res = []
-        if type:
-            query = {'is_startup': True} if type == STARTUP else {'is_startup': False}
-            companies = cls.get_companies(**query)
-        else:
-            companies = cls.get_all_companies()
-
-        for company in companies:
-            res.append(company.get_info())
-
-        return res 
-    
-    def get_company_type(self):
-        if self.is_startup == True:
-            return STARTUP
-        else: 
-            return INVESTMENT
-        
-    def get_attribute(self, k):
-        v = None
-        try:
-           v = self.__getattribute__(k)
-        except AttributeError:
-            pass
-        return v
-
-    def get_info(self):
-        fields = ('brand', 'common_info', 'contact_phone', 'contact_email')
-        startup_fields = ('product_info', 'startup_idea')
-        data = {}
-        company_type = self.get_company_type()
-        data['company_type'] = company_type
-        if company_type == STARTUP:
-            for k in startup_fields:
-                  data[k] = self.get_attribute(k)
-        for k in fields:
-                data[k] = self.get_attribute(k)
-        return data
-
-    def __str__(self):
-        return self.brand
-
-    @classmethod
-    def get_company(cls, *args, **kwargs):
-        return cls.objects.get(**kwargs)
-    
-    @classmethod
-    def get_companies(cls, *args, **kwargs):
-        return cls.objects.filter(**kwargs)
-      
-    @classmethod
-    def get_all_companies(cls):
-        return cls.objects.all()
-    
-    @classmethod
-    def get_all_companies_info(cls, type=None):
-        res = []
-        if type:
-            query = {'is_startup': True} if type == STARTUP else {'is_startup': False}
+        if company_type:
+            query = {'is_startup': True} if company_type.strip('/') == STARTUP else {'is_startup': False}
             companies = cls.get_companies(**query)
         else:
             companies = cls.get_all_companies()
