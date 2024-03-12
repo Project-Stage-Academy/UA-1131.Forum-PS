@@ -20,6 +20,10 @@ class Error:
         msg = "Token contained no recognizable user identification"
         status = status.HTTP_401_UNAUTHORIZED
 
+    class USER_ALREADY_VERIFIED:
+        msg = "User is already verified"
+        status = status.HTTP_400_BAD_REQUEST
+
     class USER_IS_NOT_VERIFIED:
         msg = "User is not verified"
         status = status.HTTP_401_UNAUTHORIZED
