@@ -92,3 +92,4 @@ class Error:
     class NO_COMPANY_ID(BaseError):
         msg = "Company ID required"
         status = status.HTTP_400_BAD_REQUEST
+
