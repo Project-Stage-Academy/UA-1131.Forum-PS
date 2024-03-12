@@ -14,7 +14,6 @@ from authentication.models import CompanyAndUserRelation, CustomUser
 from authentication.permissions import (CustomUserUpdatePermission,
                                         IsAuthenticated)
 from authentication.serializers import (PasswordRecoverySerializer,
-                                        UserPasswordUpdateSerializer,
                                         UserRegistrationSerializer,
                                         UserUpdateSerializer)
 from forum import settings
@@ -57,6 +56,9 @@ class VerifyEmail(APIView):
             user = CustomUser.get_user(user_id=user_id)
         except CustomUser.DoesNotExist:
             return Response({'error': Error.USER_NOT_FOUND.msg}, status=Error.USER_NOT_FOUND.status)
+
+        if user.is_verified:
+            return Response({'error': Error.USER_ALREADY_VERIFIED.msg}, status=Error.USER_ALREADY_VERIFIED.status)
 
         user.is_verified = True
         user.save()
