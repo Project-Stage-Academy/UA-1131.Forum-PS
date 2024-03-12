@@ -1,6 +1,6 @@
 from pydantic import ValidationError as PydanticValidationError
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status
+from rest_framework import status, viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from authentication.models import Company
@@ -10,33 +10,27 @@ from .models import Subscription
 from .serializers import CompaniesSerializer, SubscriptionSerializer
 from .managers import ArticlesManager as am, LIMIT
 from forum.errors import Error as er
+from .models import Subscription
+from .serializers import CompaniesSerializer, SubscriptionSerializer, SubscriptionListSerializer
+from .permissions import EditCompanyPermission
+from revision.views import CustomRevisionMixin
 
-
-
-class CompaniesListCreateView(APIView):
-    permission_classes = (IsAuthenticated,)
-
-    def post(self, request):
-        serializer = CompaniesSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+class CompaniesViewSet(CustomRevisionMixin, viewsets.ModelViewSet):
+    queryset = Company.objects.all()
+    serializer_class = CompaniesSerializer
+    permission_classes = (EditCompanyPermission,)
+          
 class CompanyRetrieveView(APIView):
     permission_classes = (IsAuthenticated,)
     def get(self, request, pk=None):
-        if pk:
-           try:
-               company = Company.get_company(company_id=pk)
-               return Response(company.get_info(), status=status.HTTP_200_OK)
-           except Company.DoesNotExist:
-               return er.NO_COMPANY_FOUND.response()
-        else: 
-            return er.NO_COMPANY_ID.response()
-
-    
+        if not pk:
+           return er.NO_CREDENTIALS.response()
+        try:
+            company = Company.get_company(company_id=pk)
+            return Response(company.get_info(), status=status.HTTP_200_OK)
+        except Company.DoesNotExist:
+            return er.NO_COMPANY_FOUND.response()
+   
 class CompaniesRetrieveView(APIView):
     permission_classes = (IsAuthenticated,)
     def get(self, request):
