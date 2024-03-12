@@ -10,7 +10,7 @@ from .serializers import CompaniesSerializer, SubscriptionSerializer
 from .managers import ArticlesManager as am, LIMIT
 from forum.errors import Error as er
 from .models import Subscription
-from .serializers import CompaniesSerializer, SubscriptionSerializer, SubscriptionListSerializer
+from .serializers import CompaniesSerializer, SubscriptionSerializer
 from .permissions import EditCompanyPermission
 from revision.views import CustomRevisionMixin
 
