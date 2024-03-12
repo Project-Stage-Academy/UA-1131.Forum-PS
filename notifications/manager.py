@@ -18,6 +18,7 @@ from chats.models import Message
 
 UPDATE = 'update'
 MESSAGE = 'message'
+SUBSCRIPTION = 'subscription'
 
 
 class AlreadyExist(Exception):
@@ -54,12 +55,18 @@ class Notification(BaseModel):
 
 class UpdateNotification(Notification):
     """Model for update notification"""
+    company_id:int
     type: str = Field(default=UPDATE, frozen=True)
 
 
 class MessageNotification(Notification):
     """Model for message notification"""
     type: str = Field(default=MESSAGE, frozen=True)
+
+class SubscriptionNotification(Notification):
+    """Model for subscription notification"""
+    type: str = Field(default=SUBSCRIPTION, frozen=True)
+
 
 
 
@@ -74,7 +81,8 @@ class NotificationManager(MongoManager):
 
     db = DB['Notification']
     types = {UPDATE: UpdateNotification,
-             MESSAGE: MessageNotification}
+             MESSAGE: MessageNotification,
+             SUBSCRIPTION: SubscriptionNotification}
 
 
     @classmethod

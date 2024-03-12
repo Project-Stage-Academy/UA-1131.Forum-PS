@@ -54,7 +54,7 @@ class VerifyEmail(APIView):
 
 class LoginView(APIView):
     authentication_classes = ()
-    
+
     @add_notifications_for_user
     def post(self, request):
         email = request.data.get('email')
@@ -101,7 +101,7 @@ class RelateUserToCompany(APIView):
         except CompanyAndUserRelation.DoesNotExist: 
             return Response({'error': 'You have no access to this company.'}, status=status.HTTP_403_FORBIDDEN)
         access_token = CustomUser.generate_company_related_token(request)
-        return Response({'access': f"Bearer {access_token}"})
+        return Response({'access': f"Bearer {access_token}", "relation_id": relation.relation_id})
 
 
 class UserUpdateView(generics.RetrieveUpdateAPIView):

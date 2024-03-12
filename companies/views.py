@@ -68,7 +68,7 @@ class SubscriptionCreateAPIView(APIView):
             if serializer.is_valid():
                 serializer.save()
                 msg = f"You're successfully subscribed to {serializer.company.brand}"
-                return Response({'message': msg, 'subscription_id': serializer.subscription_id}, status=status.HTTP_201_CREATED)
+                return Response({'message': msg, 'subscription_id': serializer.subscription_id, 'company_id': company_id}, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -116,8 +116,8 @@ class CreateArticle(APIView):
         try:
             res = am.add_article(data)
         except PydanticValidationError as e:
-            return Response({'error': er.Error.INVALID_ARTICLE.msg}, status=er.Error.INVALID_ARTICLE.status)    
-        return Response({'document_was_created': res}, status=status.HTTP_201_CREATED)
+            return Response({'error': er.INVALID_ARTICLE.msg}, status=er.INVALID_ARTICLE.status)    
+        return Response({'document_was_created': res, 'company_id': company_id}, status=status.HTTP_201_CREATED)
 
 class UpdateArticle(APIView):
     permission_classes = (IsAuthenticated, IsRelatedToCompany)
