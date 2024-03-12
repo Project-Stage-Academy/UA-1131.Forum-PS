@@ -1,34 +1,47 @@
 from rest_framework import status
+from rest_framework.response import Response
 
 
 class Error:
     """Pre-formatted errors for easier handling"""
 
-    class NO_HEADER:
+    class BaseError:
+        msg = None
+        status = None
+
+        @classmethod
+        def response(cls):
+            return Response({'error': cls.msg}, status=cls.status)
+
+    class NO_HEADER(BaseError):
         msg = "No authentication header provided"
         status = status.HTTP_401_UNAUTHORIZED
 
-    class NO_TOKEN:
+    class NO_TOKEN(BaseError):
         msg = "No token provided"
         status = status.HTTP_400_BAD_REQUEST
 
-    class INVALID_TOKEN:
+    class NO_COMPANY_FOUND(BaseError):
+        msg = "No company found"
+        status = status.HTTP_404_NOT_FOUND
+
+    class INVALID_TOKEN(BaseError):
         msg = "Token is invalid or expired"
         status = status.HTTP_401_UNAUTHORIZED
 
-    class NO_USER_ID:
+    class NO_USER_ID(BaseError):
         msg = "Token contained no recognizable user identification"
         status = status.HTTP_401_UNAUTHORIZED
 
-    class USER_ALREADY_VERIFIED:
+    class USER_IS_NOT_VERIFIED(BaseError):
+        msg = "User is not verified"
+        status = status.HTTP_400_BAD_REQUEST
+
+    class USER_ALREADY_VERIFIED(BaseError):
         msg = "User is already verified"
         status = status.HTTP_400_BAD_REQUEST
 
-    class USER_IS_NOT_VERIFIED:
-        msg = "User is not verified"
-        status = status.HTTP_401_UNAUTHORIZED
-
-    class NOT_AUTHENTICATED:
+    class NOT_AUTHENTICATED(BaseError):
         msg = "User is not authenticated"
         status = status.HTTP_401_UNAUTHORIZED
 
@@ -36,7 +49,7 @@ class Error:
         msg = "Invalid credentials"
         status = status.HTTP_401_UNAUTHORIZED
 
-    class NOT_INVESTOR:
+    class NOT_INVESTOR(BaseError):
         msg = "Related company is not of investment"
         status = status.HTTP_403_FORBIDDEN
 
@@ -75,3 +88,11 @@ class Error:
     class NOT_REPRESENTATIVE:
         msg = "User has not founder position"
         status = status.HTTP_403_FORBIDDEN
+
+    class NO_CREDENTIALS(BaseError):
+        msg = "No credentials were provided"
+        status = status.HTTP_400_BAD_REQUEST
+
+    class SUBSCRIPTION_NOT_FOUND(BaseError):
+        msg = "Subscription not found"
+        status = status.HTTP_404_NOT_FOUND
