@@ -5,7 +5,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from authentication.models import Company
 from authentication.permissions import IsAuthenticated, IsRelatedToCompany, IsStartup, IsInvestor, IsFounder
-from .filters import CompanyFilter
 from .models import Subscription
 from .serializers import CompaniesSerializer, SubscriptionSerializer
 from .managers import ArticlesManager as am, LIMIT
