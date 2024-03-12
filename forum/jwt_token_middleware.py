@@ -1,7 +1,6 @@
 import logging
 from channels.auth import AuthMiddlewareStack
 from django.conf import settings
-from django.contrib.auth.models import AnonymousUser
 from channels.db import database_sync_to_async
 from django.db import close_old_connections
 from rest_framework import status
