@@ -8,6 +8,7 @@ from rest_framework.exceptions import NotAuthenticated
 from forum.errors import Error
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.exceptions import TokenError
+from reversion import register
 
 STARTUP = 'startup'
 INVESTMENT = 'investment'
@@ -97,7 +98,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def get_short_name(self):
         return self.first_name
     
-
+@register()
 class Company(models.Model):
     company_id = models.BigAutoField(primary_key=True)
     brand = models.CharField(max_length=255, blank=True)

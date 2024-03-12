@@ -3,6 +3,7 @@ from django.urls import path, include
 from authentication.views import LoginView
 from rest_framework_simplejwt.views import  TokenRefreshView
 from authentication.views import LoginView, LogoutView
+from companies.urls import router as company_router
 
 urlpatterns = [
     path('admin/', admin.site.urls),
