@@ -53,39 +53,39 @@ class Error:
         msg = "Related company is not of investment"
         status = status.HTTP_403_FORBIDDEN
 
-    class NOT_STARTUP:
+    class NOT_STARTUP(BaseError):
         msg = "Related company is not of startup"
         status = status.HTTP_403_FORBIDDEN
 
-    class USER_NOT_FOUND:
+    class USER_NOT_FOUND(BaseError):
         msg = "User not found"
         status = status.HTTP_404_NOT_FOUND
 
-    class NO_USER_OR_COMPANY_ID:
+    class NO_USER_OR_COMPANY_ID(BaseError):
         msg = "Token contained no recognizable user or company identification"
         status = status.HTTP_401_UNAUTHORIZED
 
-    class NO_RELATED_TO_COMPANY:
+    class NO_RELATED_TO_COMPANY(BaseError):
         msg = "User isn't related to any company"
         status = status.HTTP_403_FORBIDDEN
 
-    class NO_COMPANY_TYPE:
+    class NO_COMPANY_TYPE(BaseError):
         msg = "No company type is recognised"
         status = status.HTTP_401_UNAUTHORIZED
 
-    class ALREADY_LOGGED_IN:
+    class ALREADY_LOGGED_IN(BaseError):
         msg = "User is already logged in"
         status = status.HTTP_403_FORBIDDEN
 
-    class WRONG_PASSWORD:
+    class WRONG_PASSWORD(BaseError):
         msg = "Password is wrong"
         status = status.HTTP_401_UNAUTHORIZED
 
-    class NOT_FOUNDER:
+    class NOT_FOUNDER(BaseError):
         msg = "User has not founder position"
         status = status.HTTP_403_FORBIDDEN
 
-    class NOT_REPRESENTATIVE:
+    class NOT_REPRESENTATIVE(BaseError):
         msg = "User has not founder position"
         status = status.HTTP_403_FORBIDDEN
 
