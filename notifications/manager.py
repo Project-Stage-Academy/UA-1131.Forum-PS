@@ -50,12 +50,13 @@ class Notification(BaseModel):
         default_factory=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     concerned_users: List = Field(default=[])
     viewed_by: List[Dict[str, Viewed]] = Field(default=[])
-    event_id: str
+    event_id: int
 
 
 class UpdateNotification(Notification):
     """Model for update notification"""
     company_id: int
+    event_id: str
     type: str = Field(default=UPDATE, frozen=True)
 
 
@@ -98,7 +99,7 @@ class NotificationManager(MongoManager):
         err = "There is no notifications that satisfy given conditions" if not err else err
         if not cls.check_if_exist(query):
             raise NotificationNotFound(err)
-        notifications = cls.get_and_sort_documents(query, sort_options=('created_at', pymongo.ASCENDING))
+        notifications = cls.get_and_sort_documents(query, sort_options=('created_at', pymongo.ASCENDING), projection=['event_id', 'type'])
         if not notifications:
             raise NotificationNotFound(
                 "Notifications not found, perhaps due to the connection error.")
@@ -157,7 +158,7 @@ class NotificationManager(MongoManager):
         """Extracting all the notifications that are regarded to user."""
 
         query = {'concerned_users': u_id}
-        err_msg = f"There is no notifications for the user with ID {u_id}."
+        err_msg = f"There is no notifications for the user."
         return cls.get_notifications_by_query(query, err=err_msg)
 
     @classmethod

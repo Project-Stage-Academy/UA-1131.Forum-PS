@@ -21,12 +21,10 @@ def get_user_id(request, response, related):
             return None, response
     return user_id, response
 
-
 def add_prefix_to_id(id, related=False):
     prefix = 'u_' if not related else 'rel_'
     id = prefix + str(id)
     return id
-
 
 def extract_data_for_message(request, response):
     data = {}
@@ -40,7 +38,6 @@ def extract_data_for_message(request, response):
         send_message_notification.delay(concerned_user)
     return data, response
 
-
 def extract_data_for_subscription(request, response):
     data = {}
     data['type'] = SUBSCRIPTION
@@ -52,10 +49,9 @@ def extract_data_for_subscription(request, response):
     concerned_users = CompanyAndUserRelation.get_relations(company_id=company_id)
     if company_id:
         send_subscribe_notification.delay(company_id)
-    ids = [add_prefix_to_id(relation.user_id.user_id, related=True) for relation in concerned_users]
+    ids = [add_prefix_to_id(relation.relation_id, related=True) for relation in concerned_users]
     data['concerned_users'] = ids
     return data, response
-
 
 def extract_data_for_update(request, response):
     data = {}
@@ -119,7 +115,6 @@ def extract_notifications_for_user(related=False):
 
     return decorator
 
-
 def create_notification_from_view(type=None):
     """Creates the notification for the event.
        
@@ -130,7 +125,6 @@ def create_notification_from_view(type=None):
             - removes user or event id if any in response (for disscussion)
     
     """
-
     def decorator(func):
 
         @wraps(func)
@@ -151,3 +145,5 @@ def create_notification_from_view(type=None):
         return wrapper
 
     return decorator
+
+
