@@ -13,6 +13,8 @@ from .models import Subscription
 from .serializers import CompaniesSerializer, SubscriptionSerializer
 from .permissions import EditCompanyPermission
 from revision.views import CustomRevisionMixin
+from notifications.decorators import create_notification_from_view
+from notifications.manager import SUBSCRIPTION, UPDATE
 
 class CompaniesViewSet(CustomRevisionMixin, viewsets.ModelViewSet):
     queryset = Company.objects.all()
@@ -44,6 +46,7 @@ class CompaniesRetrieveView(APIView):
 class SubscriptionCreateAPIView(APIView):
     permission_classes = (IsAuthenticated, IsRelatedToCompany, IsInvestor)
 
+    @create_notification_from_view(type=SUBSCRIPTION)
     def post(self, request, pk=None):
         if not pk:
             return er.NO_COMPANY_ID.response()
@@ -53,15 +56,15 @@ class SubscriptionCreateAPIView(APIView):
             check_sub = Subscription.get_subscription(
                 investor=profile_id, company=company_id)
             msg = f"You're already subscribed to {check_sub.company.brand}."
-            return Response({'message': msg}, status=status.HTTP_200_OK)
+            return Response({'message': msg}, status=status.HTTP_302_FOUND)
         except Subscription.DoesNotExist:
             data = {'investor': profile_id, 
                     'company': company_id}
             serializer = SubscriptionSerializer(data=data)
             if serializer.is_valid():
-                serializer.save()
-                msg = f"You're successfully subscribed to {serializer.company.brand}"
-                return Response({'message': msg, 'subscription_id': serializer.subscription_id}, status=status.HTTP_201_CREATED)
+                res = serializer.save()
+                msg = f"You're successfully subscribed to {res.company.brand}"
+                return Response({'message': msg, 'subscription_id': res.subscription_id, 'company_id': company_id}, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -100,6 +103,8 @@ class RetrieveArticles(APIView):
 
 class CreateArticle(APIView):
     permission_classes = (IsAuthenticated, IsRelatedToCompany, IsStartup)
+    
+    @create_notification_from_view(type=UPDATE)
     def post(self, request):
         data = request.data
         company_id = request.user.company['company_id']
@@ -109,8 +114,8 @@ class CreateArticle(APIView):
         try:
             res = am.add_article(data)
         except PydanticValidationError as e:
-            return Response({'error': er.Error.INVALID_ARTICLE.msg}, status=er.Error.INVALID_ARTICLE.status)    
-        return Response({'document_was_created': res}, status=status.HTTP_201_CREATED)
+            return Response({'error': er.INVALID_ARTICLE.msg}, status=er.INVALID_ARTICLE.status)    
+        return Response({'document_was_created': res, 'company_id': company_id}, status=status.HTTP_201_CREATED)
 
 class UpdateArticle(APIView):
     permission_classes = (IsAuthenticated, IsRelatedToCompany)

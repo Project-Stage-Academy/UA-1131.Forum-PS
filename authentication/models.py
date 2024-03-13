@@ -1,6 +1,7 @@
 from datetime import datetime
 from django.contrib.auth.models import PermissionsMixin
 from django.contrib.auth.base_user import (AbstractBaseUser, BaseUserManager)
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.exceptions import NotAuthenticated
@@ -186,6 +187,10 @@ class CompanyAndUserRelation(models.Model):
     @classmethod
     def get_relation(cls, *args, **kwargs):
         return cls.objects.get(**kwargs)
+    
+    @classmethod
+    def get_relations(cls, *args, **kwargs):
+        return cls.objects.filter(**kwargs)
 
 
 

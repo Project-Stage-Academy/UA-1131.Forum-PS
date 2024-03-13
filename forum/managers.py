@@ -1,4 +1,5 @@
 import pymongo
+from pymongo.errors import PyMongoError
 from typing import Dict
 from pydantic import BaseModel, ValidationError
 from django.core.mail import EmailMessage
@@ -10,6 +11,7 @@ from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from authentication.models import CustomUser
 
 from .errors import Error
+from .settings import EMAIL_HOST
 
 
 class TokenManager:
@@ -107,6 +109,20 @@ class MongoManager:
         return cls.to_list(document)
     
     @classmethod
+    def get_and_sort_documents(cls, query, sort_options=None, **kwargs):
+        """Retrieves the multiple documents from the database and sorts it.
+           Args for sorting: pass as a list with this args:
+               - key_or_list: a single key or a list of (key, direction) 
+                 pairs specifying the keys to sort on
+               - direction (optional): only used if key_or_list is a single key, 
+                 if not given ASCENDING is assumed
+        """
+        if sort_options is None:
+            sort_options = []
+        documents = cls.db.find(query, **kwargs).sort(*sort_options)
+        return cls.to_list(documents)
+    
+    @classmethod
     def create_document(cls, data, key) -> str | None:
         """Creates document. Key is needed to use proper model for validation."""
         model:BaseModel = cls.types[key]
@@ -124,7 +140,7 @@ class MongoManager:
     def delete_document(cls, query, **kwargs):
         """Delete the document from database."""
         res = cls.db.find_one_and_delete(query, **kwargs)
-        return res
+        return cls.id_to_string(res)
 
     @classmethod
     def delete_from_document(cls, query,delete_part, **kwargs):
@@ -133,6 +149,14 @@ class MongoManager:
         if res.modified_count == 0:
             return None
         return res
+    
+    @classmethod
+    def delete_documents(cls, query, **kwargs):
+        try:
+          res = cls.db.delete_many(query, **kwargs)
+          return res.deleted_count
+        except PyMongoError:
+            return None
     
     
 
