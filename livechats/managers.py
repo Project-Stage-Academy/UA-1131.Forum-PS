@@ -73,7 +73,7 @@ class LiveChatManager(MongoManager):
             for i in range(math.ceil(len(messages) / 50)):
                 if len(messages) > 50:
                     cls.db.update_one({"_id": ObjectId(conversation_id)},
-                                      {"$push": {"messages": {"$each": messages[0:50]}}})
+                                      {"$push": {"messages":  messages[0:50]}})
                     messages = messages[50:]
                 else:
                     cls.db.update_one({"_id": ObjectId(conversation_id)}, {"$push": {"messages": messages}})
