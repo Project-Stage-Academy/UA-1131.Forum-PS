@@ -231,16 +231,19 @@ class EmailManager:
 
 
 class EmailAuthenticationManager(EmailManager):
+    """
+        EmailAuthenticationManager extends EmailManager for authentication-related email notifications.
 
+        Methods:
+            - send_password_reset_notification(email, reset_link): Sends a password reset notification email.
+            - send_password_update_notification(user): Sends a password update notification email.
+    """
     @classmethod
     def send_password_reset_notification(cls, email, reset_link):
         email_subject = 'Password Reset'
         html_content = render_to_string('password_reset_email.html', {'reset_link': reset_link})
         data = cls._data_formatter(email_subject, html_content, email)
         cls._email_alternative_sender(data)
-
-        # logger = logging.getLogger('email_sending')
-        # logger.error(f'Error during email sending to {email}.')
 
     @classmethod
     def send_password_update_notification(cls, user):
@@ -250,31 +253,14 @@ class EmailAuthenticationManager(EmailManager):
         data = cls._data_formatter(email_subject=email_subject, email_body=email_body, email=user.email)
         cls._email_sender(data)
 
-        # logger = logging.getLogger('email_sending')
-        # logger.error(f'Error during email sending to {email}.')
-
 
 class EmailNotificationManager(EmailManager):
+    """
+        EmailNotificationManager extends EmailManager for sending notification emails.
 
-    # @classmethod
-    # def send_update_notification(cls, company):
-    #     emails_to_send = [record.investor.email for record in
-    #                       company.subscription_set.filter(get_email_newsletter=True)]
-    #     for email in emails_to_send:
-    #         email_subject = 'Update in followed company'
-    #         email_body = f'Dear user, we would like to inform you about the updates in the {company.brand}'
-    #         data = cls._data_formatter(email_subject=email_subject, email_body=email_body, email=email)
-    #         cls._email_sender(data)
-    #
-    # @classmethod
-    # def send_message_notification(cls, message, company):
-    #     emails_to_send = [record.investor.email for record in
-    #                       company.subscription_set.filter(get_email_newsletter=True)]
-    #     for email in emails_to_send:
-    #         email_subject = f'A new message from {message.sender.user_id.first_name}'
-    #         email_body = f'Dear user, we would like to inform you about a new message from {company.brand}'
-    #         data = cls._data_formatter(email_subject=email_subject, email_body=email_body, email=email)
-    #         cls._email_sender(data)
+        Methods:
+        - send_subscribe_notification(company, emails_to_send=None): Sends a notification email about a new subscriber.
+    """
 
     @classmethod
     def send_subscribe_notification(cls, company, emails_to_send=None):
@@ -285,6 +271,3 @@ class EmailNotificationManager(EmailManager):
             email_body = 'Dear user, we would like to inform you about a new subscriber'
             data = cls._data_formatter(email_subject=email_subject, email_body=email_body, email=email)
             cls._email_sender(data)
-
-        # logger = logging.getLogger('email_sending')
-        # logger.error(f'Error during email sending to {email}.')
