@@ -165,6 +165,7 @@ class Company(models.Model):
                 data[k] = self.get_attribute(k)
         return data
 
+
     def __str__(self):
         return self.brand
 
@@ -185,7 +186,6 @@ class CompanyAndUserRelation(models.Model):
     @classmethod
     def get_relation(cls, *args, **kwargs):
         return cls.objects.get(**kwargs)
-
 
 
 
