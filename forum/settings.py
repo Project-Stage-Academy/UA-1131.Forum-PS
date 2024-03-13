@@ -54,6 +54,8 @@ INSTALLED_APPS = [
 
     'corsheaders',
     'channels',
+    'django_filters',
+    'notifications',
 
 ]
 

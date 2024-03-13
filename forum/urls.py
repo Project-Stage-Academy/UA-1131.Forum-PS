@@ -15,6 +15,5 @@ urlpatterns = [
     path('conversations/', include('livechats.urls')),
     path('messages/', include('chats.urls')),
     path('search/', include('search.urls')),
-
-] + company_router.urls
-
+    path('notifications/', include('notifications.urls'))
+]
