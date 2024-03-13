@@ -1,20 +1,15 @@
-import logging
 from datetime import datetime, timedelta
-from typing import List, Dict
+from typing import Dict, List
+
 import pymongo
 from bson import ObjectId
+from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.template.loader import render_to_string
 from pydantic import BaseModel, Field, ValidationError
-from django.core.mail import EmailMessage, EmailMultiAlternatives
 
-from forum import settings
-from forum.settings import DB, EMAIL_HOST_USER
-from forum.managers import MongoManager
-
-from authentication.models import Company, CustomUser, CompanyAndUserRelation
 from companies.models import Subscription
-from chats.models import Message
-
+from forum.managers import MongoManager
+from forum.settings import DB, EMAIL_HOST_USER
 
 UPDATE = 'update'
 MESSAGE = 'message'
@@ -55,7 +50,7 @@ class Notification(BaseModel):
 
 class UpdateNotification(Notification):
     """Model for update notification"""
-    company_id:int
+    company_id: int
     type: str = Field(default=UPDATE, frozen=True)
 
 
@@ -63,12 +58,10 @@ class MessageNotification(Notification):
     """Model for message notification"""
     type: str = Field(default=MESSAGE, frozen=True)
 
+
 class SubscriptionNotification(Notification):
     """Model for subscription notification"""
     type: str = Field(default=SUBSCRIPTION, frozen=True)
-
-
-
 
 
 class NotificationManager(MongoManager):
@@ -83,7 +76,6 @@ class NotificationManager(MongoManager):
     types = {UPDATE: UpdateNotification,
              MESSAGE: MessageNotification,
              SUBSCRIPTION: SubscriptionNotification}
-
 
     @classmethod
     def get_notification_by_query(cls, query, **kwargs):
@@ -195,6 +187,20 @@ class NotificationManager(MongoManager):
 
 
 class EmailManager:
+    """
+       EmailManager is responsible for sending emails and formatting email data.
+
+       Methods:
+           - _email_sender(data: Dict): Sends a basic email.
+           - _email_alternative_sender(data: Dict): Sends an HTML email with alternative content.
+           - _data_formatter(email_subject: str, email_body: str, email: str): Formats email data.
+           - _email_subscription_filter(company): Filters email subscriptions based on company receiver.
+
+       Note:
+           This class utilizes Django's EmailMessage and EmailMultiAlternatives classes for sending emails.
+           It also interacts with the Subscription model to filter email subscriptions based on company.
+   """
+
     @staticmethod
     def _email_sender(data: Dict):
         email = EmailMessage(subject=data['email_subject'], body=data['email_body'], from_email=data['from_email'],
@@ -225,6 +231,13 @@ class EmailManager:
 
 
 class EmailAuthenticationManager(EmailManager):
+    """
+        EmailAuthenticationManager extends EmailManager for authentication-related email notifications.
+
+        Methods:
+            - send_password_reset_notification(email, reset_link): Sends a password reset notification email.
+            - send_password_update_notification(user): Sends a password update notification email.
+    """
 
     @classmethod
     def send_password_reset_notification(cls, email, reset_link):
@@ -232,9 +245,6 @@ class EmailAuthenticationManager(EmailManager):
         html_content = render_to_string('password_reset_email.html', {'reset_link': reset_link})
         data = cls._data_formatter(email_subject, html_content, email)
         cls._email_alternative_sender(data)
-
-        # logger = logging.getLogger('email_sending')
-        # logger.error(f'Error during email sending to {email}.')
 
     @classmethod
     def send_password_update_notification(cls, user):
@@ -244,31 +254,14 @@ class EmailAuthenticationManager(EmailManager):
         data = cls._data_formatter(email_subject=email_subject, email_body=email_body, email=user.email)
         cls._email_sender(data)
 
-        # logger = logging.getLogger('email_sending')
-        # logger.error(f'Error during email sending to {email}.')
-
 
 class EmailNotificationManager(EmailManager):
+    """
+        EmailNotificationManager extends EmailManager for sending notification emails.
 
-    # @classmethod
-    # def send_update_notification(cls, company):
-    #     emails_to_send = [record.investor.email for record in
-    #                       company.subscription_set.filter(get_email_newsletter=True)]
-    #     for email in emails_to_send:
-    #         email_subject = 'Update in followed company'
-    #         email_body = f'Dear user, we would like to inform you about the updates in the {company.brand}'
-    #         data = cls._data_formatter(email_subject=email_subject, email_body=email_body, email=email)
-    #         cls._email_sender(data)
-    #
-    # @classmethod
-    # def send_message_notification(cls, message, company):
-    #     emails_to_send = [record.investor.email for record in
-    #                       company.subscription_set.filter(get_email_newsletter=True)]
-    #     for email in emails_to_send:
-    #         email_subject = f'A new message from {message.sender.user_id.first_name}'
-    #         email_body = f'Dear user, we would like to inform you about a new message from {company.brand}'
-    #         data = cls._data_formatter(email_subject=email_subject, email_body=email_body, email=email)
-    #         cls._email_sender(data)
+        Methods:
+        - send_subscribe_notification(company, emails_to_send=None): Sends a notification email about a new subscriber.
+    """
 
     @classmethod
     def send_subscribe_notification(cls, company, emails_to_send=None):
@@ -279,6 +272,3 @@ class EmailNotificationManager(EmailManager):
             email_body = 'Dear user, we would like to inform you about a new subscriber'
             data = cls._data_formatter(email_subject=email_subject, email_body=email_body, email=email)
             cls._email_sender(data)
-
-        # logger = logging.getLogger('email_sending')
-        # logger.error(f'Error during email sending to {email}.')
