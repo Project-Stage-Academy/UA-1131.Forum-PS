@@ -8,6 +8,7 @@ from django.template.loader import render_to_string
 from pydantic import BaseModel, Field, ValidationError
 
 from companies.models import Subscription
+from authentication.models import CustomUser, Company
 from forum.managers import MongoManager
 from forum.settings import DB, EMAIL_HOST_USER
 
@@ -17,6 +18,10 @@ SUBSCRIPTION = 'subscription'
 
 
 class AlreadyExist(Exception):
+    pass
+
+
+class NotExist(Exception):
     pass
 
 
@@ -223,12 +228,6 @@ class EmailManager:
             'to_email': email
         }
 
-    @staticmethod
-    def _email_subscription_filter(company):
-        queryset = Subscription.objects.filter(company=company, get_email_newsletter=True)
-        emails = [record.investor.email for record in queryset]
-        return emails
-
 
 class EmailAuthenticationManager(EmailManager):
     """
@@ -238,6 +237,7 @@ class EmailAuthenticationManager(EmailManager):
             - send_password_reset_notification(email, reset_link): Sends a password reset notification email.
             - send_password_update_notification(user): Sends a password update notification email.
     """
+
     @classmethod
     def send_password_reset_notification(cls, email, reset_link):
         email_subject = 'Password Reset'
@@ -262,12 +262,46 @@ class EmailNotificationManager(EmailManager):
         - send_subscribe_notification(company, emails_to_send=None): Sends a notification email about a new subscriber.
     """
 
+    @staticmethod
+    def __email_subscription_filter(company_id: int):
+        try:
+            queryset = Subscription.get_subscription(company_id=company_id, get_email_newsletter=True)
+        except Subscription.DoesNotExist:
+            raise NotExist("Subscription is not exist with this company_id")
+        emails = [record.investor.email for record in queryset]
+        return emails
+
     @classmethod
-    def send_subscribe_notification(cls, company, emails_to_send=None):
+    def send_subscribe_notification(cls, company_id, emails_to_send=None):
         if emails_to_send is None:
-            emails_to_send = cls._email_subscription_filter(company=company)
+            emails_to_send = cls.__email_subscription_filter(company_id=company_id)
+
+        email_subject = 'You have a new subscriber'
+        email_body = 'Dear user, we would like to inform you about a new subscriber'
         for email in emails_to_send:
-            email_subject = 'You have a new subscriber'
-            email_body = 'Dear user, we would like to inform you about a new subscriber'
+            data = cls._data_formatter(email_subject=email_subject, email_body=email_body, email=email)
+            cls._email_sender(data)
+
+    @classmethod
+    def send_message_notification(cls, user: CustomUser):
+        email_subject = 'You have a new message'
+        email_body = f'Dear {user.first_name}, we would like to inform you about a new message'
+        data = cls._data_formatter(email_subject=email_subject, email_body=email_body, email=user.email)
+        cls._email_sender(data)
+
+    @classmethod
+    def send_article_notification(cls, company_id: int, users: list[CustomUser] | CustomUser):
+        try:
+            emails_to_send = [user.email for user in users]
+        except CustomUser.DoesNotExist:
+            raise NotExist('User is not exist with this id')
+        try:
+            company = Company.get_company(company_id=company_id)
+        except Company.DoesNotExist:
+            raise NotExist('Company is not exist with this id')
+
+        email_subject = f'{company.brand} has a new article!'
+        email_body = f'Dear user, we would like to inform you about a new article from {company.brand}!'
+        for email in emails_to_send:
             data = cls._data_formatter(email_subject=email_subject, email_body=email_body, email=email)
             cls._email_sender(data)
