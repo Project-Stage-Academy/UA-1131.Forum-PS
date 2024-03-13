@@ -45,7 +45,8 @@ class MessagesManager(MongoManager):
     @classmethod
     def get_message(cls, message_id):
         if ObjectId.is_valid(message_id):
-            existing_message = cls.db.find_one({"_id": ObjectId(message_id)})
+            existing_message = cls.db.find_one({"_id": ObjectId(message_id)},
+                                               {"visible_for_receiver": 0, "visible_for_sender": 0})
             if not existing_message:
                 raise MessageNotFound("Message not found")
             existing_message = cls.id_to_string(existing_message)
@@ -61,7 +62,9 @@ class MessagesManager(MongoManager):
             result = cls.db.find_one_and_update(query, {"$set": {"visible_for_sender": False}})
         if message.get("receiver_company_id") == company_id:
             result = cls.db.find_one_and_update(query, {"$set": {"visible_for_receiver": False}})
-        if not message.get("visible_for_sender") and not message.get("visible_for_receiver"):
+        check_message_to_delete = cls.get_message(message_id)
+        if not check_message_to_delete.get("visible_for_sender") and not check_message_to_delete.get(
+                "visible_for_receiver"):
             result = cls.db.find_one_and_delete(query)
         return result
 

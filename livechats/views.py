@@ -52,8 +52,8 @@ class GetConversations(APIView):
             existing_conversation = lm.get_conversation_by_id(convo_id)
             if not existing_conversation:
                 return Response({'message': 'Conversation does not exist'}, status=status.HTTP_404_NOT_FOUND)
-            if request.user.user_id in [existing_conversation.get("initiator_id"),
-                                        existing_conversation.get("receiver_id")]:
+            if request.user.user_id in [existing_conversation["initiator_id"],
+                                        existing_conversation["receiver_id"]]:
                 return Response(existing_conversation)
             else:
                 return Response({"message": "You are not the participant of this live-chat"},
@@ -81,18 +81,19 @@ class EmergencyConversationRestart(APIView):
     def post(self, request, convo_id):
         if ObjectId.is_valid(convo_id):
             existing_conversation = lm.get_conversation_by_id(convo_id)
-            if request.user.user_id in [existing_conversation.get("initiator_id"),
-                                        existing_conversation.get("receiver_id")]:
-                redis = from_url(
-                    os.environ.get("REDIS_URL"), encoding="utf-8", decode_responses=True
-                )
-                with redis.client() as conn:
-                    users = conn.hgetall(f"{convo_id}_users")
-                    if users:
-                        conn.delete(f"{convo_id}_users")
-                return Response({"message": "Chat was restarted"}, status=status.HTTP_200_OK)
-            return Response({"message": "You are not the participant of this live-chat"},
-                            status=status.HTTP_403_FORBIDDEN)
-
+            if existing_conversation:
+                if request.user.user_id in [existing_conversation["initiator_id"],
+                                            existing_conversation["receiver_id"]]:
+                    redis = from_url(
+                        os.environ.get("REDIS_URL"), encoding="utf-8", decode_responses=True
+                    )
+                    with redis.client() as conn:
+                        users = conn.hgetall(f"{convo_id}_users")
+                        if users:
+                            conn.delete(f"{convo_id}_users")
+                    return Response({"message": "Chat was restarted"}, status=status.HTTP_200_OK)
+                return Response({"message": "You are not the participant of this live-chat"},
+                                status=status.HTTP_403_FORBIDDEN)
+            return Response({"message": "Cannot find such chat"}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({"message": "Provided invalid chat id"}, status=status.HTTP_400_BAD_REQUEST)

@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from authentication.models import Company, CompanyAndUserRelation
 from authentication.permissions import IsAuthenticated
 from forum.errors import Error
-from .manager import MessagesManager as mm
+from .manager import MessagesManager as mm, MessageNotFound
 from .manager import Message
 
 
@@ -16,22 +16,24 @@ class MessageDetailView(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, message_id):
-        message = mm.get_message(message_id)
-        company_id = request.user.company.get("company_id")
-        if message.get("sender_company_id") == company_id:
-            if bool(message.get("visible_for_sender")):
-                del message["visible_for_sender"]
-                del message["visible_for_receiver"]
-                return Response(message, status=status.HTTP_200_OK)
-            return Response({"message": "No such message"}, status=status.HTTP_200_OK)
-        if message.get("receiver_company_id") == company_id:
-            if bool(message.get("visible_for_receiver")):
-                del message["visible_for_sender"]
-                del message["visible_for_receiver"]
-                return Response(message, status=status.HTTP_200_OK)
-            return Response({"message": "No such message"}, status=status.HTTP_200_OK)
-        return Response(message, status=status.HTTP_200_OK)
-
+        try:
+            message = mm.get_message(message_id)
+            company_id = request.user.company.get("company_id")
+            if message.get("sender_company_id") == company_id:
+                if bool(message.get("visible_for_sender")):
+                    del message["visible_for_sender"]
+                    del message["visible_for_receiver"]
+                    return Response(message, status=status.HTTP_200_OK)
+                return Response({"message": "No such message"}, status=status.HTTP_302_FOUND)
+            if message.get("receiver_company_id") == company_id:
+                if bool(message.get("visible_for_receiver")):
+                    del message["visible_for_sender"]
+                    del message["visible_for_receiver"]
+                    return Response(message, status=status.HTTP_200_OK)
+                return Response({"message": "No such message"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(message, status=status.HTTP_200_OK)
+        except MessageNotFound:
+            return Response({"message": "Cannot find such message"}, status=status.HTTP_400_BAD_REQUEST)
 
 class SendMessageView(APIView):
     """
@@ -97,7 +99,9 @@ class MessageDeleteView(APIView):
             mm.delete_message(company_id, message_id)
             return Response({"message": "Message was deleted"}, status=status.HTTP_200_OK)
         except AttributeError:
-            raise NotAuthenticated(detail=Error.NO_USER_OR_COMPANY_ID.msg)
+            return Response({"error": "Authentication error"}, status=status.HTTP_403_FORBIDDEN)
+        except MessageNotFound:
+            return Response({"error": "Message not found"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class OutboxView(APIView):

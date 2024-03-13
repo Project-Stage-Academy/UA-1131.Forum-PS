@@ -7,6 +7,7 @@ from typing import Optional
 from forum.settings import DB
 from forum.managers import MongoManager
 
+
 class Message(BaseModel):
     """Pydentic BaseModel class for Messages validations"""
     msg_text: str
@@ -55,13 +56,13 @@ class LiveChatManager(MongoManager):
             ]}
         conversations = cls.db.find(query, {"messages": 0})
         conversation_list = cls.to_list(conversations)
-        conversation_list = conversation_list.reverse()
+        conversation_list = conversation_list[::-1]
         return conversation_list
 
     @classmethod
     def get_conversation_by_id(cls, conversation_id):
         query = {"_id": ObjectId(conversation_id)}
-        existing_conversation = cls.get_document(query)
+        existing_conversation = cls.db.find_one(query, {"messages": 0})
         if existing_conversation:
             return cls.id_to_string(existing_conversation)
         return None
@@ -69,10 +70,11 @@ class LiveChatManager(MongoManager):
     @classmethod
     def upgrade_messages(cls, conversation_id, messages):
         if len(messages) > 50:
-            for i in range(math.ceil(messages / 50)):
+            for i in range(math.ceil(len(messages) / 50)):
                 if len(messages) > 50:
-                    cls.db.update_one({"_id": ObjectId(conversation_id)}, {"$push": {"messages": messages[0:50]}})
-                    messages = messages[50::]
+                    cls.db.update_one({"_id": ObjectId(conversation_id)},
+                                      {"$push": {"messages": {"$each": messages[0:50]}}})
+                    messages = messages[50:]
                 else:
                     cls.db.update_one({"_id": ObjectId(conversation_id)}, {"$push": {"messages": messages}})
                     break
