@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime, timedelta
 from typing import Dict, List
 
@@ -10,11 +9,6 @@ from pydantic import BaseModel, Field, ValidationError
 
 from companies.models import Subscription
 from forum.managers import MongoManager
-
-
-from companies.models import Subscription
-
-
 from forum.settings import DB, EMAIL_HOST_USER
 
 UPDATE = 'update'
@@ -56,7 +50,7 @@ class Notification(BaseModel):
 
 class UpdateNotification(Notification):
     """Model for update notification"""
-    company_id:int
+    company_id: int
     type: str = Field(default=UPDATE, frozen=True)
 
 
@@ -64,12 +58,10 @@ class MessageNotification(Notification):
     """Model for message notification"""
     type: str = Field(default=MESSAGE, frozen=True)
 
+
 class SubscriptionNotification(Notification):
     """Model for subscription notification"""
     type: str = Field(default=SUBSCRIPTION, frozen=True)
-
-
-
 
 
 class NotificationManager(MongoManager):
@@ -84,7 +76,6 @@ class NotificationManager(MongoManager):
     types = {UPDATE: UpdateNotification,
              MESSAGE: MessageNotification,
              SUBSCRIPTION: SubscriptionNotification}
-
 
     @classmethod
     def get_notification_by_query(cls, query, **kwargs):
