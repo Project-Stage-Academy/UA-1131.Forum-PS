@@ -127,10 +127,10 @@ class Company(models.Model):
         return cls.objects.all()
 
     @classmethod
-    def get_all_companies_info(cls, type=None):
+    def get_all_companies_info(cls, company_type=None):
         res = []
-        if type:
-            query = {'is_startup': True} if type == STARTUP else {'is_startup': False}
+        if company_type:
+            query = {'is_startup': True} if company_type.strip('/') == STARTUP else {'is_startup': False}
             companies = cls.get_companies(**query)
         else:
             companies = cls.get_all_companies()
