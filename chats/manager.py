@@ -45,8 +45,7 @@ class MessagesManager(MongoManager):
     @classmethod
     def get_message(cls, message_id):
         if ObjectId.is_valid(message_id):
-            existing_message = cls.db.find_one({"_id": ObjectId(message_id)},
-                                               {"visible_for_receiver": 0, "visible_for_sender": 0})
+            existing_message = cls.db.find_one({"_id": ObjectId(message_id)})
             if not existing_message:
                 raise MessageNotFound("Message not found")
             existing_message = cls.id_to_string(existing_message)
