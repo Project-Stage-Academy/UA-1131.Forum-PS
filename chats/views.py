@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from pydantic import ValidationError
 
-from authentication.models import Company
+from authentication.models import Company, CompanyAndUserRelation
 from authentication.permissions import IsAuthenticated
 from forum.errors import Error
 from .manager import MessagesManager as mm
@@ -18,36 +18,61 @@ class MessageDetailView(APIView):
     def get(self, request, message_id):
         message = mm.get_message(message_id)
         company_id = request.user.company.get("company_id")
-        if message.get("sender_id") == company_id:
+        if message.get("sender_company_id") == company_id:
             if bool(message.get("visible_for_sender")):
                 del message["visible_for_sender"]
                 del message["visible_for_receiver"]
                 return Response(message, status=status.HTTP_200_OK)
-            return Response({"message": "no such message"}, status=status.HTTP_200_OK)
-        if message.get("receiver_id") == company_id:
+            return Response({"message": "No such message"}, status=status.HTTP_200_OK)
+        if message.get("receiver_company_id") == company_id:
             if bool(message.get("visible_for_receiver")):
                 del message["visible_for_sender"]
                 del message["visible_for_receiver"]
                 return Response(message, status=status.HTTP_200_OK)
-            return Response({"message": "no such message"}, status=status.HTTP_200_OK)
+            return Response({"message": "No such message"}, status=status.HTTP_200_OK)
         return Response(message, status=status.HTTP_200_OK)
 
 
 class SendMessageView(APIView):
+    """
+      A view for sending messages.
+
+      This view send message from one user, related to sender company to another user related with some another company.
+
+
+      Request:
+          - Method: POST
+          - URL: /messages/send message/
+          - Data Params:
+              - receiver_id: relation id for getting receiver user and receiver company;
+              - msg_topic: message topic
+              - msg_text: message text
+          - Response:
+              - 201 Created: Message was created and send to receiver
+              - 400 Bad Request: Invalid message format or you try to send message to your company
+
+  """
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         data = request.data
-        company_id = request.user.company.get("company_id")
-        receiver_id = data.get("receiver_id")
-        if not company_id == receiver_id:
-            sender = Company.objects.get(pk=company_id)
-            receiver = Company.objects.get(pk=receiver_id)
+        sender_user_id = request.user.user_id
+        sender_company_id = request.user.company.get("company_id")
+        receiver_data = data.get("receiver_id")
+        receiver = CompanyAndUserRelation.get_relation(relation_id=receiver_data)
+        receiver_company_id = receiver.company_id.company_id
+        receiver_user_id = receiver.user_id.user_id
+        if not sender_company_id == receiver_company_id:
+            sender = Company.objects.get(pk=sender_company_id)
+            receiver = Company.objects.get(pk=receiver_company_id)
             message = {
-                "sender_id": company_id,
+                "sender_company_id": sender_company_id,
                 "sender_data": sender.brand,
-                "receiver_id": receiver_id,
+                "sender_user_id": sender_user_id,
+                "receiver_company_id": receiver_company_id,
                 "receiver_data": receiver.brand,
+                "receiver_user_id": receiver_user_id,
                 "msg_text": data.get("msg_text"),
                 "msg_topic": data.get("msg_topic"),
                 "timestamp": timezone.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -60,7 +85,7 @@ class SendMessageView(APIView):
                 return Response(message_validated, status=status.HTTP_201_CREATED)
             except ValidationError as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({"error": "You can`t send message to yourself"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "You can`t send message to your company"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class MessageDeleteView(APIView):

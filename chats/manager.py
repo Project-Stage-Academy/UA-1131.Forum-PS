@@ -17,9 +17,11 @@ class Message(BaseModel):
     msg_text: str
     msg_topic: str
     timestamp: str
-    sender_id: int
+    sender_company_id: int
+    sender_user_id: int
     sender_data: str
-    receiver_id: int
+    receiver_company_id: int
+    receiver_user_id: int
     receiver_data: str
     visible_for_sender: bool
     visible_for_receiver: bool
@@ -55,9 +57,9 @@ class MessagesManager(MongoManager):
         query = {"_id": ObjectId(message_id)}
         message = cls.get_message(message_id)
         result = ""
-        if message.get("sender_id") == company_id:
+        if message.get("sender_company_id") == company_id:
             result = cls.db.find_one_and_update(query, {"$set": {"visible_for_sender": False}})
-        if message.get("receiver_id") == company_id:
+        if message.get("receiver_company_id") == company_id:
             result = cls.db.find_one_and_update(query, {"$set": {"visible_for_receiver": False}})
         if not message.get("visible_for_sender") and not message.get("visible_for_receiver"):
             result = cls.db.find_one_and_delete(query)
@@ -65,8 +67,9 @@ class MessagesManager(MongoManager):
 
     @classmethod
     def create_message(cls, message):
-        cls.db.insert_one(message.model_dump())
-        return message.dict()
+        new_message_id = cls.db.insert_one(message.model_dump()).inserted_id
+        new_message = cls.get_message(new_message_id)
+        return new_message
 
     @classmethod
     def company_inbox_messages(cls, company_id):
