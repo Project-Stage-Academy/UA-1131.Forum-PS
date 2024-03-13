@@ -45,7 +45,7 @@ class Notification(BaseModel):
         default_factory=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     concerned_users: List = Field(default=[])
     viewed_by: List[Dict[str, Viewed]] = Field(default=[])
-    event_id: int
+    event_id: str
 
 
 class UpdateNotification(Notification):

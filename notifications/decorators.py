@@ -41,6 +41,7 @@ def extract_data_for_subscription(request, response):
     except KeyError:
         return None, response
     concerned_users = CompanyAndUserRelation.get_relations(company_id=company_id)
+    #
     ids = [add_prefix_to_id(relation.user_id.user_id, related=True) for relation in concerned_users]
     data['concerned_users'] = ids
     return data, response
@@ -51,8 +52,10 @@ def extract_data_for_update(request, response):
     data['event_id'] = response.data['document_was_created']['article_id']
     company_id = response.data.pop('company_id')
     concerned_users = Subscription.get_subscriptions(company_id=company_id)
+    #
     ids = [add_prefix_to_id(subscription.investor.relation_id, related=True) for subscription in concerned_users]
     data['concerned_users'] = ids
+    data['company_id'] = company_id
     return data, response
 
 STRATEGIES = {
