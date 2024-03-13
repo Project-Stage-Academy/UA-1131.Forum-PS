@@ -17,7 +17,7 @@ from revision.views import CustomRevisionMixin
 class CompaniesViewSet(CustomRevisionMixin, viewsets.ModelViewSet):
     queryset = Company.objects.all()
     serializer_class = CompaniesSerializer
-    permission_classes = (EditCompanyPermission,)
+    permission_classes = (EditCompanyPermission, IsAuthenticated)
           
 class CompanyRetrieveView(APIView):
     permission_classes = (IsAuthenticated,)

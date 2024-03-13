@@ -26,7 +26,7 @@ class TokenManager:
         """Generates token for user"""
 
         refresh_token = RefreshToken.for_user(user)
-        return str(refresh_token)
+        return refresh_token
 
     @classmethod
     def get_access_payload(cls, token: str) -> dict:
