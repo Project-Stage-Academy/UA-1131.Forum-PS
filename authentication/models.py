@@ -244,9 +244,6 @@ class CompanyAndUserRelation(models.Model):
     def get_relation(cls, *args, **kwargs):
         return cls.objects.get(**kwargs)
 
-    @classmethod
-    def get_relations(cls, *args, **kwargs):
-        return cls.objects.filter(**kwargs)
 
 
 class UserLoginActivity(models.Model):

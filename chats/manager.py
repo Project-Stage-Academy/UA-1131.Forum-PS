@@ -33,8 +33,8 @@ class MessagesManager(MongoManager):
     @classmethod
     def get_messages_to_company(cls, company_id):
         cursor = cls.db.find({"$or": [
-            {"sender_id": company_id},
-            {"receiver_id": company_id}]},
+            {"sender_company_id": company_id},
+            {"receiver_company_id": company_id}]},
             {"visible_for_receiver": 0, "visible_for_sender": 0}
         )
         if not cursor:
