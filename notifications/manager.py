@@ -260,23 +260,13 @@ class EmailNotificationManager(EmailManager):
         EmailNotificationManager extends EmailManager for sending notification emails.
 
         Methods:
-        - send_subscribe_notification(company, emails_to_send=None): Sends a notification email about a new subscriber.
+        - send_subscribe_notification(emails_to_send: List[str]): Sends a notification email about a new subscriber.
+        - send_message_notification(user_email: str): Sends a notification email about a new message.
+        - send_article_notification(company_id: int, emails_to_send: List[str]): Sends a notification email about a new article from a company.
     """
 
-    @staticmethod
-    def __email_subscription_filter(company_id: int):
-        try:
-            queryset = Subscription.get_subscription(company_id=company_id, get_email_newsletter=True)
-        except Subscription.DoesNotExist:
-            raise NotExist("Subscription is not exist with this company_id")
-        emails = [record.investor.email for record in queryset]
-        return emails
-
     @classmethod
-    def send_subscribe_notification(cls, company_id, emails_to_send=None):
-        if emails_to_send is None:
-            emails_to_send = cls.__email_subscription_filter(company_id=company_id)
-
+    def send_subscribe_notification(cls, emails_to_send: list[str]):
         email_subject = 'You have a new subscriber'
         email_body = 'Dear user, we would like to inform you about a new subscriber'
         for email in emails_to_send:
@@ -284,18 +274,14 @@ class EmailNotificationManager(EmailManager):
             cls._email_sender(data)
 
     @classmethod
-    def send_message_notification(cls, user: CustomUser):
+    def send_message_notification(cls, user_email: str):
         email_subject = 'You have a new message'
-        email_body = f'Dear {user.first_name}, we would like to inform you about a new message'
-        data = cls._data_formatter(email_subject=email_subject, email_body=email_body, email=user.email)
+        email_body = f'Dear user, we would like to inform you about a new message'
+        data = cls._data_formatter(email_subject=email_subject, email_body=email_body, email=user_email)
         cls._email_sender(data)
 
     @classmethod
-    def send_article_notification(cls, company_id: int, users: list[CustomUser] | CustomUser):
-        try:
-            emails_to_send = [user.email for user in users]
-        except CustomUser.DoesNotExist:
-            raise NotExist('User is not exist with this id')
+    def send_article_notification(cls, company_id: int, emails_to_send: list[str]):
         try:
             company = Company.get_company(company_id=company_id)
         except Company.DoesNotExist:

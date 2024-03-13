@@ -35,9 +35,9 @@ def extract_data_for_message(request, response):
         return None, response
     data['conсerned_users'] = [add_prefix_to_id(relation_id,
                                                 related=True)]
-    concerned_user = CompanyAndUserRelation.get_relation(relation_id=relation_id).user_id
-    if concerned_user:
-        send_message_notification.delay(concerned_user)
+    concerned_user_email = CompanyAndUserRelation.get_relation(relation_id=relation_id).user_id.email
+    if concerned_user_email:
+        send_message_notification.delay(concerned_user_email)
     return data, response
 
 def extract_data_for_subscription(request, response):
@@ -49,8 +49,9 @@ def extract_data_for_subscription(request, response):
     except KeyError:
         return None, response
     concerned_users = CompanyAndUserRelation.get_relations(company_id=company_id)
-    if company_id:
-        send_subscribe_notification.delay(company_id)
+    users_emails = [relation.user_id.email for relation in concerned_users]
+    if users_emails:
+        send_subscribe_notification.delay(users_emails)
     ids = [add_prefix_to_id(relation.relation_id, related=True) for relation in concerned_users]
     data['concerned_users'] = ids
     return data, response
@@ -63,7 +64,8 @@ def extract_data_for_update(request, response):
     concerned_users = Subscription.get_subscriptions(company_id=company_id)
     users_with_newsletter = concerned_users.exclude(get_email_newsletter=False)
     if users_with_newsletter:
-        send_article_notification.delay(company_id, users_with_newsletter)
+        users_with_newsletter_emails = [subscription.investor.user_id.email for subscription in users_with_newsletter]
+        send_article_notification.delay(company_id, users_with_newsletter_emails)
     ids = [add_prefix_to_id(subscription.investor.relation_id, related=True) for
            subscription in concerned_users.exclude(get_email_newsletter=True)]
     data['concerned_users'] = ids

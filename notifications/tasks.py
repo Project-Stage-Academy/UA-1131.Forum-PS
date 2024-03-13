@@ -12,18 +12,18 @@ def send_password_reset_notification(email, reset_link):
     EmailAuthenticationManager.send_password_reset_notification(email, reset_link)
 
 @shared_task
-def send_article_notification(company_id, users):
-    EmailNotificationManager.send_article_notification(company_id, users)
+def send_article_notification(company_id, emails_to_send):
+    EmailNotificationManager.send_article_notification(company_id, emails_to_send)
 
 
 @shared_task
-def send_subscribe_notification(company_id):
-    EmailNotificationManager.send_subscribe_notification(company_id)
+def send_subscribe_notification(emails_to_send):
+    EmailNotificationManager.send_subscribe_notification(emails_to_send)
 
 
 @shared_task
-def send_message_notification(user):
-    EmailNotificationManager.send_message_notification(user)
+def send_message_notification(user_email):
+    EmailNotificationManager.send_message_notification(user_email)
 
 @shared_task
 def create_notification(data):
