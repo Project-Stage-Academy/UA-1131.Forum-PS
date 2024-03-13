@@ -23,14 +23,14 @@ class CompanyTestAuthenticatedUser(APITestCase):
         self.assertEqual(response.status_code, 201)
 
     def test_get_company(self):
-        post_response = self.client.post(self.company_url, {'brand': 'test_brand', 'is_registered': True}, format='json')
+        post_response = self.client.post(self.company_url, {'brand': 'test_brand', 'is_startup': True}, format='json')
         company_id = post_response.data.get('company_id')
         url = f'{self.get_company_url}{company_id}'
         response = self.client.get(url, follow=True)
         self.assertEqual(response.status_code, 200)
 
     def test_update_company(self):
-        response = self.client.post(self.company_url, {'brand': 'test_brand', 'is_registered': True},
+        response = self.client.post(self.company_url, {'brand': 'test_brand', 'is_startup': True},
                                format='json')
         company_id = response.data.get('company_id')
         company = Company.get_company(company_id=company_id)
@@ -41,7 +41,7 @@ class CompanyTestAuthenticatedUser(APITestCase):
         self.assertEqual(response.data['brand'], 'updated_brand')
 
     def test_delete_company(self):
-        response = self.client.post(self.company_url, {'brand': 'test_brand', 'is_registered': True},
+        response = self.client.post(self.company_url, {'brand': 'test_brand', 'is_startup': True},
                                format='json')
         company_id = response.data.get('company_id')
         company = Company.get_company(company_id=company_id)
@@ -50,7 +50,7 @@ class CompanyTestAuthenticatedUser(APITestCase):
         self.assertEqual(response.status_code, 204)
 
     def test_valid_edrpou(self):
-        valid_post_body = {'brand': 'test_brand', 'is_registered': True, 'edrpou': 98756775}
+        valid_post_body = {'brand': 'test_brand', 'is_startup': True, 'edrpou': 98756775}
         response = self.client.post(self.company_url, valid_post_body, format='json')
         self.assertEqual(response.status_code, 201)
 
@@ -60,17 +60,17 @@ class CompanyTestAuthenticatedUser(APITestCase):
         self.assertEqual(response.status_code, 201)
 
     def test_negative_incorrect_edrpou(self):
-        invalid_post_body = {'brand': 'test_brand', 'is_registered': True, 'edrpou': 987567}
+        invalid_post_body = {'brand': 'test_brand', 'is_startup': True, 'edrpou': 987567}
         response = self.client.post(self.company_url, invalid_post_body, format='json')
         self.assertEqual(response.status_code, 400)
 
     def test_negative_invalid_phone(self):
-        invalid_post_body = {'brand': 'test_brand', 'is_registered': True, 'contact_phone': 'jh0937777777'}
+        invalid_post_body = {'brand': 'test_brand', 'is_startup': True, 'contact_phone': 'jh0937777777'}
         response = self.client.post(self.company_url, invalid_post_body, format='json')
         self.assertEqual(response.status_code, 400)
 
     def test_update_company_with_invalid_data(self):
-        response = self.client.post(self.company_url, {'brand': 'test_brand', 'is_registered': True},
+        response = self.client.post(self.company_url, {'brand': 'test_brand', 'is_startup': True},
                                format='json')
         company_id = response.data.get('company_id')
         company = Company.get_company(company_id=company_id)
@@ -84,7 +84,7 @@ class CompanyTestAuthenticatedUser(APITestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_create_company_with_invalid_phone_number(self):
-        invalid_post_body = {'brand': 'test_brand', 'is_registered': True, 'contact_phone': 'invalid_phone'}
+        invalid_post_body = {'brand': 'test_brand', 'is_startup': True, 'contact_phone': 'invalid_phone'}
         response = self.client.post(self.company_url, invalid_post_body, format='json')
         self.assertEqual(response.status_code, 400)
 
@@ -93,7 +93,7 @@ class CompanyTestAuthenticatedUser(APITestCase):
 class CompanyTestUnauthenticatedUser(APITestCase):
 
     def test_negative_unauthenticated_user(self):
-        response = self.client.post(f'{FRONTEND_URL}/companies/', {'brand': 'test_brand', 'is_registered': True},
+        response = self.client.post(f'{FRONTEND_URL}/companies/', {'brand': 'test_brand', 'is_startup': True},
                                     format='json')
         self.assertEqual(response.status_code, 401)
         
