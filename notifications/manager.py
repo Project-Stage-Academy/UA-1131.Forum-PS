@@ -51,6 +51,7 @@ class Notification(BaseModel):
 class UpdateNotification(Notification):
     """Model for update notification"""
     company_id: int
+    event_id: str
     type: str = Field(default=UPDATE, frozen=True)
 
 
