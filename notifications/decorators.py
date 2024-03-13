@@ -42,7 +42,7 @@ def extract_data_for_subscription(request, response):
         return None, response
     concerned_users = CompanyAndUserRelation.get_relations(company_id=company_id)
     #
-    ids = [add_prefix_to_id(relation.user_id.user_id, related=True) for relation in concerned_users]
+    ids = [add_prefix_to_id(relation.relation_id, related=True) for relation in concerned_users]
     data['concerned_users'] = ids
     return data, response
 
