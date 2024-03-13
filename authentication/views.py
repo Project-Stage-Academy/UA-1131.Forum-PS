@@ -22,7 +22,7 @@ from authentication.serializers import (PasswordRecoverySerializer,
 from forum import settings
 from forum.errors import Error
 from forum.managers import TokenManager
-from notifications.decorators import add_notifications_for_user
+from notifications.decorators import extract_notifications_for_user
 from notifications.tasks import send_password_update_notification, send_password_reset_notification
 
 
@@ -55,7 +55,7 @@ class VerifyEmail(APIView):
 class LoginView(APIView):
     authentication_classes = ()
 
-    @add_notifications_for_user
+    @extract_notifications_for_user(related=False)
     def post(self, request):
         email = request.data.get('email')
         password = request.data.get('password')
@@ -70,8 +70,7 @@ class LoginView(APIView):
         return Response({
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
-                'user_id': user.user_id,
-                'email': email
+                'user_id': user.user_id
             })
     
 class LogoutView(APIView):
@@ -92,14 +91,15 @@ class RelateUserToCompany(APIView):
     """Binding user to company and insert binded company's id into token."""
     permission_classes = (IsAuthenticated,)
 
-    @add_notifications_for_user
-    def post(self, request):
+    @extract_notifications_for_user(related=True)
+    def post(self, request, pk=None):
         user_id = request.user.user_id
-        company_id = request.data['company_id']
+        company_id = pk
         try:
             relation = CompanyAndUserRelation.get_relation(user_id=user_id, company_id=company_id)
         except CompanyAndUserRelation.DoesNotExist: 
             return Response({'error': 'You have no access to this company.'}, status=status.HTTP_403_FORBIDDEN)
+        request.data['company_id'] = company_id
         access_token = CustomUser.generate_company_related_token(request)
         return Response({'access': f"Bearer {access_token}", "relation_id": relation.relation_id})
 

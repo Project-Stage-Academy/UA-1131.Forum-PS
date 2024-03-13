@@ -11,9 +11,9 @@ from forum import settings
 from forum.settings import DB, EMAIL_HOST_USER
 from forum.managers import MongoManager
 
-from authentication.models import Company, CustomUser, CompanyAndUserRelation
+
 from companies.models import Subscription
-from chats.models import Message
+
 
 
 UPDATE = 'update'
@@ -43,7 +43,6 @@ class Viewed(BaseModel):
     viewed_at: str = Field(
         default_factory=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
-
 class Notification(BaseModel):
     """Parent class for notification classes."""
     created_at: str = Field(
@@ -52,12 +51,10 @@ class Notification(BaseModel):
     viewed_by: List[Dict[str, Viewed]] = Field(default=[])
     event_id: int
 
-
 class UpdateNotification(Notification):
     """Model for update notification"""
     company_id:int
     type: str = Field(default=UPDATE, frozen=True)
-
 
 class MessageNotification(Notification):
     """Model for message notification"""
