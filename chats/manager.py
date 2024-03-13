@@ -74,7 +74,7 @@ class MessagesManager(MongoManager):
     @classmethod
     def company_inbox_messages(cls, company_id):
         cursor = cls.db.find({"$and":
-                                  [{"receiver_id": company_id},
+                                  [{"receiver_company_id": company_id},
                                    {"visible_for_receiver": True}]},
                              {"visible_for_receiver": 0, "visible_for_sender": 0})
         return cls.to_list(cursor)
@@ -82,7 +82,7 @@ class MessagesManager(MongoManager):
     @classmethod
     def company_outbox_messages(cls, company_id):
         cursor = cls.db.find({"$and":
-                                  [{"sender_id": company_id},
+                                  [{"sender_company_id": company_id},
                                    {"visible_for_sender": True}]},
                              {"visible_for_receiver": 0, "visible_for_sender": 0})
         return cls.to_list(cursor)
