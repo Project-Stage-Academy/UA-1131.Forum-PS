@@ -42,7 +42,7 @@ class LiveChatManager(MongoManager):
                 {"initiator_id": participant.user_id, "receiver_id": initiator.user_id}
             ]
         }
-        conversation = cls.get_document(query)
+        conversation = cls.db.find_one(query, {"messages": 0})
         if conversation:
             return cls.id_to_string(conversation)
         return None
