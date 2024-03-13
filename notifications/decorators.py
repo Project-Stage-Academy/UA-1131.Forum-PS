@@ -104,7 +104,9 @@ def create_notification_from_view(type=None):
        
        Required parameters:
            - type thet indicates which type of event to handle;
-             types is subscription, message, update
+             types is subscription, message, update;
+        Response:
+            - removes user or event id if any in response (for disscussion)
     
     """
     def decorator(func):
