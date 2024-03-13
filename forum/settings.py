@@ -64,7 +64,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=100),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     "SIGNING_KEY": os.environ.get('SECRET_KEY'),
     "USER_ID_FIELD": 'user_id',
