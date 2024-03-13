@@ -33,11 +33,11 @@ class CompanyRetrieveView(APIView):
 class CompaniesRetrieveView(APIView):
     permission_classes = (IsAuthenticated,)
     def get(self, request):
-        request.query_params.get('company_type')
-        if not type:
+        company_type = request.query_params.get('company_type')
+        if not company_type:
             companies = Company.get_all_companies_info()
         else:
-            companies = Company.get_all_companies_info(type)
+            companies = Company.get_all_companies_info(company_type)
 
         return Response(companies, status=status.HTTP_200_OK)
     
