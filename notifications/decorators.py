@@ -36,7 +36,7 @@ def extract_data_for_subscription(request, response):
     data = {}
     data['type'] = SUBSCRIPTION
     try:
-        data['event_id'] = add_prefix_to_id(response.data.pop('subscription_id'), related=True)
+        data['event_id'] = response.data.pop('subscription_id')
         company_id = response.data.pop('company_id')
     except KeyError:
         return None, response
