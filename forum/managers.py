@@ -1,4 +1,5 @@
 import pymongo
+from pymongo.errors import PyMongoError
 from typing import Dict
 from pydantic import BaseModel, ValidationError
 from django.core.mail import EmailMessage
@@ -108,11 +109,18 @@ class MongoManager:
         return cls.to_list(document)
     
     @classmethod
-    def get_and_sort_documents(cls, query, sort_options=[], **kwargs):
+    def get_and_sort_documents(cls, query, sort_options=None, **kwargs):
         """Retrieves the multiple documents from the database and sorts it.
-           Args for sorting: """
-        document = cls.db.find(query, **kwargs).sort(*sort_options)
-        return cls.to_list(document)
+           Args for sorting: pass as a list with this args:
+               - key_or_list: a single key or a list of (key, direction) 
+                 pairs specifying the keys to sort on
+               - direction (optional): only used if key_or_list is a single key, 
+                 if not given ASCENDING is assumed
+        """
+        if sort_options is None:
+            sort_options = []
+        documents = cls.db.find(query, **kwargs).sort(*sort_options)
+        return cls.to_list(documents)
     
     @classmethod
     def create_document(cls, data, key) -> str | None:
@@ -144,8 +152,11 @@ class MongoManager:
     
     @classmethod
     def delete_documents(cls, query, **kwargs):
-        res = cls.db.delete_many(query, **kwargs)
-        return res.deleted_count
+        try:
+          res = cls.db.delete_many(query, **kwargs)
+          return res.deleted_count
+        except PyMongoError:
+            return None
     
     
 

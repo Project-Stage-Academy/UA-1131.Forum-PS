@@ -16,7 +16,7 @@ def get_user_id(request, response, related):
         user_id = response.data.pop(id_key)
     except KeyError:
         try:
-            user_id = request.user.__getattribute__(id_key)
+            user_id = getattr(request.user, id_key)
         except AttributeError:
             return None, response
     return user_id, response
@@ -29,8 +29,10 @@ def add_prefix_to_id(id, related=False):
 def extract_data_for_message(request, response):
     data = {}
     data['type'] = MESSAGE
-    data['event_id'] = response.data['inserted_id']
+    event_id = response.dataget('inserted_id')
     relation_id = request.data.get('receiver_id')
+    if not event_id or relation_id:
+        return None, response
     data['conсerned_users'] = [add_prefix_to_id(relation_id,
                                                 related=True)]
     concerned_user = CompanyAndUserRelation.get_relation(relation_id=relation_id).user_id
