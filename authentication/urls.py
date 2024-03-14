@@ -15,3 +15,4 @@ urlpatterns = [
     path('password-reset/<str:jwt_token>/', views.PasswordResetView.as_view(), name='password_reset'),
     path('password_recovery/', views.PasswordRecoveryAPIView.as_view(), name='password_recovery'),
 ]
+
