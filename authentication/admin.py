@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from authentication.models import CustomUser, UserLoginActivity, CompanyAndUserRelation, Company
+from .models import (Company, CompanyAndUserRelation, CustomUser,
+                     UserLoginActivity)
 
 
 class CustomAdmin(UserAdmin):
@@ -48,4 +49,3 @@ class UserLoginActivityAdmin(admin.ModelAdmin):
 
 admin.site.register(UserLoginActivity, UserLoginActivityAdmin)
 admin.site.register(Company)
-

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework.exceptions import APIException
-from reversion.models import Version
 from reversion.errors import RevertError
+from reversion.models import Version
 
 
 class RevisionSerializer(serializers.ModelSerializer):

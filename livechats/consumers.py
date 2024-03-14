@@ -1,21 +1,20 @@
 import json
-import math
 import os
-from bson import ObjectId
-from django.utils import timezone
+
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.utils import timezone
 from redis.asyncio import from_url
-from livechats.schemas import Message
-from livechats.utils import mongo_conversations
+
+from livechats.managers import LiveChatManager as lm
+from livechats.managers import Message
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def get_conversation(self):
-        conversations = mongo_conversations()
-        conv = conversations.find_one({"_id": ObjectId(self.room_name)})
+        conv = lm.get_conversation_by_id(self.room_name)
         initiator = conv.get("initiator_id")
         receiver = conv.get("receiver_id")
         return conv, initiator, receiver
@@ -23,17 +22,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def update_conversation(self, messages):
         """Function for updating live-chat messages data"""
-        conversations = mongo_conversations()
-        if len(messages) > 50:
-            for i in range(math.ceil(messages / 50)):
-                if len(messages) > 50:
-                    conversations.update_one({"_id": ObjectId(self.room_name)}, {"$push": {"messages": messages[0:50]}})
-                    messages = messages[50::]
-                else:
-                    conversations.update_one({"_id": ObjectId(self.room_name)}, {"$push": {"messages": messages}})
-                    break
-        else:
-            conversations.update_one({"_id": ObjectId(self.room_name)}, {"$push": {"messages": messages}})
+        lm.upgrade_messages(self.room_name, messages)
 
     async def create_message_data(self, message):
         """Function for creating messages available for caching and sending"""
