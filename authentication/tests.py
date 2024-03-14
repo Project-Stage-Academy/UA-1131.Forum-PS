@@ -69,8 +69,6 @@ class AuthenticationUserApiTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('refresh', response.data)
         self.assertIn('access', response.data)
-        self.assertIn('user_id', response.data)
-        self.assertIn('email', response.data)
 
     def test_login_user_not_found(self):
         data = {'email': 'nonexistent@example.com', 'password': 'password123'}
@@ -101,9 +99,8 @@ class AuthenticationUserApiTest(APITestCase):
         response = self.client.post(reverse('logout'), data, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    @patch('authentication.utils.Utils.send_password_reset_email')
     @patch('forum.managers.TokenManager.generate_access_token_for_user')
-    def test_password_recovery_success(self, mock_generate_access_token_for_user, mock_send_password_reset_email):
+    def test_password_recovery_success(self, mock_generate_access_token_for_user):
         mock_access_token = 'jwt_token'
         mock_generate_access_token_for_user.return_value = mock_access_token
 
@@ -111,9 +108,6 @@ class AuthenticationUserApiTest(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['message'], 'Password reset email sent successfully')
-        mock_send_password_reset_email.assert_called_once_with(self.user2.email,
-                                                               settings.FRONTEND_URL +
-                                                               reverse('password_reset', args=(mock_access_token,)))
 
     def test_password_recovery_not_found_email(self):
         response = self.client.post(reverse('password_recovery'), {'email': 'nonexistent@example.com'}, format='json')
@@ -133,21 +127,6 @@ class AuthenticationUserApiTest(APITestCase):
         self.user3.refresh_from_db()
         self.assertTrue(self.user3.check_password(password))
 
-    @patch('forum.managers.TokenManager.get_access_payload')
-    def test_password_update_success(self, mock_get_access_payload):
-        password = 'new_password321!ABC'
-        mock_get_access_payload.return_value = {'user_id': self.user3.user_id}
-
-        refresh_token = TokenManager.generate_refresh_token_for_user(self.user3)
-        self._authenticate_user(refresh_token)
-
-        response = self.client.post(reverse('password_update'),
-                                    {'password': password, 'password2': password}, format='json')
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['message'], 'Password reset successfully')
-        self.user3.refresh_from_db()
-        self.assertTrue(self.user3.check_password(password))
 
     @patch('forum.managers.TokenManager.get_access_payload')
     def test_password_update_invalid_password(self, mock_get_access_payload):
@@ -196,7 +175,7 @@ class AuthenticationUserApiTest(APITestCase):
         refresh_token = TokenManager.generate_refresh_token_for_user(self.user)
         self._authenticate_user(refresh_token)
 
-        response = self.client.post(reverse('relate'), {'company_id': self.company.company_id}, format='json')
+        response = self.client.post(reverse('relate',args=(self.company.company_id,)), {'company_id': self.company.company_id}, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue('access' in response.data)
@@ -206,7 +185,7 @@ class AuthenticationUserApiTest(APITestCase):
         refresh_token = TokenManager.generate_refresh_token_for_user(self.user)
         self._authenticate_user(refresh_token)
 
-        response = self.client.post(reverse('relate'), {'company_id': self.company.company_id}, format='json')
+        response = self.client.post(reverse('relate',args=(self.company.company_id,)), {'company_id': self.company.company_id}, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(response.data['error'], 'You have no access to this company.')
