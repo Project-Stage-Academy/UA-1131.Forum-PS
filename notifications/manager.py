@@ -48,8 +48,8 @@ class Notification(BaseModel):
     """Parent class for notification classes."""
     created_at: str = Field(
         default_factory=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    concerned_users: List = Field(default=[])
-    viewed_by: List[Dict[str, Viewed]] = Field(default=[])
+    concerned_users: list[str | int]
+    viewed_by: list[dict[str, Viewed]] = Field(default=[])
     event_id: int
 
 
