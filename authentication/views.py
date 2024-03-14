@@ -178,7 +178,7 @@ class RelateUserToCompany(APIView):
 
         user_token = request.auth.token
         access_token = TokenManager.generate_company_related_token(company_id=company_id, token=user_token)
-        return Response({'access': f"Bearer {access_token}"})
+        return Response({'access': f"Bearer {access_token}", 'relation_id': relation.relation_id})
 
 
 class UserUpdateView(generics.RetrieveUpdateAPIView):
