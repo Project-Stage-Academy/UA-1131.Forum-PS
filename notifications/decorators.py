@@ -29,12 +29,12 @@ def add_prefix_to_id(id, related=False):
 def extract_data_for_message(request, response):
     data = {}
     data['type'] = MESSAGE
-    event_id = response.data.get('inserted_id')
-    relation_id = response.data.get('receiver_id')
+    event_id = response.data.get('_id')
+    relation_id = request.data.get('receiver_id')
     if not event_id or not relation_id:
         return None, response
     data['event_id'] = event_id
-    data['conсerned_users'] = [add_prefix_to_id(relation_id,
+    data['concerned_users'] = [add_prefix_to_id(relation_id,
                                                 related=True)]
     concerned_user_email = CompanyAndUserRelation.get_relation(relation_id=relation_id).user_id.email
     if concerned_user_email:
@@ -139,7 +139,7 @@ def create_notification_from_view(type=None):
                 return response
             if not type:
                 return response
-            request = args[0]
+            request = args[1]
             extraction_strategy = STRATEGIES[type]
             nf_data, response = extraction_strategy(request, response)
             if not nf_data:
