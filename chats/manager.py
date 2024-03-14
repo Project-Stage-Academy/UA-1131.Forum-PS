@@ -83,8 +83,8 @@ class MessagesManager(MongoManager):
 
     @classmethod
     def create_message(cls, message):
-        cls.db.insert_one(message.model_dump())
-        return message.dict()
+        inserted_id = cls.db.insert_one(message.model_dump()).inserted_id
+        return {**message.dict(), 'inserted_id': str(inserted_id)}
 
     @classmethod
     def company_inbox_messages(cls, company_id):
