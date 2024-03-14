@@ -147,11 +147,6 @@ class LoginView(APIView):
         })
 
 
-class LogoutView(APIView):
-    authentication_classes = (UserAuthentication,)
-    permission_classes = (IsAuthenticated,)
-
-
 class RelateUserToCompany(APIView):
     """
         A view for binding a user to a company and inserting the linked company's id into the token.
@@ -333,7 +328,7 @@ class PasswordResetView(APIView):
             user.password = make_password(new_password)
             user.save()
 
-            send_password_update_notification.delay(user)
+            send_password_update_notification(user)
             return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
 
         else:
