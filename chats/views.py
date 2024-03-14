@@ -1,15 +1,16 @@
 from django.utils import timezone
+from pydantic import ValidationError
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from pydantic import ValidationError
 
 from authentication.models import Company, CompanyAndUserRelation
 from authentication.permissions import IsAuthenticated
 from forum.errors import Error
-from .manager import MessagesManager as mm, MessageNotFound
-from .manager import Message
+
+from .manager import Message, MessageNotFound
+from .manager import MessagesManager as mm
 
 
 class MessageDetailView(APIView):

@@ -7,8 +7,8 @@ from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.template.loader import render_to_string
 from pydantic import BaseModel, Field, ValidationError
 
+from authentication.models import Company, CustomUser
 from companies.models import Subscription
-from authentication.models import CustomUser, Company
 from forum.managers import MongoManager
 from forum.settings import DB, EMAIL_HOST_USER
 

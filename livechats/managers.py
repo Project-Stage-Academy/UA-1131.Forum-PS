@@ -1,11 +1,12 @@
 import math
 from datetime import datetime
-from bson import ObjectId
-from pydantic import BaseModel
 from typing import Optional
 
-from forum.settings import DB
+from bson import ObjectId
+from pydantic import BaseModel
+
 from forum.managers import MongoManager
+from forum.settings import DB
 
 
 class Message(BaseModel):

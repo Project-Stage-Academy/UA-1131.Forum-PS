@@ -10,13 +10,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 import os
-import pymongo
 from datetime import timedelta
+from pathlib import Path
 
 import pymongo
 from dotenv import load_dotenv
-from pathlib import Path
-import pymongo
 
 load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -51,12 +49,13 @@ INSTALLED_APPS = [
     'authentication',
     'companies',
     'chats',
-    'livechats',
+        'livechats',
 
     'corsheaders',
     'channels',
     'django_filters',
     'notifications',
+    'search',
 
 ]
 

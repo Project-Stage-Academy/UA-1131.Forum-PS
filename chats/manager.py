@@ -1,7 +1,8 @@
 from bson import ObjectId
 from pydantic import BaseModel, ValidationError
-from forum.settings import DB
+
 from forum.managers import MongoManager
+from forum.settings import DB
 
 
 class MessageNotFound(Exception):

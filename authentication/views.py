@@ -5,11 +5,12 @@ from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from rest_framework import status, generics
-from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
-from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
+
 from authentication.authentications import UserAuthentication
 from authentication.models import CompanyAndUserRelation, CustomUser
 from authentication.permissions import (CustomUserUpdatePermission,
@@ -18,13 +19,12 @@ from authentication.serializers import (PasswordRecoverySerializer,
                                         UserPasswordUpdateSerializer,
                                         UserRegistrationSerializer,
                                         UserUpdateSerializer)
-
 from forum import settings
 from forum.errors import Error
 from forum.managers import TokenManager
 from notifications.decorators import extract_notifications_for_user
-from notifications.tasks import send_password_update_notification, send_password_reset_notification
-
+from notifications.tasks import (send_password_reset_notification,
+                                 send_password_update_notification)
 
 
 class UserRegistrationView(generics.CreateAPIView):
@@ -68,11 +68,12 @@ class LoginView(APIView):
             return Response({'error': 'Wrong password'}, status=status.HTTP_401_UNAUTHORIZED)
         refresh = RefreshToken.for_user(user)
         return Response({
-                'refresh': str(refresh),
-                'access': 'Bearer ' + str(refresh.access_token),
-                'user_id': user.user_id
-            })
-    
+            'refresh': str(refresh),
+            'access': 'Bearer ' + str(refresh.access_token),
+            'user_id': user.user_id
+        })
+
+
 class LogoutView(APIView):
     authentication_classes = (UserAuthentication,)
     permission_classes = (IsAuthenticated,)
@@ -97,7 +98,7 @@ class RelateUserToCompany(APIView):
         company_id = pk
         try:
             relation = CompanyAndUserRelation.get_relation(user_id=user_id, company_id=company_id)
-        except CompanyAndUserRelation.DoesNotExist: 
+        except CompanyAndUserRelation.DoesNotExist:
             return Response({'error': 'You have no access to this company.'}, status=status.HTTP_403_FORBIDDEN)
         request.data['company_id'] = company_id
         access_token = CustomUser.generate_company_related_token(request)
@@ -111,7 +112,8 @@ class UserUpdateView(generics.RetrieveUpdateAPIView):
     permission_classes = (IsAuthenticated, CustomUserUpdatePermission)
 
 
-class UserPasswordUpdateView(generics.UpdateAPIView): #doesn't this view double the password reset and recovery functions?
+class UserPasswordUpdateView(
+    generics.UpdateAPIView):  # doesn't this view double the password reset and recovery functions?
     queryset = CustomUser.objects.all()
     serializer_class = UserPasswordUpdateSerializer
     authentication_classes = (UserAuthentication,)
@@ -176,7 +178,6 @@ class PasswordRecoveryAPIView(APIView):
         return Response({'message': 'Password reset email sent successfully'}, status=status.HTTP_200_OK)
 
 
-
 class PasswordResetView(APIView):
     """
         A view for handling password reset requests.
@@ -224,4 +225,3 @@ class PasswordResetView(APIView):
 
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-

@@ -1,10 +1,14 @@
+from typing import Any, Dict
+
+from bson import ObjectId
 from pydantic import BaseModel
 from pymongo import MongoClient
-from typing import Dict, Any
-from bson import ObjectId
+
 from forum.managers import MongoManager
 from forum.settings import DB
+
 from .schemas import Article, CompanyArticles
+
 
 class NoCompanyProvided(Exception):
     pass

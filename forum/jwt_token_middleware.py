@@ -1,11 +1,13 @@
 import logging
+
 from channels.auth import AuthMiddlewareStack
-from django.conf import settings
 from channels.db import database_sync_to_async
+from django.conf import settings
 from django.db import close_old_connections
+from jwt import decode as jwt_decode
 from rest_framework import status
 from rest_framework.response import Response
-from jwt import decode as jwt_decode
+
 from authentication.models import CustomUser
 
 

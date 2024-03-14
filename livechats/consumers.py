@@ -1,11 +1,13 @@
 import json
 import os
-from django.utils import timezone
+
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.utils import timezone
 from redis.asyncio import from_url
 
-from livechats.managers import LiveChatManager as lm, Message
+from livechats.managers import LiveChatManager as lm
+from livechats.managers import Message
 
 
 class ChatConsumer(AsyncWebsocketConsumer):

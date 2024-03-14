@@ -1,7 +1,9 @@
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import status
+
 from forum.errors import Error as er
+
 from .manager import AlreadyExist
 from .manager import NotificationManager as nm
 from .manager import NotificationNotFound

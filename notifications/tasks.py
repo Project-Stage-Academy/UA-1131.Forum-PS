@@ -1,5 +1,7 @@
 from celery import shared_task
-from .manager import EmailNotificationManager, EmailAuthenticationManager, NotificationManager as nm
+
+from .manager import EmailAuthenticationManager, EmailNotificationManager
+from .manager import NotificationManager as nm
 
 
 @shared_task

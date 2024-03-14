@@ -1,6 +1,7 @@
-from rest_framework.test import APITestCase, APIClient
 from rest_framework import reverse
-from authentication.models import CustomUser, CompanyAndUserRelation, Company
+from rest_framework.test import APIClient, APITestCase
+
+from authentication.models import Company, CompanyAndUserRelation, CustomUser
 from forum.managers import TokenManager
 from forum.settings import FRONTEND_URL
 
@@ -9,17 +10,16 @@ class CompanyTestAuthenticatedUser(APITestCase):
 
     def setUp(self):
         self.company_url = f'{FRONTEND_URL}/companies/'
-        self.get_company_url =  f'{self.company_url}get_company/'
-        self.user = CustomUser.objects.create_user('test@mail.com','Test_password123456')
+        self.get_company_url = f'{self.company_url}get_company/'
+        self.user = CustomUser.objects.create_user('test@mail.com', 'Test_password123456')
         self.client = APIClient()
         refresh_token = TokenManager.generate_refresh_token_for_user(self.user)
         jwt_token = f'Bearer {refresh_token.access_token}'
-        self.client.credentials(HTTP_AUTHORIZATION=jwt_token)        
-                
-    
+        self.client.credentials(HTTP_AUTHORIZATION=jwt_token)
+
     def test_create_company(self):
         response = self.client.post(self.company_url, {'brand': 'test_brand', 'is_startup': True},
-                               format='json')
+                                    format='json')
         self.assertEqual(response.status_code, 201)
 
     def test_get_company(self):
@@ -31,18 +31,18 @@ class CompanyTestAuthenticatedUser(APITestCase):
 
     def test_update_company(self):
         response = self.client.post(self.company_url, {'brand': 'test_brand', 'is_startup': True},
-                               format='json')
+                                    format='json')
         company_id = response.data.get('company_id')
         company = Company.get_company(company_id=company_id)
-        CompanyAndUserRelation.objects.create(company_id=company, user_id=self.user)        
+        CompanyAndUserRelation.objects.create(company_id=company, user_id=self.user)
         response = self.client.patch(f'{self.company_url}{company_id}/', {'brand': 'updated_brand'},
-                                format='json')
+                                     format='json')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['brand'], 'updated_brand')
 
     def test_delete_company(self):
         response = self.client.post(self.company_url, {'brand': 'test_brand', 'is_startup': True},
-                               format='json')
+                                    format='json')
         company_id = response.data.get('company_id')
         company = Company.get_company(company_id=company_id)
         CompanyAndUserRelation.objects.create(company_id=company, user_id=self.user)
@@ -71,12 +71,12 @@ class CompanyTestAuthenticatedUser(APITestCase):
 
     def test_update_company_with_invalid_data(self):
         response = self.client.post(self.company_url, {'brand': 'test_brand', 'is_startup': True},
-                               format='json')
+                                    format='json')
         company_id = response.data.get('company_id')
         company = Company.get_company(company_id=company_id)
-        CompanyAndUserRelation.objects.create(company_id=company, user_id=self.user)        
+        CompanyAndUserRelation.objects.create(company_id=company, user_id=self.user)
         response = self.client.patch(f'{self.company_url}{company_id}/', {'edrpou': 'invalid_data'},
-                                format='json')
+                                     format='json')
         self.assertEqual(response.status_code, 400)
 
     def test_get_nonexistent_company(self):
@@ -89,12 +89,9 @@ class CompanyTestAuthenticatedUser(APITestCase):
         self.assertEqual(response.status_code, 400)
 
 
-
 class CompanyTestUnauthenticatedUser(APITestCase):
 
     def test_negative_unauthenticated_user(self):
         response = self.client.post(f'{FRONTEND_URL}/companies/', {'brand': 'test_brand', 'is_startup': True},
                                     format='json')
         self.assertEqual(response.status_code, 401)
-        
-
