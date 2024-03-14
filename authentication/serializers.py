@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 from django.contrib.auth.hashers import check_password
@@ -6,7 +7,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.tokens import RefreshToken
-import logging
+
 from authentication.models import CustomUser
 from authentication.utils import Utils
 from validation.serializers import CustomValidationSerializer

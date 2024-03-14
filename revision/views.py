@@ -1,12 +1,11 @@
-from reversion.models import Version
-from reversion.views import RevisionMixin
-from reversion.errors import RegistrationError
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.exceptions import APIException
 from rest_framework import status
-from .serializers import RevisionSerializer
+from rest_framework.decorators import action
+from rest_framework.exceptions import APIException
+from rest_framework.response import Response
+from reversion.errors import RegistrationError
+from reversion.models import Version
 
+from .serializers import RevisionSerializer
 
 
 class CustomRevisionMixin(RevisionMixin):

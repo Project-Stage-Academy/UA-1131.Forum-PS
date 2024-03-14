@@ -46,4 +46,3 @@ class TestCompanyFilter(APITestCase):
         # Check if the response contains only the company with the specified address
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['address'], "Dnipro")
-

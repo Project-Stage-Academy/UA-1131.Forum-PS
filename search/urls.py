@@ -1,8 +1,8 @@
 from django.urls import path
 
-from search.views import SearchCompanyView
+from .views import SearchCompanyView
 
-app_name = "search"
+APP_NAME = "search"
 
 urlpatterns = [
     path(

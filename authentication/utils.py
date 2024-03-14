@@ -31,7 +31,8 @@ class Utils:
     @staticmethod
     def send_password_update_email(user):
         from_email = settings.EMAIL_HOST_USER
-        email_body = f'Hello {user.first_name} {user.surname}. This is automatically generated email, your password was successfully changed '
+        email_body = (f'Hello {user.first_name} {user.surname}. This is automatically generated email,'
+                      f' your password was successfully changed ')
         data = {'to_email': user.email,
                 'from_email': from_email,
                 'email_body': email_body,
@@ -49,5 +50,5 @@ class Utils:
             email_message.attach_alternative(html_message, "text/html")
             email_message.send()
         except:
-            logger = logging.getLogger('email_sending') 
-            logger.error(f'Error during email sending to {email}.')   
+            logger = logging.getLogger('email_sending')
+            logger.error(f'Error during email sending to {email}.')

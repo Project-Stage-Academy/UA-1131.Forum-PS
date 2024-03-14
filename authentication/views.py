@@ -19,9 +19,9 @@ from authentication.serializers import (PasswordRecoverySerializer,
 from forum import settings
 from forum.errors import Error
 from forum.managers import TokenManager
-
-from .utils import Utils
-
+from notifications.decorators import extract_notifications_for_user
+from notifications.tasks import (send_password_reset_notification,
+                                 send_password_update_notification)
 
 class UserRegistrationView(APIView):
     """
@@ -122,6 +122,8 @@ class LoginView(APIView):
     authentication_classes = ()
     permission_classes = ()
 
+
+    @extract_notifications_for_user(related=False)
     def post(self, request):
         """Handle POST requests for user login"""
         email = request.data.get('email')
@@ -139,10 +141,14 @@ class LoginView(APIView):
         refresh = TokenManager.generate_refresh_token_for_user(user)
         return Response({
             'refresh': str(refresh),
-            'access': str(refresh.access_token),
-            'user_id': user.user_id,
-            'email': email
+            'access': 'Bearer ' + str(refresh.access_token),
+            'user_id': user.user_id
         })
+
+
+class LogoutView(APIView):
+    authentication_classes = (UserAuthentication,)
+    permission_classes = (IsAuthenticated,)
 
 
 class RelateUserToCompany(APIView):
@@ -163,10 +169,12 @@ class RelateUserToCompany(APIView):
     """
     permission_classes = (IsAuthenticated,)
 
-    def post(self, request):
+    @extract_notifications_for_user(related=True)
+    def post(self, request, pk=None):
         """Handle POST requests for binding a user"""
+
         user_id = request.user.user_id
-        company_id = request.data['company_id']
+        company_id = pk
         try:
             relation = CompanyAndUserRelation.get_relation(user_id=user_id, company_id=company_id)
         except CompanyAndUserRelation.DoesNotExist:
@@ -270,8 +278,9 @@ class PasswordRecoveryAPIView(APIView):
         access_token = TokenManager.generate_access_token_for_user(user)
         reset_link = f"{settings.FRONTEND_URL}/auth/password-reset/{access_token}/"
 
-        Utils.send_password_reset_email(email, reset_link)  # TO DO: REWRITE WITH DECORATORS
+        send_password_reset_notification.delay(email, reset_link)
         return Response({'message': 'Password reset email sent successfully'}, status=status.HTTP_200_OK)
+
 
 
 class PasswordResetView(APIView):
@@ -323,7 +332,8 @@ class PasswordResetView(APIView):
             new_password = serializer.validated_data.get("password")
             user.password = make_password(new_password)
             user.save()
-            Utils.send_password_update_email(user)  # TO DO: REWRITE WITH DECORATORS
+
+            send_password_update_notification.delay(user)
             return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
 
         else:
