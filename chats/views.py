@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from authentication.models import Company
 from authentication.permissions import IsAuthenticated
 from forum.errors import Error
+from notifications.decorators import create_notification_from_view, MESSAGE
 from .manager import MessagesManager as manager
 from .manager import Message
 
@@ -35,7 +36,8 @@ class MessageDetailView(APIView):
 
 class SendMessageView(APIView):
     permission_classes = [IsAuthenticated]
-
+    
+    @create_notification_from_view(type=MESSAGE)
     def post(self, request):
         data = request.data
         company_id = request.user.company.get("company_id")
