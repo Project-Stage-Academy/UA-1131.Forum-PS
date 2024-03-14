@@ -18,8 +18,8 @@ class Utils:
     def send_verification_email(domain, user, access_token):
         current_site = domain
         access_token = access_token
-        verification_link = reverse('email_verify')
-        absurl = f"http://{current_site}{verification_link}?token={str(access_token)}"
+        verification_link = reverse('email_verify', args=(access_token,))
+        absurl = f"http://{current_site}{verification_link}"
         from_email = settings.EMAIL_HOST_USER
         email_body = f'Hello {user.first_name} {user.surname} Use link below to verify your account\n {absurl}'
         data = {'to_email': user.email,

@@ -35,10 +35,18 @@ class Error:
 
     class USER_IS_NOT_VERIFIED(BaseError):
         msg = "User is not verified"
-        status = status.HTTP_401_UNAUTHORIZED
+        status = status.HTTP_400_BAD_REQUEST
+
+    class USER_ALREADY_VERIFIED(BaseError):
+        msg = "User is already verified"
+        status = status.HTTP_409_CONFLICT
 
     class NOT_AUTHENTICATED(BaseError):
         msg = "User is not authenticated"
+        status = status.HTTP_401_UNAUTHORIZED
+
+    class INVALID_CREDENTIALS:
+        msg = "Invalid credentials"
         status = status.HTTP_401_UNAUTHORIZED
 
     class NOT_INVESTOR(BaseError):

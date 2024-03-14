@@ -17,18 +17,28 @@ from .settings import EMAIL_HOST, EMAIL_HOST_USER
 class TokenManager:
 
     @classmethod
-    def generate_access_token_for_user(cls, user: CustomUser) -> str:
+    def generate_access_token_for_user(cls, user: CustomUser) -> AccessToken:
         """Generates token for user"""
 
         access_token = AccessToken.for_user(user)
-        return str(access_token)
+        return access_token
 
     @classmethod
-    def generate_refresh_token_for_user(cls, user: CustomUser) -> str:
+    def generate_refresh_token_for_user(cls, user: CustomUser) -> RefreshToken:
         """Generates token for user"""
 
         refresh_token = RefreshToken.for_user(user)
         return refresh_token
+
+    @classmethod
+    def generate_token_with_payload(cls, payload, token=None):
+        decoded_token = cls.__get_decoded_access_token(token)
+        decoded_token.payload = {**decoded_token.payload, **payload}
+        return str(decoded_token)
+
+    @classmethod
+    def generate_company_related_token(cls, company_id: int, token=None):
+        return cls.generate_token_with_payload({'company_id': company_id}, token)
 
     @classmethod
     def get_access_payload(cls, token: str) -> dict:

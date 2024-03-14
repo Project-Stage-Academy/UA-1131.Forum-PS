@@ -62,22 +62,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def get_user(cls, *args, **kwargs):
         return cls.objects.get(**kwargs)
 
-    @classmethod
-    def generate_token(cls, payload, token=None):
-        decoded_token = AccessToken(token)
-        decoded_token.payload = {**decoded_token.payload, **payload}
-        return str(decoded_token)
-
-    @classmethod
-    def generate_company_related_token(cls, request):
-        try:
-            raw_token: str = request.headers.get('Authorization')
-            access_token = raw_token.split(' ')[1]
-            company_id = request.data['company_id']
-            return cls.generate_token({'company_id': company_id}, token=access_token)
-        except TokenError as e:
-            raise e
-
     def get_company_type(self):
         if self.company is None:
             raise NotAuthenticated(detail=Error.NO_RELATED_TO_COMPANY.msg)
@@ -91,14 +75,13 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def get_email(self):
         return self.email
-
+    
     def get_full_name(self):
         return f"{self.first_name} {self.surname}"
 
     def get_short_name(self):
         return self.first_name
-
-
+    
 @register()
 class Company(models.Model):
     company_id = models.BigAutoField(primary_key=True)
@@ -189,10 +172,12 @@ class CompanyAndUserRelation(models.Model):
     @classmethod
     def get_relation(cls, *args, **kwargs):
         return cls.objects.get(**kwargs)
-    
+
     @classmethod
     def get_relations(cls, *args, **kwargs):
         return cls.objects.filter(**kwargs)
+
+
 
 class UserLoginActivity(models.Model):
     # Login Status
