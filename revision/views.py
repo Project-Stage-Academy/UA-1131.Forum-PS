@@ -4,6 +4,7 @@ from rest_framework.exceptions import APIException
 from rest_framework.response import Response
 from reversion.errors import RegistrationError
 from reversion.models import Version
+from reversion.views import RevisionMixin
 
 from .serializers import RevisionSerializer
 
