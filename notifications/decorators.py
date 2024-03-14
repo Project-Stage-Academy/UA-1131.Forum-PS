@@ -30,9 +30,10 @@ def extract_data_for_message(request, response):
     data = {}
     data['type'] = MESSAGE
     event_id = response.data.get('inserted_id')
-    relation_id = request.data.get('receiver_id')
-    if not event_id or relation_id:
+    relation_id = response.data.get('receiver_id')
+    if not event_id or not relation_id:
         return None, response
+    data['event_id'] = event_id
     data['conсerned_users'] = [add_prefix_to_id(relation_id,
                                                 related=True)]
     concerned_user_email = CompanyAndUserRelation.get_relation(relation_id=relation_id).user_id.email
