@@ -108,7 +108,7 @@ class PasswordRecoverySerializer(serializers.ModelSerializer, CustomValidationSe
         if password1 != password2:
             raise ValidationError(detail="Passwords are different")
         try:
-            self.validation_password(password1)
+            self.validate_password(password1)
         except ValidationError as e:
             raise ValidationError(detail=e.detail)
         return attrs
