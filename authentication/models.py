@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
-from django.contrib.auth.models import PermissionsMixin
+from django.contrib.auth.models import AbstractUser, PermissionsMixin
 from django.db import models
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework_simplejwt.exceptions import TokenError
@@ -167,6 +167,7 @@ class Company(models.Model):
             data[k] = self.get_attribute(k)
         return data
 
+
     def __str__(self):
         return self.brand
 
@@ -188,7 +189,10 @@ class CompanyAndUserRelation(models.Model):
     @classmethod
     def get_relation(cls, *args, **kwargs):
         return cls.objects.get(**kwargs)
-
+    
+    @classmethod
+    def get_relations(cls, *args, **kwargs):
+        return cls.objects.filter(**kwargs)
 
 class UserLoginActivity(models.Model):
     # Login Status

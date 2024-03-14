@@ -4,8 +4,8 @@ from authentication.models import Company, CompanyAndUserRelation, CustomUser
 
 
 class Subscription(models.Model):
-    subscription_id = models.BigAutoField(primary_key=True, unique=True)
-    investor = models.ForeignKey(CompanyAndUserRelation, on_delete=models.CASCADE, to_field='relation_id')
+    subscription_id = models.BigAutoField(primary_key=True)
+    investor = models.ForeignKey(CompanyAndUserRelation, on_delete=models.CASCADE)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     get_email_newsletter = models.BooleanField(default=False)
     subscribed_at = models.DateTimeField(auto_now_add=True)

@@ -21,12 +21,12 @@ class PositionPermission(BasePermission):
 
 
 class IsFounder(PositionPermission):
-    position = 'Founder'
+    position = 'F'
     error = Error.NOT_FOUNDER
 
 
 class IsRepresentative(PositionPermission):
-    position = 'Representative'
+    position = 'R'
     error = Error.NOT_REPRESENTATIVE
 
 

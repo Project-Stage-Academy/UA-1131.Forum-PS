@@ -44,14 +44,17 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     'rest_framework_simplejwt.token_blacklist',
     'rest_framework',
+    'rest_framework_swagger',
     'reversion',
     'authentication',
     'companies',
     'chats',
-    'livechats',
+        'livechats',
 
     'corsheaders',
     'channels',
+    'django_filters',
+    'notifications',
     'search',
 
 ]
@@ -63,7 +66,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=100),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     "SIGNING_KEY": os.environ.get('SECRET_KEY'),
     "USER_ID_FIELD": 'user_id',
@@ -141,7 +144,6 @@ TEMPLATES = [
     },
 ]
 
-
 WSGI_APPLICATION = 'forum.wsgi.application'
 ASGI_APPLICATION = 'forum.asgi.application'
 # Database
@@ -161,8 +163,6 @@ DATABASES = {
     },
 
 }
-CLIENT = pymongo.MongoClient(os.environ.get('MONGO_URL'), maxPoolSize=400)
-DB = CLIENT[os.environ.get('MONGO_DATABASE')]
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -205,7 +205,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 FRONTEND_URL = os.environ.get('FRONTEND_URL')
 
-
 AUTH_USER_MODEL = 'authentication.CustomUser'
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -217,11 +216,12 @@ EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+# for docker use "hosts": [('redis', 6379)], for local machine "hosts": [('localhost', 6379)]
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [('redis', 6379)],
+            "hosts": [('localhost', 6379)],
         },
     },
 }
