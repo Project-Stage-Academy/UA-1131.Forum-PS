@@ -16,12 +16,14 @@ from authentication.permissions import (CustomUserUpdatePermission,
 from authentication.serializers import (PasswordRecoverySerializer,
                                         UserRegistrationSerializer,
                                         UserUpdateSerializer)
+from authentication.utils import Utils
 from forum import settings
 from forum.errors import Error
 from forum.managers import TokenManager
 from notifications.decorators import extract_notifications_for_user
 from notifications.tasks import (send_password_reset_notification,
                                  send_password_update_notification)
+
 
 class UserRegistrationView(APIView):
     """
@@ -121,7 +123,6 @@ class LoginView(APIView):
     """
     authentication_classes = ()
     permission_classes = ()
-
 
     @extract_notifications_for_user(related=False)
     def post(self, request):
@@ -280,7 +281,6 @@ class PasswordRecoveryAPIView(APIView):
 
         send_password_reset_notification.delay(email, reset_link)
         return Response({'message': 'Password reset email sent successfully'}, status=status.HTTP_200_OK)
-
 
 
 class PasswordResetView(APIView):
