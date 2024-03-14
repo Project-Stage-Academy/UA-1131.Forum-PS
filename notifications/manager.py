@@ -62,6 +62,7 @@ class UpdateNotification(Notification):
 
 class MessageNotification(Notification):
     """Model for message notification"""
+    event_id: str
     type: str = Field(default=MESSAGE, frozen=True)
 
 
