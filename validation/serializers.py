@@ -28,7 +28,7 @@ class CustomValidationSerializer(serializers.Serializer):
         return phone_number_to_validate
 
     @staticmethod
-    def validation_password(password_to_validate, email=None, first_name=None, surname=None):
+    def validate_password(password_to_validate, email=None, first_name=None, surname=None):
         if len(password_to_validate) < 8:
             raise ValidationError("Password length should be at least 8 characters ")
         if (not any(symbol.isdigit() for symbol in password_to_validate)
