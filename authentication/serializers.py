@@ -36,7 +36,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer, CustomValidationSe
         if password != password2:
             raise ValidationError({"password": "Passwords are different"})
         try:
-            self.validation_email(email)
+            self.validate_contact_email(email)
         except ValidationError as e:
             raise ValidationError({"email": e.detail})
         try:
@@ -44,7 +44,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer, CustomValidationSe
         except ValidationError as e:
             raise ValidationError({"password": e.detail})
         try:
-            self.validation_phone_number(phone_number)
+            self.validate_contact_phone(phone_number)
         except ValidationError as e:
             raise ValidationError({"phone_number": e.detail})
         return attrs
@@ -64,11 +64,11 @@ class UserUpdateSerializer(serializers.ModelSerializer, CustomValidationSerializ
         email = attrs.get("email")
         phone_number = attrs.get("phone_number")
         try:
-            self.validation_email(email)
+            self.validate_contact_email(email)
         except ValidationError as e:
             raise ValidationError({"email": e.detail})
         try:
-            self.validation_phone_number(phone_number)
+            self.validate_contact_phone(phone_number)
         except ValidationError as e:
             raise ValidationError({"phone_number": e.detail})
         return attrs

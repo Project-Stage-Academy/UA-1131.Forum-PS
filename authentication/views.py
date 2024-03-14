@@ -333,7 +333,7 @@ class PasswordResetView(APIView):
             user.password = make_password(new_password)
             user.save()
 
-            send_password_update_notification.delay(user)
+            send_password_update_notification(user)
             return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
 
         else:
