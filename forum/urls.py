@@ -18,3 +18,5 @@ urlpatterns = [
     path('search/', include('search.urls')),
     path('notifications/', include('notifications.urls'))
 ]
+
+urlpatterns += company_router.urls
